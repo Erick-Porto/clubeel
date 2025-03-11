@@ -1,0 +1,95 @@
+.sidebar{
+    position: absolute;
+    z-index: 100;
+    background: var(--background);
+    width: 25%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding: 30px;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
+    animation: entry 0.5s ease-in-out;
+}
+.sidebarHeader{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.sidebarBody{
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
+
+.row{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+  }
+
+.buttonOutlined{
+    background-color: var(--background);
+    color: var(--grena-lighter);
+    border: solid 2px var(--grena-lighter);
+}
+.buttonOutlined:hover{
+    background-color: var(--grena-lighter);
+    color: var(--background);
+    cursor: pointer;
+}
+
+.button{
+    background-color: var(--grena-light);
+    border: none;
+    color: white;
+}
+.button:hover{
+    background-color: var(--grena-lighter);
+    cursor: pointer;
+}
+
+.actionText{
+    color: var(--grena-light);
+    cursor: pointer;
+    position: relative;
+}
+
+.actionText::after{
+    content: '';
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 1px;
+    background-color: var(--grena-lighter);
+    transition: all 0.3s;
+}
+
+.actionText:hover::after{
+    width: 100%;
+}
+
+
+@keyframes entry {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes exit {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}

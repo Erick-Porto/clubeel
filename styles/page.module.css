@@ -6,14 +6,11 @@
   --button-primary-hover: #383838;
   --button-secondary-hover: #f2f2f2;
 
-  display: grid;
-  grid-template-rows: 20px 1fr 20px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   justify-items: center;
   min-height: 100svh;
-  padding: 80px;
-  gap: 64px;
-  font-family: var(--font-geist-sans);
+  font-family: 'Nunito', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -92,22 +89,6 @@ a.secondary {
   min-width: 180px;
 }
 
-.footer {
-  grid-row-start: 3;
-  display: flex;
-  gap: 24px;
-}
-
-.footer a {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.footer img {
-  flex-shrink: 0;
-}
-
 /* Enable hover only on non-touch devices */
 @media (hover: hover) and (pointer: fine) {
   a.primary:hover {
@@ -118,11 +99,6 @@ a.secondary {
   a.secondary:hover {
     background: var(--button-secondary-hover);
     border-color: transparent;
-  }
-
-  .footer a:hover {
-    text-decoration: underline;
-    text-underline-offset: 4px;
   }
 }
 
@@ -152,12 +128,6 @@ a.secondary {
 
   a.secondary {
     min-width: auto;
-  }
-
-  .footer {
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
   }
 }
 

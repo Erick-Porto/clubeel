@@ -1,0 +1,45 @@
+.horizontalNavigation{
+    max-width: 50%;
+    margin: 0 auto;
+    position: relative;
+    top: -30px;
+    z-index: 30;
+}
+
+.horizontalItemList{
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+    list-style: none;
+    background: var(--grena-light);
+    text-align: center;
+    align-items: center;
+    padding: 15px;
+    border-radius: 15px;
+    font-size: 20px;
+    text-transform: uppercase;
+    font-weight: bold;
+    color: white;
+}
+
+.horizontalItem{
+    position: relative;
+    cursor: pointer;
+}
+
+.horizontalItem:hover span::after{
+    width: 100%;
+}
+
+.horizontalItem span::after{
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 1px;
+    background-color: white;
+    transition: all 0.3s;
+}

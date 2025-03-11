@@ -1,0 +1,73 @@
+.carousel {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: rgb(115 0 1 / 5%) 0px 14px 28px, rgb(115 0 1 / 10%) 0px 10px 10px;
+}
+
+.carouselCover{
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  opacity: 0.5;
+  z-index: 30;
+  position: absolute;
+}
+
+.carouselButtons{
+  position: absolute;
+  font-size: 36px;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 999;
+  width: 100%;
+  color: white;
+  padding: 20px;
+}
+
+.carouselButton{
+  cursor: pointer;
+}
+
+.carouselItem {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 1s ease-in-out;
+  opacity: 0;
+}
+
+.carouselItem.active {
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.coverLogo{
+  z-index: 999;
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}

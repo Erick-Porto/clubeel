@@ -1,0 +1,51 @@
+.header{
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    top: -100%;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-around;
+    position: fixed;
+    transition: all 0.5s linear;
+    z-index: 2;
+    background-color: var(--background);
+    box-shadow: rgb(115 0 1 / 15%) 0px 14px 28px, rgb(115 0 1 / 5%) 0px 10px 10px;
+    animation: disaper 0.5s linear;
+    display: none;
+}
+
+.headerActive{
+    display: flex;
+    top: 0;
+    animation: surge 0.5s linear;
+}
+
+.header ul{
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 10px;
+}
+
+@keyframes surge{
+    from{
+        top: -100%;
+    }
+    to{
+        top:0;
+    }
+}
+
+@keyframes disaper{
+    from{
+        top: 0;
+        display: flex;
+    }
+    to{
+        top: -100%;
+        display: none;
+    }
+}
