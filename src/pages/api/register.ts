@@ -45,20 +45,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'POST') {
         const { cpf, matricula, bornAs, password} = req.body;
 
-        if (!cpf || !matricula || !bornAs || !password) {
+        if (!cpf || !matricula || !bornAs || !password) 
             return res.status(400).json({ error: 'Missing required fields' });
-        }
+        
 
-        if (!isValidCPF(cpf)) {
+        if (!isValidCPF(cpf)) 
             return res.status(400).json({ error: 'Invalid CPF' });
-        }
+        
 
         try {
-            const apiResponse = await fetch('http://192.168.100.205/api/register', {
+            const apiResponse = await fetch('http://192.168.100.205:8000/api/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + process.env.API_KEY,
+                    'Authorization': 'Bearer ' + process.env.API_TOKEN,
                 },
                 body: JSON.stringify({
                     title:matricula,
@@ -66,7 +66,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     birthDate:bornAs,
                     password}),
             });
-
             if (!apiResponse.ok) {
                 const contentType = apiResponse.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {

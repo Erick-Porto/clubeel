@@ -1,21 +1,27 @@
-async function isTokenValid(token: string): Promise<boolean> {
+import type { NextApiRequest, NextApiResponse } from 'next';
+
+const isTokenValid = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
-        const response = await fetch('http://192.168.100.205/api/verify-token', {
+        const { api, token } = req.body;
+        const response = await fetch('http://192.168.100.205:8000/api/verify-token', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${api}`,
+                'Session': token
             },
-            body: JSON.stringify({ token })
         });
 
+        console.log('Response status:', response.status);
         if (response.status === 200) {
-            return true;
+            res.status(200).json({ valid: true });
         } else {
-            return false;
+            res.status(401).json({ valid: false });
         }
     } catch (error) {
         console.error('Token validation failed:', error);
-        return false;
+        res.status(500).json({ valid: false });
     }
 }
+
+export default isTokenValid;

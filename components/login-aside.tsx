@@ -6,7 +6,7 @@ import Logo from "@/images/logo-grena.png";
 import { useState, useEffect } from "react";
 import AlertBox from "@/components/alert";
 import CryptoJS from "crypto-js"; // Import CryptoJS
-import { redirect } from "next/navigation";
+import { useRouter } from 'next/navigation'; // Import useRouter from next/navigation
 
 export default function AuthSidebar({ useInterface }: { useInterface: string }) {
     const [cpf, setCPF] = useState("");
@@ -18,6 +18,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
     const [passwordVerified, setPasswordVerified] = useState(false);
+    const router = useRouter(); // Initialize useRouter
 
     function verifyCode({ code }: { code: string }) {
         let codeValue = code.replace(/[^0-9ESCesc]/g, ''); // Permite apenas números e as letras E, S, C
@@ -78,22 +79,30 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     async function login(event: React.FormEvent) {
         event.preventDefault();
         try {
-            const response = await fetch('http://192.168.100.146/api/login', {
+            let documentValue = cpf.replace(/\D/g, '');
+            if (documentValue.length > 11) documentValue = documentValue.slice(0, 11);
+
+            
+            const encryptedPassword = CryptoJS.SHA256(password).toString();
+            
+            const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    login: cpf,
-                    password: CryptoJS.AES.encrypt(password, process.env.SECRET_KEY || 'token').toString(),
+                    login:documentValue,
+                    password:encryptedPassword,
                 }),
             });
-
             const data = await response.json();
 
             if (response.status !== 200) {
                 setAlertMessage(data.error);
                 setAlertVisible(true);
             } else {
-                redirect('/home'); // Redirect to dashboard on successful login
+                console.log("Login realizado com sucesso");
+                console.log(data);
+                localStorage.setItem('___cfcsn-access-token', data.token); // Armazena o token no localStorage
+                router.push('/'); // Redirect to the dashboard page
             }
 
         } catch (error) {
@@ -104,7 +113,6 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
 
     async function register(event: React.FormEvent) {
         event.preventDefault();
-        console.log(cpf, matricula, bornAs, password)
         let documentValue = cpf.replace(/\D/g, '');
         if (documentValue.length > 11) documentValue = documentValue.slice(0, 11);
 
@@ -114,6 +122,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 setAlertVisible(true);
                 return;
             } else {
+                const encryptedPassword = CryptoJS.SHA256(password).toString();
                 const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -121,7 +130,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                         cpf: documentValue,
                         matricula,
                         bornAs,
-                        password: CryptoJS.AES.encrypt(password, process.env.SECRET_KEY || 'token').toString()
+                        password:encryptedPassword,
                     }),
                 });
 
@@ -208,11 +217,11 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                             <input
                                 type="password"
                                 value={repeatPassword}
-                                // onBlur={() => {
-                                //     if (!passwordVerified) {
-                                //         verifyPassword({ password, repeatPassword });
-                                //     }
-                                // }}
+                                onBlur={() => {
+                                    if (!passwordVerified) {
+                                        verifyPassword({ password, repeatPassword });
+                                    }
+                                }}
                                 onChange={(e) => {
                                     setRepeatPassword(e.target.value);
                                     setPasswordVerified(false); // Reset password verification state

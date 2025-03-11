@@ -1,22 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import CryptoJS from "crypto-js"; // Import CryptoJS
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         const { login, password } = req.body;
-
-        if (!login || !password) {
-            return res.status(400).json({ error: 'Missing login or password' });
-        }
+        if (!login || !password) return res.status(400).json({ error: 'Missing login or password' });
 
         try {
-            // Make a request to another API
-            const apiResponse = await fetch('http://192.168.100.205/api/login', {
+            const apiResponse = await fetch('http://192.168.100.205:8000/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + process.env.API_TOKEN,
                 },
-                body: JSON.stringify({ login, password: CryptoJS.AES.encrypt(password, 'secret-key').toString() }),
+                body: JSON.stringify({ login, password }),
             });
 
             if (!apiResponse.ok) {
@@ -25,9 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             const data = await apiResponse.json();
-            localStorage.setItem('authentication', data.token);
-
             return res.status(200).json(data);
+
         } catch (error) {
             if (error instanceof Error) {
                 return res.status(500).json({ error: error.message });
