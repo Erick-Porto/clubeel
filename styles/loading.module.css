@@ -1,0 +1,61 @@
+.LoadingScreen{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+}
+
+.LoadingScreen img{
+    width: 35%;
+    height: 25%;
+    animation: pulse 0.5s linear;
+    animation-iteration-count: 2;
+    margin-bottom: 30px;
+}
+
+.loading{
+    position: relative;
+    width: 50px;
+    height: 50px;
+    bottom: 0;
+}
+
+.loading::after{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border:solid 1px var(--grena);
+    border-bottom:none;
+    border-left:none;
+    /* border-right:none; */
+    border-radius: 100%;
+    animation: rotate 0.8s linear infinite;
+}
+
+@keyframes rotate {
+    from{
+        transform: rotate(0deg);
+    }
+    to{
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse{
+    0%{
+        transform: scale(1);
+    }
+    50%{
+        transform: scale(1.05);
+    }
+    100%{
+        transform: scale(1);
+    }
+
+}
