@@ -3,39 +3,38 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ComponentType } from 'react';
+import LoadingScreen from './loading';
 
 const withAuth = (WrappedComponent: ComponentType) => {
     return (props: any) => {
         const [isLoading, setIsLoading] = useState(true);
         const router = useRouter();
-
         useEffect(() => {
             const checkToken = async () => {
-                const token = localStorage.getItem('___cfcsn-access-token');
+                const token = localStorage.getItem('___cfcsn-access-token')
+
                 if (!token) {
                     console.log('No token found, redirecting to login');
                     router.push('/login'); // Redirect to login if token is not present
                 } else {
-                    const response = await fetch('/api/authorization', {
-                        method: 'POST',
+                    
+
+                    const response = await fetch('http://192.168.100.81:8000/api/verify-token', {
+                        method: 'GET',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+                            'Session': token,
                         },
-                        body: JSON.stringify({ 
-                            api: process.env.API_TOKEN,
-                            token 
-                        }),
                     });
 
                     const data = await response.json();
-                    
-                    console.log('Token validation status:', data.valid);
 
-                    if (data.valid) {
+                    if (data[0]) {
                         setIsLoading(false); // Token is valid, can render the page
                     } else {
                         console.log('Invalid token, removing token and redirecting to login');
-                        localStorage.removeItem('___cfcsn-access-token'); // Remove invalid token
+                        localStorage.removeItem('___cfcsn-access-token');
                         router.push('/login'); // Redirect to login if token is not valid
                     }
                 }
@@ -48,7 +47,7 @@ const withAuth = (WrappedComponent: ComponentType) => {
         }, [router]);
 
         if (isLoading) {
-            return <div>Loading...</div>; // Show loading while checking token
+            return <LoadingScreen/>; // Show loading while checking token
         }
 
         return <WrappedComponent {...props} />;

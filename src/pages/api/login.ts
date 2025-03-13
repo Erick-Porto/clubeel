@@ -6,11 +6,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!login || !password) return res.status(400).json({ error: 'Missing login or password' });
 
         try {
-            const apiResponse = await fetch('http://192.168.100.205:8000/api/login', {
+            const apiResponse = await fetch('http://192.168.100.81:8000/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + process.env.API_TOKEN,
+                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
                 },
                 body: JSON.stringify({ login, password }),
             });

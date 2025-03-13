@@ -54,11 +54,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
 
         try {
-            const apiResponse = await fetch('http://192.168.100.205:8000/api/register', {
+            const apiResponse = await fetch('http://192.168.100.81:8000/api/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + process.env.API_TOKEN,
+                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
                 },
                 body: JSON.stringify({
                     title:matricula,

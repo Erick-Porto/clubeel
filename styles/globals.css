@@ -23,6 +23,14 @@
   }
 }
 
+section{
+  position: relative;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 html,
 body {
   max-width: 100vw;

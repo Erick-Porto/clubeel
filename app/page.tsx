@@ -8,6 +8,9 @@ import Header from "@/components/header";
 import HorizontalNavBar from '@/components/horizontal-nav-bar';
 import MapLocation from "@/components/location";
 import withAuth from "@/components/auth"; // Corrected import path
+import { redirect } from "next/dist/server/api-utils";
+import { useRouter } from "next/navigation";
+import SportiveSquare from "@/components/sportive-square";
 
 interface NavOption {
   text: string;
@@ -23,7 +26,7 @@ const Home = () => {
     { text: "Áreas Esportivas", to: 0, page:""},
     { text: "Áreas de Confraternização", to: 0, page:""}
   ]);
-
+  const router = useRouter();
   const locationRef = useRef<HTMLDivElement>(null);
   const sportsAreasRef = useRef<HTMLDivElement>(null);
   const confraternizationAreasRef = useRef<HTMLDivElement>(null);
@@ -54,15 +57,23 @@ const Home = () => {
       <Header options={navOptions} surgeIn={navOptions[0].to}/>
       <Carousel controllers={true} height={95}/>
       <HorizontalNavBar options={navOptions}/>
-      <div ref={locationRef}>
+
+      <div>
+        <span onClick={()=>{
+          localStorage.removeItem('___cfcsn-access-token');
+          router.push('/login')
+        }}>LOGOUT</span>
+      </div>
+
+      <section ref={locationRef}>
         <MapLocation />
-      </div>
-      <div id="sports-areas" ref={sportsAreasRef}>
+      </section>
+      <section id="sports-areas" ref={sportsAreasRef}>
+        <SportiveSquare/>
+      </section>
+      <section id="confraternization-areas" ref={confraternizationAreasRef}>
         {/* Confraternization Areas content */}
-      </div>
-      <div id="confraternization-areas" ref={confraternizationAreasRef}>
-        {/* Confraternization Areas content */}
-      </div>
+      </section>
       <Footer/>
     </div>
   );

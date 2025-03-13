@@ -100,9 +100,8 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 setAlertVisible(true);
             } else {
                 console.log("Login realizado com sucesso");
-                console.log(data);
-                localStorage.setItem('___cfcsn-access-token', data.token); // Armazena o token no localStorage
-                router.push('/'); // Redirect to the dashboard page
+                localStorage.setItem('___cfcsn-access-token', data.token);
+                router.push('/');
             }
 
         } catch (error) {

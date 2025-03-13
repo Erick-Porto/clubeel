@@ -1,0 +1,50 @@
+:root {
+    --no-of-slides: 6;
+    --slides-in-view: 4;
+    --slide-width: 350px;
+    --slide-height: 100%;
+    --iteration-time: 30s;
+}
+
+@keyframes squareScroll{
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(calc(var(--slide-width) * var(--no-of-slides) * -1));
+    }
+}
+
+.squareContainer {
+    display: flex;
+    align-items: center;
+    width: calc(var(--slides-in-view) * var(--slide-width));
+    overflow: hidden;
+    justify-content: center;
+    margin: 0 auto;
+    height: 70svh;
+}
+
+.carousel {
+    padding: 10px 0;
+    overflow: hidden;
+    height: 100%;
+    width: calc(2 * var(--no-of-slides));
+}
+
+.square {
+    color: white;
+    background-color: var(--grena-light);
+    position: relative;
+    animation: squareScroll linear;
+    animation-iteration-count: infinite;
+    animation-duration: var(--iteration-time);
+    width: var(--slide-width);
+    height: var(--slide-height);
+    box-sizing: border-box;
+}
+
+.square:nth-child(even) {
+    background-color: var(--grena-lighter);
+    /* top: var(--even-down); */
+}
