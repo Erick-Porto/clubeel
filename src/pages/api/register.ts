@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import API_CONSUME from '@/services/api-consume';
 
 function isValidCPF(cpf: string): boolean {
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) {
@@ -47,49 +48,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (!cpf || !matricula || !bornAs || !password) 
             return res.status(400).json({ error: 'Missing required fields' });
-        
 
         if (!isValidCPF(cpf)) 
             return res.status(400).json({ error: 'Invalid CPF' });
-        
 
         try {
-            const apiResponse = await fetch('http://192.168.100.81:8000/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
+            const data = await API_CONSUME(
+                'POST',
+                'register',
+                {
+                    Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
+                    Session: null
                 },
-                body: JSON.stringify({
-                    title:matricula,
+                {
+                    title: matricula,
                     cpf,
-                    birthDate:bornAs,
-                    password}),
-            });
-            if (!apiResponse.ok) {
-                const contentType = apiResponse.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const errorData = await apiResponse.json();
-                    throw new Error(errorData.message || 'Failed to register');
-                } else {
-                    throw new Error('Failed to register');
+                    birthDate: bornAs,
+                    password
                 }
-            }
+            );
 
-            const contentType = apiResponse.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                const data = await apiResponse.json();
-                return res.status(200).json(data);
-            } else {
-                throw new Error('Unexpected response format');
-            }
-        } catch (error) {
+            return res.status(200).json(data);
+        }
+
+        catch (error) {
             if (error instanceof Error) {
                 return res.status(500).json({ error: error.message });
             } else {
                 return res.status(500).json({ error: 'An unknown error occurred' });
             }
         }
+
     } else {
         res.setHeader('Allow', ['POST']);
         res.status(405).end(`Method ${req.method} Not Allowed`);

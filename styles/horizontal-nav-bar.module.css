@@ -35,11 +35,11 @@
 .horizontalItem span::after{
     content: '';
     position: absolute;
-    bottom: -5px;
+    bottom: 0px;
     left: 50%;
     transform: translateX(-50%);
     width: 0;
-    height: 1px;
+    height: 2px;
     background-color: white;
     transition: all 0.3s;
 }

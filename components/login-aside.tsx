@@ -4,9 +4,10 @@ import styles from "@/styles/login-side-bar.module.css";
 import Image from "next/image";
 import Logo from "@/images/logo-grena.png";
 import { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation'; // Import useRouter from next/navigation
+import {useUser} from '@/context/UserContext'
 import AlertBox from "@/components/alert";
 import CryptoJS from "crypto-js"; // Import CryptoJS
-import { useRouter } from 'next/navigation'; // Import useRouter from next/navigation
 
 export default function AuthSidebar({ useInterface }: { useInterface: string }) {
     const [cpf, setCPF] = useState("");
@@ -19,6 +20,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     const [alertMessage, setAlertMessage] = useState("");
     const [passwordVerified, setPasswordVerified] = useState(false);
     const router = useRouter(); // Initialize useRouter
+    const { setUser } = useUser();
 
     function verifyCode({ code }: { code: string }) {
         let codeValue = code.replace(/[^0-9ESCesc]/g, ''); // Permite apenas números e as letras E, S, C
@@ -72,6 +74,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
         setPasswordVerified(true);
     }
 
+    
     useEffect(() => {
         setAuthInterface(useInterface);
     }, [useInterface]);
@@ -99,7 +102,16 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 setAlertMessage(data.error);
                 setAlertVisible(true);
             } else {
-                console.log("Login realizado com sucesso");
+                const userData = {
+                    name: data.user.name,
+                    email: data.user.email,
+                    cpf: data.user.cpf,
+                    title: data.user.title,
+                    barcode: data.user.barcode,
+                    birthdate: data.user.birthdate,
+                    telephone: data.user.telephone,
+                }
+                setUser(userData)
                 localStorage.setItem('___cfcsn-access-token', data.token);
                 router.push('/');
             }
@@ -139,7 +151,16 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     setAlertMessage(data.error);
                     setAlertVisible(true);
                 } else {
-                    console.log('Registration successful:', data);
+                    const userData = {
+                        name: data.user.name,
+                        email: data.user.email,
+                        cpf: data.user.cpf,
+                        title: data.user.title,
+                        barcode: data.user.barcode,
+                        birthdate: data.user.birthdate,
+                        telephone: data.user.telephone,
+                    }
+                    setUser(userData)
                     setAlertVisible(false);
                 }
             }

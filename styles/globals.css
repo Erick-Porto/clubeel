@@ -26,8 +26,9 @@
 section{
   position: relative;
   height: 100vh;
+  flex-direction: column;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
 }
 

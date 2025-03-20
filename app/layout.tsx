@@ -4,6 +4,8 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 
+import { UserProvider } from '@/context/UserContext'; // Importe o UserProvider
+
 export const metadata: Metadata = {
   title: "Clube dos Funcionários",
   description: "O melhor da vida é aqui.",
@@ -14,10 +16,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  
   return (
     <html lang="pt-br">
       <body>
-        {children}
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   );

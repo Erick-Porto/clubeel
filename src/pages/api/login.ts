@@ -1,4 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import API_CONSUME from '@/services/api-consume';
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
@@ -6,21 +8,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!login || !password) return res.status(400).json({ error: 'Missing login or password' });
 
         try {
-            const apiResponse = await fetch('http://192.168.100.81:8000/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
+            const data = await API_CONSUME('POST', 'login',
+                {
+                    Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
+                    Session: null,
                 },
-                body: JSON.stringify({ login, password }),
-            });
+                { 
+                    login,
+                    password
+                }
+            );
 
-            if (!apiResponse.ok) {
-                const errorData = await apiResponse.json();
-                throw new Error(errorData.message || 'Failed to authenticate');
-            }
-
-            const data = await apiResponse.json();
             return res.status(200).json(data);
 
         } catch (error) {

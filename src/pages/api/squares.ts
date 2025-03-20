@@ -1,9 +1,23 @@
-import { get, METHODS } from 'http';
-import type { NextApiRequest, NextApiResponse } from 'next';
+'use server'
 
-export default function handler_squares(req: NextApiRequest, res: NextApiResponse) {
-    if(req.method==='GET'){
-        
-    }
+import API_CONSUME from '@/services/api-consume';
 
+const handler_squares = (accessToken:string|null) => {
+    const response = API_CONSUME(
+        "GET",
+        "places/groups/sport",
+        {
+            'Authorization': 'Bearer '+process.env.NEXT_PUBLIC_API_TOKEN,
+            'Session': accessToken
+        },
+        null
+    )
+
+    console.log(" => "+response)
+
+    return(
+        "a"
+    )
 }
+
+export default handler_squares;

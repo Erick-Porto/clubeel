@@ -1,9 +1,9 @@
 'use client'
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ComponentType } from 'react';
 import LoadingScreen from './loading';
+import API_CONSUME from '@/services/api-consume';
 
 const withAuth = (WrappedComponent: ComponentType) => {
     return (props: any) => {
@@ -19,16 +19,15 @@ const withAuth = (WrappedComponent: ComponentType) => {
                 } else {
                     
 
-                    const response = await fetch('http://192.168.100.81:8000/api/verify-token', {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-                            'Session': token,
+                    const data = await API_CONSUME(
+                        'GET',
+                        'verify-token',
+                        {
+                            Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+                            Session: token,
                         },
-                    });
-
-                    const data = await response.json();
+                        null
+                    );
 
                     if (data[0]) {
                         setIsLoading(false); // Token is valid, can render the page

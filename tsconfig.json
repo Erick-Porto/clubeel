@@ -24,8 +24,10 @@
       "@/styles/*": ["./styles/*"],
       "@/components/*": ["./components/*"],
       "@/pages/*": ["./app/*"],
-      "@/api/*": ["./src/pages/api/*"], // Corrigido o caminho da API
-      "@/images/*": ["./public/images/*"], // Corrigido o caminho das imagens
+      "@/api/*": ["./src/pages/api/*"],
+      "@/images/*": ["./public/images/*"],
+      "@/services/*": ["./services/*"],
+      "@/context/*": ["./context/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

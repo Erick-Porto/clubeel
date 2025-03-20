@@ -1,49 +1,51 @@
-'use client'
+"use client"
 
-import { useEffect, useState, useRef } from 'react';
+import API_CONSUME from '@/services/api-consume';
 import Style from '@/styles/sportive-square.module.css';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 const SportiveSquare = () => {
-    const [items, setItems] = useState({});
-    const containerRef = useRef(null);
-
-    async function load_square(){
-        try {
-            const response = await fetch('http://192.168.100.81:8000/api/places/group/sport', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer '+ process.env.NEXT_PUBLIC_API_TOKEN,
-                    'Session': localStorage.getItem('___cfcsn-access-token'),
-                }                
-            });
-            const data = await response.json();
-            console.log(data)
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to fetch data');
-            }
-
-            setItems(data);
-        } catch (err) {
-            console.error(err.message);
-        }
-    }
-
+    const [places, setPlaces] = useState([]);
+    
     useEffect(() => {
-        load_square();
+        const fetchPlaces = async () => {
+            try {
+                const response = await API_CONSUME("GET", "places/group/sport", {
+                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
+                    'Session': localStorage.getItem('___cfcsn-access-token')
+                }, null);
+                const placesArray = Object.values(response); // Converte o objeto para um array
+                setPlaces(placesArray);
+            } catch (error) {
+                console.error("Error fetching places:", error);
+            }
+        };
+    
+        fetchPlaces();
     }, []);
 
+    const formatPlaceName = (name: string) => {
+        return name.split(' ').join('-').toLowerCase();
+    };
+
     return (
-        <div className={Style.carousel}>
-            <div className={Style.squareContainer} ref={containerRef}>
-                {items && items.data && items.data.map((item, index) => (
-                    <div key={index} className={Style.square}>
-                        <img src={item.image} alt={item.name} />
-                        <div className={Style.squareContent}>
-                            <h3>{item.name}</h3>
-                            <p>{item.description}</p>
+        <div className={Style.squareContainer}>
+            <div className={Style.carousel}>
+                {places.map((place, index) => (
+                    <div key={index} className={Style.square} style={{backgroundImage: `url(${place.image_vertical})`}}>
+                        <div className={Style.squareInfo}>
+                        <Link href={`/places/${formatPlaceName(place.name)}:${place.id}`} className={Style.squareInfo}>
+                            <span className={Style.title}>{place.name}</span>
+                        </Link>
                         </div>
+                    </div>
+                ))}
+                {places.map((place, index) => (
+                    <div key={index + places.length} className={Style.square} style={{backgroundImage: `url(${place.image_vertical})`}}>
+                        <Link href={`/places/${formatPlaceName(place.name)}:${place.id}`} className={Style.squareInfo}>
+                            <span className={Style.title}>{place.name}</span>
+                        </Link>
                     </div>
                 ))}
             </div>
