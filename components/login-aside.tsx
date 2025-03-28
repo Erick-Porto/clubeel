@@ -6,8 +6,8 @@ import Logo from "@/images/logo-grena.png";
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation'; // Import useRouter from next/navigation
 import {useUser} from '@/context/UserContext'
-import AlertBox from "@/components/alert";
 import CryptoJS from "crypto-js"; // Import CryptoJS
+import { toast } from "react-toastify";
 
 export default function AuthSidebar({ useInterface }: { useInterface: string }) {
     const [cpf, setCPF] = useState("");
@@ -16,8 +16,6 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     const [matricula, setMatricula] = useState("");
     const [bornAs, setBornAs] = useState("");
     const [authInterface, setAuthInterface] = useState('');
-    const [alertVisible, setAlertVisible] = useState(false);
-    const [alertMessage, setAlertMessage] = useState("");
     const [passwordVerified, setPasswordVerified] = useState(false);
     const router = useRouter(); // Initialize useRouter
     const { setUser } = useUser();
@@ -66,12 +64,8 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
 
     function verifyPassword({ password, repeatPassword }: { password: string, repeatPassword: string }) {
         if (password !== repeatPassword) {
-            setAlertMessage("As senhas não coincidem");
-            setAlertVisible(true);
-        } else {
-            setAlertVisible(false);
+            toast.error("As senhas não coincidem");
         }
-        setPasswordVerified(true);
     }
 
     
@@ -85,22 +79,23 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
             let documentValue = cpf.replace(/\D/g, '');
             if (documentValue.length > 11) documentValue = documentValue.slice(0, 11);
 
-            
             const encryptedPassword = CryptoJS.SHA256(password).toString();
-            
+
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    login:documentValue,
-                    password:encryptedPassword,
+                    login: documentValue,
+                    password: encryptedPassword,
                 }),
             });
+
             const data = await response.json();
 
-            if (response.status !== 200) {
-                setAlertMessage(data.error);
-                setAlertVisible(true);
+            if (!response.ok) {
+                const errorMessage = data.error || "Erro ao tentar fazer login. Por favor, tente novamente.";
+                toast.error(errorMessage);
+                console.error("Login error:", errorMessage);
             } else {
                 const userData = {
                     name: data.user.name,
@@ -110,15 +105,14 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     barcode: data.user.barcode,
                     birthdate: data.user.birthdate,
                     telephone: data.user.telephone,
-                }
-                setUser(userData)
+                };
+                setUser(userData);
                 localStorage.setItem('___cfcsn-access-token', data.token);
                 router.push('/');
             }
-
         } catch (error) {
-            setAlertMessage(`${error}`);
-            setAlertVisible(true);
+            toast.error("Erro inesperado ao tentar fazer login. Por favor, tente novamente.");
+            console.error("Unexpected login error:", error);
         }
     }
 
@@ -129,131 +123,126 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
 
         try {
             if (password !== repeatPassword) {
-                setAlertMessage("As senhas não coincidem");
-                setAlertVisible(true);
+                toast.error("As senhas não coincidem");
                 return;
+            }
+
+            const encryptedPassword = CryptoJS.SHA256(password).toString();
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cpf: documentValue,
+                    matricula,
+                    bornAs,
+                    password: encryptedPassword,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                const errorMessage = data.error || "Erro ao tentar registrar. Por favor, tente novamente.";
+                toast.error(errorMessage);
+                console.error("Register error:", errorMessage);
             } else {
-                const encryptedPassword = CryptoJS.SHA256(password).toString();
-                const response = await fetch('/api/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        cpf: documentValue,
-                        matricula,
-                        bornAs,
-                        password:encryptedPassword,
-                    }),
-                });
-
-                const data = await response.json();
-
-                if (response.status !== 200) {
-                    setAlertMessage(data.error);
-                    setAlertVisible(true);
-                } else {
-                    const userData = {
-                        name: data.user.name,
-                        email: data.user.email,
-                        cpf: data.user.cpf,
-                        title: data.user.title,
-                        barcode: data.user.barcode,
-                        birthdate: data.user.birthdate,
-                        telephone: data.user.telephone,
-                    }
-                    setUser(userData)
-                    setAlertVisible(false);
-                }
+                const userData = {
+                    name: data.user.name,
+                    email: data.user.email,
+                    cpf: data.user.cpf,
+                    title: data.user.title,
+                    barcode: data.user.barcode,
+                    birthdate: data.user.birthdate,
+                    telephone: data.user.telephone,
+                };
+                setUser(userData);
             }
         } catch (error) {
-            setAlertMessage(`${error}`);
-            setAlertVisible(true);
-            console.error('Registration failed:', error);
+            toast.error("Erro inesperado ao tentar registrar. Por favor, tente novamente.");
+            console.error("Unexpected register error:", error);
         }
     }
 
     return (
-        <>
-            {alertVisible && <AlertBox visible={true} width={50} title={`Falha no ${authInterface}`} message={alertMessage} />}
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarHeader}>
-                    <Image alt="Logo" src={Logo} height={75} width={200} style={{ margin: "0 auto" }} />
-                </div>
+        <aside className={styles.sidebar}>
+            <div className={styles.sidebarHeader}>
+                <Image alt="Logo" src={Logo} height={75} width={200} style={{ margin: "0 auto" }} />
+            </div>
 
-                {authInterface === "login" ? (
-                    <>
-                        <p> Bem-vindo ao Locação de Espaços do Clube dos Funcionários.</p>
-                        <form className={styles.sidebarBody} onSubmit={login}>
-                            <input
-                                type="text"
-                                value={cpf}
-                                onChange={(e) => verifyDocument({ cpf: e.target.value })}
-                                placeholder="CPF"
-                            />
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Senha"
-                            />
-                            <input type="submit" value="Acessar" className={styles.button} />
-                            <p className={styles.actionText} onClick={() => { setAuthInterface("register") }}>Ainda não tem um usuário? Cadastre-se!</p>
-                        </form>
-                    </>
-                ) : authInterface === "register" ? (
-                    <form className={styles.sidebarBody} onSubmit={register}>
+            {authInterface === "login" ? (
+                <>
+                    <p> Bem-vindo ao Locação de Espaços do Clube dos Funcionários.</p>
+                    <form className={styles.sidebarBody} onSubmit={login}>
                         <input
                             type="text"
                             value={cpf}
                             onChange={(e) => verifyDocument({ cpf: e.target.value })}
                             placeholder="CPF"
                         />
-
-                        <div className={styles.row}>
-                            <input
-                                type="text"
-                                value={matricula}
-                                onChange={(e) => verifyCode({ code: e.target.value })}
-                                placeholder="Matricula"
-                            />
-
-                            <input
-                                type="date"
-                                value={bornAs}
-                                onChange={(e) => setBornAs(e.target.value)}
-                                placeholder="Data de nascimento"
-                            />
-                        </div>
-
-                        <div className={styles.row}>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => {
-                                    setPassword(e.target.value);
-                                    setPasswordVerified(false); // Reset password verification state
-                                }}
-                                placeholder="Senha"
-                            />
-                            <input
-                                type="password"
-                                value={repeatPassword}
-                                onBlur={() => {
-                                    if (!passwordVerified) {
-                                        verifyPassword({ password, repeatPassword });
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    setRepeatPassword(e.target.value);
-                                    setPasswordVerified(false); // Reset password verification state
-                                }}
-                                placeholder="Repita a senha"
-                            />
-                        </div>
-                        <input type="submit" value="Registrar" className={styles.button} />
-                        <p className={styles.actionText} onClick={() => { setAuthInterface("login") }}>Já possuí um usuário? Acesse aqui!</p>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Senha"
+                        />
+                        <input type="submit" value="Acessar" className={styles.button} />
+                        <p className={styles.actionText} onClick={() => { setAuthInterface("register") }}>Ainda não tem um usuário? Cadastre-se!</p>
                     </form>
-                ) : null}
-            </aside>
-        </>
+                </>
+            ) : authInterface === "register" ? (
+                <form className={styles.sidebarBody} onSubmit={register}>
+                    <input
+                        type="text"
+                        value={cpf}
+                        onChange={(e) => verifyDocument({ cpf: e.target.value })}
+                        placeholder="CPF"
+                    />
+
+                    <div className={styles.row}>
+                        <input
+                            type="text"
+                            value={matricula}
+                            onChange={(e) => verifyCode({ code: e.target.value })}
+                            placeholder="Matricula"
+                        />
+
+                        <input
+                            type="date"
+                            value={bornAs}
+                            onChange={(e) => setBornAs(e.target.value)}
+                            placeholder="Data de nascimento"
+                        />
+                    </div>
+
+                    <div className={styles.row}>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                setPasswordVerified(false); // Reset password verification state
+                            }}
+                            placeholder="Senha"
+                        />
+                        <input
+                            type="password"
+                            value={repeatPassword}
+                            onBlur={() => {
+                                if (!passwordVerified) {
+                                    verifyPassword({ password, repeatPassword });
+                                }
+                            }}
+                            onChange={(e) => {
+                                setRepeatPassword(e.target.value);
+                                setPasswordVerified(false); // Reset password verification state
+                            }}
+                            placeholder="Repita a senha"
+                        />
+                    </div>
+                    <input type="submit" value="Registrar" className={styles.button} />
+                    <p className={styles.actionText} onClick={() => { setAuthInterface("login") }}>Já possuí um usuário? Acesse aqui!</p>
+                </form>
+            ) : null}
+        </aside>
     );
 }

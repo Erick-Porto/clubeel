@@ -1,69 +1,170 @@
-.placeBanner{
-    margin-top: 70px;
+.placeBanner {
+  margin-top: 70px;
+  width: 100%;
+  height: 55svh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+  margin-bottom: 20px;
+  z-index: 0;
+
+  &::after {
+    content: "";
+    height: 100%;
     width: 100%;
-    height: 55svh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    position: relative;
-    margin-bottom: 20px;
-    z-index: 0;
-
-    &::after{
-        content: '';
-        height: 100%;
-        width: 100%;
-        position: absolute;
-        top: 0;
-        background-color: black;
-        opacity: 0.7;
-        left: 0;
-        z-index: 1;
-    }
+    position: absolute;
+    top: 0;
+    background-color: black;
+    opacity: 0.7;
+    left: 0;
+    z-index: 1;
+  }
 }
 
-.placeBannerCover{
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    text-transform: uppercase;
-    font-size: 32px;
+.placeBannerCover {
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-transform: uppercase;
+  font-size: 32px;
 }
 
-.placeList{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 30px;
-    flex-direction: row;
+.placeList {
+  display: grid;
+  grid-template: "1fr 1fr 1fr" auto;
+  gap: 30px;
 }
 
-.placeCard{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border-radius: 10px;
-    width: 350px;
-    height: 197px;
+.placeCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  width: 350px;
+  height: 197px;
+
+  &:hover .placeCardImage {
+    height: 60%;
+  }
+
+  &:hover .placeCardInfo {
+    height: 40%;
+  }
+
+  &:hover .placeCardInfo p {
+    transform: translateY(-10%);
+    top:10%;
+  }
+
+  &:hover .placeCardInfo a {
+    bottom: 30%;
+    display: block;
+  }
 }
 
-.placeCardImage{
-    height: 80%;
-    width: 100%;
-    background-color: var(--grena);
-    background-repeat: no-repeat;
-    background-size: cover;
+.placeCardImage {
+  height: 80%;
+  width: 100%;
+  background-color: var(--grena);
+  background-repeat: no-repeat;
+  transition: all 0.2s linear;
+  background-size: cover;
 }
 
-.placeCardInfo{
-    border: 1px solid var(--grena);
-    width: 100%;
-    height: 20%;
-    padding: 5px;
-    text-align: center;
+.placeCardInfo {
+  border: 1px solid var(--grena);
+  width: 100%;
+  height: 20%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s linear;
+  position: relative;
+  text-align: center;
+}
+
+.placeCardInfo p{
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+}
+
+.placeCardInfo a{
+  color: var(--grena-light);
+  bottom: 10%;
+  text-transform: uppercase;
+  display: none;
+  position: absolute;
+  animation: .2s linear places-module__Ax3uKq__fadeIn;
+  font-weight: bold;
+
+  &:hover{
+    color: var(--grena-lighter)
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    bottom: 5%;
+    opacity: 0;
+  }
+  to {
+    bottom: 30%;
+    opacity: 1;
+  }
+    
+}
+
+.placeContainer{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 20px;
+  height: 200px;
+  width: 60%;
+  position: relative;
+  margin-bottom: 50px;
+  border-radius: 20px 0 20px 0;
+  border: solid 3px var(--grena-light);
+}
+
+.placeTitle{
+  background-color: var(--background);
+  font-size: 32px;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 10px;
+  position: absolute;
+  left: 20px;
+  top: 0;
+  color: var(--grena-light);
+  transform: translateY(-50%);
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.placeRules{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  align-items: center;
+}
+
+.placeImage
+{
+  position: absolute;
+  top: -2px;
+  border-radius: 0 0 20px 0;
+  right: -2px;
 }

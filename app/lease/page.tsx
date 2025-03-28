@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from "react";
-import styles from "@/styles/page.module.css";
+import globalStyle from "@/styles/page.module.css";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 import withAuth from "@/components/auth";
@@ -45,7 +45,7 @@ const Lease = () => {
   }, []);
 
   return (
-    <div className={styles.page}>
+    <div className={globalStyle.page}>
       <Header options={navOptions} surgeIn={0}/>
       <Footer/>
     </div>

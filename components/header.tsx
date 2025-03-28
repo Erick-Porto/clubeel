@@ -18,7 +18,7 @@ interface Option {
 
 interface HeaderProps {
     surgeIn: number;
-    options: Array<Option>;
+    options: Array<Option>|null;
     onlyScroll: boolean;
 }
 
@@ -50,6 +50,7 @@ export default function Header({ options, surgeIn, onlyScroll }: HeaderProps) {
             <Link href={'/'}>
                 <Image src={Logo} alt="Logo do Clube dos Funcionários" width={150} height={50} />
             </Link>
+            {options === null ? null : (
             <nav>
                 <ul className={styles.navigateOptions}>
                     {onlyScroll ? (
@@ -71,6 +72,7 @@ export default function Header({ options, surgeIn, onlyScroll }: HeaderProps) {
                     ))}
                 </ul>
             </nav>
+            )}
             <div className={styles.profileOptions}>
                 {
                     user ?
@@ -96,7 +98,7 @@ export default function Header({ options, surgeIn, onlyScroll }: HeaderProps) {
                     </li>
                     <li>
                         <span>
-                            meus agendamentos
+                            <Link href={'/cart'}>meus agendamentos</Link>
                         </span>
                     </li>
                     <li

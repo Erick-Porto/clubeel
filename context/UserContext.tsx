@@ -5,7 +5,11 @@ import React, { createContext, useState, ReactNode, useContext, useEffect } from
 interface User {
   name: string;
   email: string;
-  // Adicione outros campos conforme necessário
+  cpf:string;
+  title:string;
+  barcode:string;
+  birthdate:string;
+  telephone:string;
 }
 
 interface UserContextProps {

@@ -10,7 +10,7 @@ const API_CONSUME = async (
     body: object | null,
 ) => {
     
-    const ip = "192.168.100.218:8000"
+    const ip = "192.168.100.128:8000"
 
     try {
         const response = await fetch(`http://${ip}/api/${route}`, {

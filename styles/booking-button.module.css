@@ -1,0 +1,17 @@
+.bookingButton{
+    background-color: var(--grena);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all .2s ease;
+    font-size: 18px;
+    &:hover{
+      background-color: var(--grena-light);
+    }
+    &:active{
+      transform: scale(0.95);
+    }
+  }

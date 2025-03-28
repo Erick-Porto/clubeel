@@ -67,7 +67,7 @@
     justify-content: space-around;
     position: fixed;
     transition: all 0.5s linear;
-    z-index: 2;
+    z-index: 999;
     background-color: var(--background);
     box-shadow: rgb(115 0 1 / 15%) 0px 14px 28px, rgb(115 0 1 / 5%) 0px 10px 10px;
     animation: disaper 0.5s linear;

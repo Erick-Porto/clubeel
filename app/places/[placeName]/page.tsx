@@ -1,13 +1,15 @@
 "use client"
-import styles from "@/styles/page.module.css";
+import globalStyle from "@/styles/page.module.css";
 import style from "@/styles/places.module.css"
 import Footer from '@/components/footer';
 import Header from '@/components/header';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from "react";
 import API_CONSUME from "@/services/api-consume";
+import Link from "next/link";
+import withAuth from "@/components/auth";
 
-const PlacePage = () => {
+const PlacesPage = () => {
     const params = useParams();
     const placeName = params?.placeName as string | " ";
     const [places, setPlaces] = useState([]);
@@ -32,13 +34,13 @@ const PlacePage = () => {
     }, []);
 
     return (
-        <div className={styles.page}>
+        <div className={globalStyle.page}>
             <Header
-                options={[{text: 'a', to: 0, page: ''},{text: 'a', to: 0, page: ''}]}
+                options={null}
                 surgeIn={0}
                 onlyScroll={false}
             />
-            <section>
+            <section className={globalStyle.Section}>
                 <div
                     className={style.placeBanner}
                     style={{backgroundImage: `url(${group.image_horizontal})`}}
@@ -53,16 +55,17 @@ const PlacePage = () => {
                         <div key={index} className={style.placeCard}>
                             <div className={style.placeCardImage} style={{backgroundImage: `url()`}}></div>
                             <div className={style.placeCardInfo}>
-                                {item.name}
+                                <p>{item.name}</p>
+                                <Link href={`/place/${item.name.split(' ').join('-').toLowerCase()}-${item.id}`}>RESERVAR</Link>
                             </div>
                         </div>
                     ))}
                 </div>
             </section>
-
+            
             <Footer/>
         </div>
     );
 };
 
-export default PlacePage;
+export default withAuth(PlacesPage);

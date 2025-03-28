@@ -11,7 +11,7 @@ const SportiveSquare = () => {
     useEffect(() => {
         const fetchPlaces = async () => {
             try {
-                const response = await API_CONSUME("GET", "places/group/sport", {
+                const response = await API_CONSUME("GET", "places/group/esportiva", {
                     'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
                     'Session': localStorage.getItem('___cfcsn-access-token')
                 }, null);

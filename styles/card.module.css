@@ -1,0 +1,75 @@
+
+.card{
+    width: 550px;
+    height: 300px;
+    border: solid 1px #333;
+    background-color: #333;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 20px;
+    color: #fff;
+    text-transform:uppercase;
+    margin: 14px;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 1s ease;
+    &:not(.cardBackward) .cardBack{
+        opacity: 0;
+        display: none;
+    }
+    &:not(.cardBackward) .cardFront{
+        opacity: 1;
+        display: flex;
+    }
+}
+
+.cardBackward{
+    transform: rotateY(180deg);
+}
+
+.cardFront{
+    display: none;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    animation: .5s linear fadeIn;
+}
+
+.cardBack{
+    display: flex;
+    position: relative;
+    transform: rotateY(-180deg);
+    height: 100%;
+    width: 100%;
+    animation: .5s linear fadeIn;
+}
+
+.cardNumber{
+    position: absolute;
+    bottom: 30%;
+    left: 5%;
+    font-size: 30px;
+}
+.cardName{
+    position: absolute;
+    bottom: 20%;
+    left: 5%;
+}
+.cardCVV{
+    position: absolute;
+    bottom:30%;
+    left: 10%;
+}
+.cardValid{
+    position: absolute;
+    bottom:30%;
+    right: 10%;
+}
+
+@keyframes fadeIn {
+    from{
+        opacity: 0;
+    }
+    to{
+        opacity: 1;
+    }
+}

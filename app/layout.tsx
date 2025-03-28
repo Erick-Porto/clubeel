@@ -5,6 +5,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 
 import { UserProvider } from '@/context/UserContext'; // Importe o UserProvider
+import { ToastContainer } from "react-toastify";
 
 export const metadata: Metadata = {
   title: "Clube dos Funcionários",
@@ -23,6 +24,18 @@ export default function RootLayout({
         <UserProvider>
           {children}
         </UserProvider>
+        <ToastContainer
+            position="bottom-right"
+            autoClose={5000}
+            hideProgressBar
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss={false}
+            draggable
+            pauseOnHover={false}
+            theme="light"
+        />
       </body>
     </html>
   );
