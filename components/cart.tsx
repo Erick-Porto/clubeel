@@ -76,7 +76,7 @@ const Cart = () => {
                         )})}
                 </div>
                 <div className={style.cartOptions}>
-                    <button className={style.cartButton}>Finalizar compra</button>
+                    <Link href={'/checkout'}><button className={style.cartButton}>Finalizar compra</button></Link>
                     <button className={style.cartButton} onClick={()=> deleteItems()}>Limpar carrinho</button>
                 </div>
             </>

@@ -7,6 +7,7 @@ config.autoAddCss = false
 import { UserProvider } from '@/context/UserContext'; // Importe o UserProvider
 import { ToastContainer } from "react-toastify";
 
+
 export const metadata: Metadata = {
   title: "Clube dos Funcionários",
   description: "O melhor da vida é aqui.",
@@ -20,7 +21,7 @@ export default function RootLayout({
   
   return (
     <html lang="pt-br">
-      <body>
+      <body >
         <UserProvider>
           {children}
         </UserProvider>

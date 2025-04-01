@@ -1,182 +1,124 @@
+'use client'
 import style from '@/styles/checkout.module.css'
-import { table } from 'console'
-import { useState, useEffect } from 'react'
+import React from 'react'
+import { Payment } from '@mercadopago/sdk-react'
+import { useState,useEffect } from 'react'
 import { toast } from 'react-toastify'
-import Card from '@/components/card'
+import {initMercadoPago} from "@mercadopago/sdk-react";
+import API_CONSUME from '@/services/api-consume'
 
-const CheckoutView = () => {
-    const [paymentMethod, setPaymentMethod] = useState('')
-    const[cardNumber, setCardNumber] = useState('0000 0000 0000 0000')
-    const[cvc, setCvc] = useState('000')
-    const[valid, setValid] = useState('00/00')
-    const[cardName, setCardName] = useState('Nome conforme no cartão')
-    const[type, setType] = useState('')
-    const [cardPostion, setCardPosition] = useState('front')
+initMercadoPago('TEST-1f6158bd-fb99-4f48-97c7-96d048948e31');
+const groupCartData = async (cartData) => {
 
-    const user = JSON.parse(localStorage.getItem('___cfcsn-user-data'))
+    const groupedData: Record<string, { 
+        place: string; 
+        value: number; 
+        hours: string[]; 
+        image: string; 
+    }> = {};
 
-    const userDocuments = () =>{
-        return(
-            <table>
-                <thead>
-                    <tr>
-                        <th colSpan={3}>Dados pessoais</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colSpan={1}>Nome completo:</td>
-                        <td colSpan={2}>{user.name}</td>
-                    </tr>
-                    <tr>
-                        <td colSpan={1}>CPF:</td>
-                        <td colSpan={2}>{user.cpf}</td>
-                    </tr>
-                    <tr>
-                        <td colSpan={1}>Matricula:</td>
-                        <td colSpan={2}>{user.barcode}</td>
-                    </tr>
-                </tbody>
-            </table>
-    )}
+    for (const item of cartData) {
+        try {
+            // Faz a requisição para a API usando API_CONSUME
+            const response = await API_CONSUME('get', `place/${item.place}`, {
+                'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
+                'Session': localStorage.getItem('___cfcsn-access-token')
+            }, null);
 
-    const userContact = () =>{
-        return(
-            <table>
-                <thead>
-                    <tr>
-                        <th colSpan={3}>Dados de contato</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colSpan={1}>E-mail</td>
-                        <td colSpan={2}>{user.email}</td>
-                    </tr>
-                    <tr>
-                        <td colSpan={1}>Whatsapp</td>
-                        <td colSpan={2}>{user.telephone}</td>
-                    </tr>
-                </tbody>
-            </table>
+            if (!groupedData[item.place]) {
+                groupedData[item.place] = {
+                    place: response[0].name, // Nome da quadra
+                    value: parseFloat(response[0].price), // Valor
+                    hours: [`${item.hour}:00 - ${item.hour + 1}:00`], // Horários
+                    image: response[0].image, // Imagem
+                };
+            } else {
+                // Agrupa horários consecutivos
+                const lastHour = parseInt(groupedData[item.place].hours[groupedData[item.place].hours.length - 1].split(' - ')[1].split(':')[0], 10);
+                if (item.hour === lastHour) {
+                    groupedData[item.place].hours[groupedData[item.place].hours.length - 1] = `${groupedData[item.place].hours[groupedData[item.place].hours.length - 1].split(' - ')[0]} - ${item.hour + 1}:00`;
+                } else {
+                    groupedData[item.place].hours.push(`${item.hour}:00 - ${item.hour + 1}:00`);
+                }
+            }
+        } catch (error) {
+            console.error(`Error fetching data for placeId ${item.placeId}:`, error);
+        }
+    }
+
+    return Object.values(groupedData);
+};
+
+
+const CheckoutView: React.FC = () => {
+    const [groupedCartData, setGroupedCartData] = useState<{ 
+        place: string; 
+        value: number; 
+        hours: string[]; 
+        image: string; 
+    }[]>([]);
+
+    const amount = groupedCartData.reduce((sum, item) => sum + item.value, 0); // Calculate dynamically
+
+    const initialization = {
+        amount: amount || 100,
+    };
     
-    )}
+    const customization = {
+        paymentMethods: {
+            bankTransfer: "all",
+            creditCard: "all",
+            debitCard: "all",
+            mercadoPago: "all",
+          },
+    };
 
-    const cartItens = () =>{
-        const cartData = JSON.parse(localStorage.getItem('___cfcsn-cart'))
+    useEffect(() => {
+        const fetchData = async () => {
+            const cartData = JSON.parse(localStorage.getItem('___cfcsn-cart')) || [];
+            const groupedData = await groupCartData(cartData);
+            setGroupedCartData(groupedData);
+        };
 
-        return(
-            <table>
-                <thead>
-                    <tr>
-                        <th colSpan={3}>Agendamentos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {cartData.map((item, index) => {
-                        const hour = `${item.hour}:00 - ${item.hour + 1}:00`
-                        return(
-                        <>
-                            <tr>
-                                <td colSpan={1}>Quadra:</td>
-                                <td colSpan={2}>{item.place}</td>
-                            </tr>
-                            <tr>
-                                <td colSpan={1}>Horário agendado:</td>
-                                <td colSpan={2}>{hour}</td>
-                            </tr>
-                        </>
-                        )}
-                    )}
-                </tbody>
-            </table>
-        )}
+        fetchData().catch((error) => {
+            console.error('Error fetching cart data:', error);
+        });
+    }, []);
 
-    const methodCard = () => {
-        return(
-            <div className={style.cardContainer}>
-                <input
-                    type="text"
-                    placeholder="Número do cartão"
-                    maxLength={19}
-                    value={cardNumber}
-                    onChange={(e) => handleCardNumberChange(e)}
-                />
-                <input
-                    type="text"
-                    placeholder="Nome do titular"
-                    onChange={(e) => setCardName(e.target.value)}
-                    />
-                <input
-                    type="text"
-                    maxLength={3}
-                    placeholder="CVV"
-                    onFocus={()=>setCardPosition('back')}
-                    onBlur={()=>setCardPosition('front')}
-                    onChange={(e) => setCvc(e.target.value)}
-                    />
-                <input
-                    type="text"
-                    placeholder="MM/AA"
-                    maxLength={5}
-                    onFocus={() => setCardPosition('back')}
-                    onBlur={() => setCardPosition('front')}
-                    onChange={(e) => handleValidChange(e)}
-                    value={valid}
-                />
-
-                <Card cardNumber={cardNumber} name={cardName} cvc={cvc} valid={valid} cardPosition={cardPostion}/>
-            </div>
-    )}
-
-    const methodPix = () => {
-        return(
-            <div>PIX</div>
-    )}
-
-    function handleCardNumberChange(event: React.ChangeEvent<HTMLInputElement>) {
-        const value = event.target.value.replace(/\D/g, '');
-        const limitedValue = value.slice(0, 16);
-        const formattedValue = limitedValue
-            .replace(/(\d{4})(?=\d)/g, '$1 ')
-            .trim();
-        setCardNumber(formattedValue);
-    }
-
-function handleValidChange(event: React.ChangeEvent<HTMLInputElement>) {
-    let value = event.target.value.replace(/\D/g, '');
-    if (value.length > 4) value = value.slice(0, 4);
-    if (value.length >= 3) {
-        value = `${value.slice(0, 2)}/${value.slice(2)}`;
-    }
-    setValid(value);
-}
-
-    function selectPaymentMethod({paymentMethod}: {paymentMethod: string}) {
-        setPaymentMethod(paymentMethod)
-        toast.success(`Metodo de pagamento alterado com sucesso.\n Método atual: ${paymentMethod}`)
-    }
+    const cartItens = () => {
+        return (
+            <>
+            {groupedCartData.map((item, index) => (
+            <React.Fragment key={index}>
+                <div className={style.checkoutItem} style={{backgroundImage:`url(${item.image})`}}>
+                    <div className={style.checkoutItemData}>
+                        <h2>{item.place}</h2>
+                        <p>Horário: {item.hours.join(', ')}</p>
+                        <p>Valor/Hora R${item.value}.00</p>
+                    </div>
+                </div>
+            </React.Fragment>
+            ))}
+            <h2>Total: R${amount}</h2>
+            </>
+        );
+    };
 
     return (
         <div className={style.checkout}>
             <div className={style.checkoutContainer}>
                 <div className={style.checkoutLeft}>
-                    <h2 className={style.checkoutTitle}>Your shopping Basket</h2>
-                    <ul>
-                        <li onClick={()=>selectPaymentMethod({paymentMethod: 'Pix'})}>Pix</li>
-                        <li onClick={()=>selectPaymentMethod({paymentMethod: 'Cartão'})}>Cartão</li>
-                    </ul>
-
-                    {paymentMethod === 'Pix' ? methodPix() : methodCard()}
+                    <Payment
+                        initialization={initialization}
+                        customization={customization}
+                    />
                 </div>
                 <div className={style.checkoutRight}>
-                    {userDocuments()}
-                    {userContact()}
                     {cartItens()}
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default CheckoutView
+export default CheckoutView;

@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['plus.unsplash.com'],
+    domains: ['plus.unsplash.com','i.imgur.com'],
   },
 };
 

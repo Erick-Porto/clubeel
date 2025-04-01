@@ -138,11 +138,10 @@ a.secondary {
 }
 
 .Section{
+  padding-top: 70px;
   position: relative;
-  min-height: 100vh;
-  margin-bottom: 30px;
   flex-direction: column;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
 }

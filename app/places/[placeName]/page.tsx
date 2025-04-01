@@ -53,7 +53,7 @@ const PlacesPage = () => {
                 <div className={style.placeList}>
                     {places.map((item, index)=>(
                         <div key={index} className={style.placeCard}>
-                            <div className={style.placeCardImage} style={{backgroundImage: `url()`}}></div>
+                            <div className={style.placeCardImage} style={{backgroundImage: `url(${item.image})`}}></div>
                             <div className={style.placeCardInfo}>
                                 <p>{item.name}</p>
                                 <Link href={`/place/${item.name.split(' ').join('-').toLowerCase()}-${item.id}`}>RESERVAR</Link>

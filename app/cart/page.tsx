@@ -12,7 +12,6 @@ const CartPage = () => {
             <Header options={null} surgeIn={-1} onlyScroll={false}/>
             <section className={globalStyle.Section}>
                 <Cart />
-                <br/><br/>
                 <LatestAppointments/>
             </section>
             <Footer />
