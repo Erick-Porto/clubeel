@@ -104,8 +104,8 @@ a.secondary {
 
 @media (max-width: 600px) {
   .page {
-    padding: 32px;
-    padding-bottom: 80px;
+    height: 100%;
+    width: 100%;
   }
 
   .main {

@@ -127,3 +127,31 @@
         background-color: var(--grena-light);
     }
 }
+
+@media (max-width: 768px) {
+    .cartContainer{
+        width: 95%;
+        padding-bottom: 25px;
+        margin-top: 45px;
+    }
+
+    .cartListContainer{
+        grid-template:"1fr";
+    }
+
+    .cartContainerTitle{
+        font-size: 20px;
+    }
+
+    .cartItem{
+        gap: 5px;
+        padding: 0;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 600px) {
+    .cartContainerTitle{
+        font-size: 16px;
+    }
+}

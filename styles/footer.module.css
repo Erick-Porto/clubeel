@@ -1,4 +1,9 @@
-  .footer {
+:root{
+    --logo-cfcsn-w-vert: url('../public/images/logo-cfcsn-w-vert.png');
+    --logo-cfcsn-w-horiz: url('../public/images/logo-cfcsn-w-horiz.png');
+}
+
+.footer {
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -7,10 +12,17 @@
     gap: 10px;
     align-items: center;
     justify-content: center;
-    margin-top: 50px;
+    /* margin-top: 50px; */
+  }
+
+  .footerCopy{
+    gap: 10px;
   }
 
   .footerBody{
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none;
     width: 100%;
     padding: 5% 10%;
     display: flex;
@@ -34,6 +46,15 @@
   gap: 15px;
 }
 
+  .footerLogo{
+    width: 100%;
+    height: 80px;
+    background-image: var(--logo-cfcsn-w-horiz);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+  }
+
   .footerBottom{
     width: 100%;
     padding: 20px;
@@ -44,22 +65,81 @@
     text-align: center;
   }
 
+  .footerCopy{
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
+
   .footer img {
     flex-shrink: 0;
+    width: 45%;
+    height: 100%;
   }
-  
-  /* Enable hover only on non-touch devices */
-  @media (hover: hover) and (pointer: fine) {  
-    .footer a:hover {
-      text-decoration: underline;
-      text-underline-offset: 4px;
+
+  .footerBodyItem:nth-child(1) a, .footerBottom a {
+    position: relative;
+    
+    &::after{
+      content: '';
+      width: 0%;
+      position: absolute;
+      height: 2px;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: white;
+      transition: all 0.3s ease-in-out;
     }
   }
   
+  @media (hover: hover) and (pointer: fine) {  
+    .footer a:hover::after {
+      width: 100%;
+    }
+  }
+  
+  /* @media (max-width: 1280px) {
+    .footer {
+      margin-top: 100px;
+    }
+} */
+
   @media (max-width: 600px) {
     .footer {
       flex-wrap: wrap;
       align-items: center;
       justify-content: center;
+    }
+    .footerCopy{
+      flex-direction: column;
+      gap: 5px;
+    }
+    .footerPipeline{
+      display: none;
+    }
+
+    .footerBody {
+      flex-direction: column;
+      gap: 50px;
+    }
+
+    .footerBodyItem {
+      width: 100%;
+      text-align: center;
+    }
+
+    .footerLogo{
+      background-image: var(--logo-cfcsn-w-vert);
+      height: 130px;
+    }
+
+    .footerBodyItem:nth-child(1) p{
+      font-size: 14px;
+    }
+
+    .socialMedia{
+      font-size: 40px;
     }
   }

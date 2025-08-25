@@ -1,3 +1,8 @@
+:root{
+    --logo-cfcsn-vert: url('../public/images/logo-cfcsn-vert.png');
+    --logo-cfcsn-horiz: url('../public/images/logo-cfcsn-horiz.png');
+}
+
 .LoadingScreen{
     position: relative;
     display: flex;
@@ -8,9 +13,14 @@
     height: 100vh;
 }
 
-.LoadingScreen img{
-    width: 35%;
-    height: 25%;
+.loadingLogo{
+    background-image: var(--logo-cfcsn-horiz);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    
+    width: 40%;
+    height: 30%;
     animation: pulse 0.5s linear;
     animation-iteration-count: 2;
     margin-bottom: 30px;
@@ -58,4 +68,12 @@
         transform: scale(1);
     }
 
+}
+
+@media (max-width: 768px) {
+    .loadingLogo{
+        background-image: var(--logo-cfcsn-vert);
+        width: 60%;
+        height: 40%;
+    }
 }

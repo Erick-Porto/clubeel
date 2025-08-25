@@ -1,17 +1,13 @@
+:root{
+  --logo-cfcsn-w-vert: url('../public/images/logo-cfcsn-w-vert.png');
+  --logo-cfcsn-w-horiz: url('../public/images/logo-cfcsn-w-horiz.png');
+}
+
 .carousel {
   position: relative;
   width: 100%;
   overflow: hidden;
   box-shadow: rgb(115 0 1 / 5%) 0px 14px 28px, rgb(115 0 1 / 10%) 0px 10px 10px;
-}
-
-.carouselCover{
-  width: 100%;
-  height: 100%;
-  background-color: black;
-  opacity: 0.5;
-  z-index: 30;
-  position: absolute;
 }
 
 .carouselButtons{
@@ -36,6 +32,7 @@
   top: 0;
   width: 100%;
   height: 100%;
+  filter:brightness(0.3);
   background-size: cover;
   background-position: center;
   transition: opacity 1s ease-in-out;
@@ -70,4 +67,33 @@
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
+  background-image: var(--logo-cfcsn-w-horiz);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 50%;
+  height: 25%;
+}
+
+
+@media (min-width: 600px) {
+  .coverLogo{
+    width: 50%;
+    height: 50%;
+  }
+}
+
+@media (max-width: 600px) {
+  .coverLogo{
+    background-image: var(--logo-cfcsn-w-vert);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+  }
+
+  .carouselButtons{
+    display: none;
+  }
 }

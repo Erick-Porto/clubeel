@@ -18,10 +18,10 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     const [authInterface, setAuthInterface] = useState('');
     const [passwordVerified, setPasswordVerified] = useState(false);
     const router = useRouter(); // Initialize useRouter
-    const { setUser } = useUser();
+    const { setUser, setAccessToken } = useUser();
 
     function verifyCode({ code }: { code: string }) {
-        let codeValue = code.replace(/[^0-9ESCesc]/g, ''); // Permite apenas números e as letras E, S, C
+        const codeValue = code.replace(/[^0-9ESCesc]/g, ''); // Permite apenas números e as letras E, S, C
         let newValue = codeValue.split('');
         const escOrder = ['E', 'S', 'C'];
 
@@ -97,7 +97,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 toast.error(errorMessage);
                 console.error("Login error:", errorMessage);
             } else {
-                const userData = {
+                const UserData = {
                     name: data.user.name,
                     email: data.user.email,
                     cpf: data.user.cpf,
@@ -106,8 +106,11 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     birthdate: data.user.birthdate,
                     telephone: data.user.telephone,
                 };
-                setUser(userData);
-                localStorage.setItem('___cfcsn-access-token', data.token);
+                setUser(UserData);
+                setAccessToken(data.token); // Atualiza o token no contexto
+                localStorage.setItem('___cfcsn-user-data', JSON.stringify(UserData)); // Armazena o usuário no localStorage
+                localStorage.setItem('___cfcsn-access-token', data.token); // Armazena o token no localStorage
+                toast.success("Login realizado com sucesso!");
                 router.push('/');
             }
         } catch (error) {
@@ -118,16 +121,17 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
 
     async function register(event: React.FormEvent) {
         event.preventDefault();
-        let documentValue = cpf.replace(/\D/g, '');
-        if (documentValue.length > 11) documentValue = documentValue.slice(0, 11);
-
         try {
+            let documentValue = cpf.replace(/\D/g, '');
+            if (documentValue.length > 11) documentValue = documentValue.slice(0, 11);
+
             if (password !== repeatPassword) {
                 toast.error("As senhas não coincidem");
                 return;
             }
-
+    
             const encryptedPassword = CryptoJS.SHA256(password).toString();
+
             const response = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -138,73 +142,86 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     password: encryptedPassword,
                 }),
             });
-
+    
             const data = await response.json();
 
             if (!response.ok) {
-                const errorMessage = data.error || "Erro ao tentar registrar. Por favor, tente novamente.";
+                const errorMessage = `Erro: ${response.status} - ${data.error}`;
                 toast.error(errorMessage);
                 console.error("Register error:", errorMessage);
             } else {
-                const userData = {
-                    name: data.user.name,
-                    email: data.user.email,
+                const UserData = {
+                    name: data.user.Name,
+                    email: data.user.Email,
                     cpf: data.user.cpf,
                     title: data.user.title,
-                    barcode: data.user.barcode,
-                    birthdate: data.user.birthdate,
+                    barcode: data.user.Barcode,
+                    birthdate: data.user.birth_date,
                     telephone: data.user.telephone,
                 };
-                setUser(userData);
+                setUser(UserData);
+                localStorage.setItem('___cfcsn-access-token', data.token);
+                router.push('/');
             }
         } catch (error) {
             toast.error("Erro inesperado ao tentar registrar. Por favor, tente novamente.");
             console.error("Unexpected register error:", error);
         }
     }
-
     return (
         <aside className={styles.sidebar}>
             <div className={styles.sidebarHeader}>
-                <Image alt="Logo" src={Logo} height={75} width={200} style={{ margin: "0 auto" }} />
+                {/* <Image alt="Logo" src={Logo} height={75} width={200} style={{ margin: "0 auto" }} /> */}
             </div>
 
             {authInterface === "login" ? (
                 <>
-                    <p> Bem-vindo ao Locação de Espaços do Clube dos Funcionários.</p>
+                    <p className={styles.loginMessage}> Bem-vindo ao Locação de Espaços do Clube dos Funcionários.</p>
                     <form className={styles.sidebarBody} onSubmit={login}>
+                        <div className={`${styles.gridRow} , ${styles.fullGridRow}`}>
+                            <input
+                                type="text"
+                                value={cpf}
+                                onChange={(e) => verifyDocument({ cpf: e.target.value })}
+                                placeholder="CPF"
+                            />
+                        </div>
+                        <div className={`${styles.gridRow} , ${styles.fullGridRow}`}>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Senha"
+                            />
+                        </div>
+                        <div className={`${styles.gridRow} , ${styles.fullGridRow}`}>
+                            <input type="submit" value="Acessar" className={styles.button} />
+                        </div>
+                        <div className={`${styles.gridRow} , ${styles.fullGridRow}`}>
+                            <p className={styles.actionText} onClick={() => { setAuthInterface("register") }}>Ainda não tem um usuário? Cadastre-se!</p>
+                        </div>
+                    </form>
+                </>
+            ) : authInterface === "register" ? (
+                <form className={styles.sidebarBody} onSubmit={register}>
+                    <div className={`${styles.gridRow} , ${styles.fullGridRow}`}>
                         <input
                             type="text"
                             value={cpf}
                             onChange={(e) => verifyDocument({ cpf: e.target.value })}
                             placeholder="CPF"
                         />
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Senha"
-                        />
-                        <input type="submit" value="Acessar" className={styles.button} />
-                        <p className={styles.actionText} onClick={() => { setAuthInterface("register") }}>Ainda não tem um usuário? Cadastre-se!</p>
-                    </form>
-                </>
-            ) : authInterface === "register" ? (
-                <form className={styles.sidebarBody} onSubmit={register}>
-                    <input
-                        type="text"
-                        value={cpf}
-                        onChange={(e) => verifyDocument({ cpf: e.target.value })}
-                        placeholder="CPF"
-                    />
+                    </div>
 
-                    <div className={styles.row}>
+                    <div className={styles.gridRow}>
                         <input
                             type="text"
                             value={matricula}
                             onChange={(e) => verifyCode({ code: e.target.value })}
                             placeholder="Matricula"
                         />
+                    </div>
+                    <div className={styles.gridRow}>
 
                         <input
                             type="date"
@@ -214,7 +231,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                         />
                     </div>
 
-                    <div className={styles.row}>
+                    <div className={styles.gridRow}>
                         <input
                             type="password"
                             value={password}
@@ -224,6 +241,8 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                             }}
                             placeholder="Senha"
                         />
+                    </div>
+                    <div className={styles.gridRow}>
                         <input
                             type="password"
                             value={repeatPassword}
@@ -239,8 +258,12 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                             placeholder="Repita a senha"
                         />
                     </div>
-                    <input type="submit" value="Registrar" className={styles.button} />
-                    <p className={styles.actionText} onClick={() => { setAuthInterface("login") }}>Já possuí um usuário? Acesse aqui!</p>
+                    <div className={`${styles.gridRow} , ${styles.fullGridRow}`}>
+                        <input type="submit" value="Registrar" className={styles.button} />
+                    </div>
+                    <div className={`${styles.gridRow} , ${styles.fullGridRow}`}>
+                        <p className={styles.actionText} onClick={() => { setAuthInterface("login") }}>Já possuí um usuário? Acesse aqui!</p>
+                    </div>
                 </form>
             ) : null}
         </aside>

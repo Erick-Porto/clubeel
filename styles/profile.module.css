@@ -1,0 +1,283 @@
+.formContainer
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 50%;
+    margin: 0 auto;
+    padding: 25px;
+    border: 2px solid var(--grena-light);
+    border-radius: 0;
+    position: relative;
+    &:nth-child(1){
+        margin-top: 30px;
+        border-bottom: none;
+        border-radius: 20px 0 0 0;
+    }
+    
+    &:nth-child(2){
+        border-radius: 0 0 20px 0;
+    }
+}
+
+.formTitle
+{
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    background-color: var(--background);
+    padding: 10px;
+    position: absolute;
+    top: -25px;
+    left: 20px;
+    text-transform: uppercase;
+    color: var(--grena-light);
+}
+
+.formContent
+{
+    display: grid;
+    grid-template: 70px 70px / 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+}
+
+.formRow{
+    display: grid;
+    grid-template-columns: 1fr  1fr ;
+    gap: 10px;
+    width: 100%;
+    padding: 10px;
+}
+
+.formItem
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+
+.formItemLabel
+{
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--grena-light);
+    text-transform: capitalize;
+}
+
+.formItemInput
+{
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--grena-light);
+    border-radius: 5px;
+    color: var(--grena-dark);
+    font-size: 16px;
+    background-color: var(--background);
+    transition: all 0.3s ease;
+    outline: none;
+    &:focus{
+        border-color: var(--grena-lighter);
+    }
+    &:disabled{
+        background-color:var(--gray-alpha-100);
+        cursor: not-allowed;
+    }
+}
+
+.formItemButton
+{
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--grena-light);
+    border:solid 2px var(--grena-light);
+    color: var(--background);
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover{
+        background-color: var(--grena-lighter);
+        border-color: var(--grena-lighter);
+    }
+    &:disabled{
+        display: none;
+    }
+    &:not(:disabled){
+        animation: surgeButton .8s ease-in-out;
+    }
+    &:active{
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+}
+
+.cancelItemButton
+{
+    width: 100%;
+    padding: 10px;
+    border: 2px solid var(--grena-light);
+    border-radius: 5px;
+    background-color: var(--gray-alpha-100);
+    color: var(--grena-light);
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover{
+        background-color: var(--background);
+        border-color: var(--grena-lighter);
+        color: var(--grena-lighter);
+    }
+    &:disabled{
+        display: none;
+    }
+    &:not(:disabled){
+        animation: surgeButton .8s ease-in-out;
+    }
+    &:active{
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+}
+
+.passwordRules{
+    display: grid;
+    height: 100%;
+    width: 100%;
+    align-self: center;
+    grid-template: 1fr 1fr / 1fr 1fr 1fr;
+    justify-content: center;
+    gap: 5px;
+    list-style: none;
+}
+
+.slideToDownAnimation{
+    animation: slideToDown 1s ease-in-out;
+    opacity: 1;
+}
+
+@keyframes surgeButton {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .formContainer{
+        width: 95%;
+    }
+    .formContent{
+        grid-template: 1fr / 1fr;
+    }
+    .formRow{
+        grid-template-columns: 1fr;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.formItemVisible {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slideDown {
+    animation: slideDown 0.3s ease-in-out;
+}
+
+.confirmationFormContainer{
+    background-color: black;
+    opacity: 0.6;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.confirmationFormContent{
+    background-color: var(--background);
+    width: 90%;
+    max-width: 500px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    animation: slideDown 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    border: 2px solid var(--grena-light);
+    opacity: 1;
+}
+
+.confirmationFormTitle{
+    margin-bottom: 5px;
+    text-align: center;
+
+}
+
+.confirmationFormText{
+    margin-bottom: 10px;
+}
+
+.confirmationForm{
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.confirmationForm .formItemButton{
+    width: 30%;
+}

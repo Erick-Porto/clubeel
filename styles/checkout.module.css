@@ -1,9 +1,9 @@
 @keyframes upToDown {
     0% {
-        transform: translateY(-100%);
+        transform: translateY(-50%) translateX(100%);
     }
     100% {
-        transform: translateY(0);
+        transform:  translateY(-50%) translateX(0);
     }
 }
 
@@ -31,6 +31,10 @@
 }
 
 .checkoutRight{
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateX(100%) translateY(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -40,10 +44,11 @@
     border: solid 3px var(--grena-light);
     background-color: var(--grena-light);
     color: #fff;
-    border-radius: 0px 0 0 20px;
+    border-radius: 20px 0 0 20px;
     padding: 20px;
     box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
     animation: upToDown 1s ease-in-out forwards;
+    animation-delay: 2s;
 }
 
 .cardContainer{
@@ -56,6 +61,9 @@
 
 .checkoutItem{
     background-image: url(https://i.imgur.com/cDDozxR.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
     width: 80%;
     display: flex;
     height: 190px;
@@ -93,7 +101,26 @@
     width: 100%;
     text-align: center;
     border: none;
-    padding: 10px;
+    padding: 5px;
     transition: all .3s ease-in-out;
     z-index: 2;
+}
+
+@media (max-width: 768px) {
+    .checkoutContainer{
+        flex-direction: column-reverse;
+    }
+
+    .checkoutLeft{
+        width: 100%;
+    }
+
+    .checkoutRight{
+        width: 100%;
+        position: initial;
+        transform: translateX(0) translateY(0);
+        border-radius: 0;
+        box-shadow: none;
+        animation: none;
+    }
 }

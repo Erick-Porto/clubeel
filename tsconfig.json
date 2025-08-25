@@ -22,7 +22,7 @@
       "@/*": ["./*"],
       "@/public/*": ["./public/*"],
       "@/styles/*": ["./styles/*"],
-      "@/components/*": ["./components/*"],
+      "@/components/*": ["./app/components/*"],
       "@/pages/*": ["./app/*"],
       "@/api/*": ["./src/pages/api/*"],
       "@/images/*": ["./public/images/*"],

@@ -15,11 +15,14 @@ const API_CONSUME = async (
     try {
         const response = await fetch(`http://${ip}/api/${route}`, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': headers.Authorization,
-                'Session': headers.Session,
-            },
+            headers: Object.fromEntries(
+                Object.entries({
+                    'Content-Type': 'application/json',
+                    'Authorization': headers.Authorization,
+                    'Session': headers.Session,
+                }).filter(([_, value]) => value != null)
+                .map(([key, value]) => [key, String(value)])
+            ),
             body: body ? JSON.stringify(body) : undefined,
         });
 
@@ -29,7 +32,7 @@ const API_CONSUME = async (
         }
 
         const data = await response.json();
-
+        console.log(data)
         return data
     } catch (err) {
         if (err instanceof Error) {

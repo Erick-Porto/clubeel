@@ -1,3 +1,8 @@
+:root{
+    --logo-vert: url('../public/images/logo-cfcsn-vert.png');
+    --logo-horiz: url('../public/images/logo-cfcsn-horiz.png');
+}
+
 .sidebar{
     position: absolute;
     z-index: 100;
@@ -11,25 +16,32 @@
     box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
     animation: entry 0.5s ease-in-out;
 }
+
+.fullGridRow{
+    grid-column:1 / 3
+}
+
+
 .sidebarHeader{
     width: 100%;
     display: flex;
+    height: 25%;
+    background-size: contain;
     align-items: center;
-    margin-bottom: 30px;
+    background-image: var(--logo-horiz);
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .sidebarBody{
-    align-items: center;
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(5,1fr);
     gap: 10px;
-    flex-direction: column;
 }
 
-.row{
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    width: 100%;
+.gridRow{
+    text-align: center;
   }
 
 .buttonOutlined{
@@ -91,5 +103,52 @@
     }
     to {
         transform: translateX(-100%);
+    }
+}
+
+
+@media (max-width: 1200px) {
+    .sidebar{
+        width: 30%;
+    }
+}
+
+@media (max-width: 1024px) {
+    .sidebar{
+        width: 40%;
+    }
+}
+
+@media (max-width: 768px) {
+
+}
+
+@media (max-width: 600px) {
+    .sidebar{
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 75%;
+        height: 80%;
+        border-radius: 15px;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .sidebarBody{
+        grid-template-columns: 1fr;
+    }
+
+    .gridRow{
+        grid-column: 1 / 2;
+    }
+    .sidebarHeader{
+        background-image: var(--logo-vert);
+    }
+
+    .loginMessage{
+        text-align: center;
+        width: 80%;
+        margin: 0 auto;
     }
 }

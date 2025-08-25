@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import API_CONSUME from '@/services/api-consume';
 
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function LoginHandler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         const { login, password } = req.body;
         if (!login || !password) return res.status(400).json({ error: 'Missing login or password' });
@@ -19,9 +18,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 }
             );
 
+            if (!data || !data.token || !data.user) {
+                return res.status(401).json({ error: 'Invalid login credentials' });
+            }
+
             return res.status(200).json(data);
 
         } catch (error) {
+            console.error('Login API error:', error);
             if (error instanceof Error) {
                 return res.status(500).json({ error: error.message });
             } else {

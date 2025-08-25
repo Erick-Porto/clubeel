@@ -1,6 +1,4 @@
 import styles from "@/styles/footer.module.css";
-import Image from "next/image";
-import logo from "@/images/logo-branca.png"; // Corrigido o caminho da imagem do logo
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebookSquare, faInstagramSquare, faLinkedin } from '@fortawesome/free-brands-svg-icons';
 
@@ -9,7 +7,8 @@ export default function Footer() {
     <footer className={styles.footer}>
       <div className={styles.footerBody}>
         <div className={styles.footerBodyItem}>
-          <Image src={logo} alt="Logo do Clube dos Funcionarios" width={150} height={75} />
+          <div className={styles.footerLogo}></div>
+          {/* <Image src={logo} alt="Logo do Clube dos Funcionarios" width={150} height={75} /> */}
           <p>Telefone: <a href="tel:+552421022750"> (24) 2102-2750 </a></p>
           <p>Email: <a href="mailto:atendimento@clubedosfuncionarios.com.br"> atendimento@clubedosfuncionarios.com.br </a></p>
         </div>
@@ -29,8 +28,8 @@ export default function Footer() {
         </div>
       </div>
       <div className={styles.footerBottom}>
-        <p>
-          Desenvolvido por <a target="_blank" href="https://www.linkedin.com/in/erick-porto">Erick Porto</a> e <a target="_blank" href="https://www.linkedin.com/in/gustavo-alves-81895321a/">Gustavo Alves</a> | &copy; 2025 Clube dos Funcionários
+        <p className={styles.footerCopy}>
+          <span>Desenvolvido por <a target="_blank" href="https://www.linkedin.com/in/erick-porto">Erick Porto</a> e <a target="_blank" href="https://www.linkedin.com/in/gustavo-alves-81895321a/">Gustavo Alves</a></span> <span className={styles.footerPipeline}>|</span> <span>&copy; 2025 <a target="_blank" href="https://www.clubedosfuncionarios.com.br">Clube dos Funcionários</a></span>
         </p>
       </div>
     </footer>

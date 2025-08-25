@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import API_CONSUME from '@/services/api-consume';
 
-function isValidCPF(cpf: string): boolean {
+function IsValidCPF(cpf: string): boolean {
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) {
         return false;
     }
@@ -42,45 +42,54 @@ function isValidCPF(cpf: string): boolean {
     return true;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function RegisterHandler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
-        const { cpf, matricula, bornAs, password} = req.body;
+        const { cpf, matricula, bornAs, password } = req.body;
 
-        if (!cpf || !matricula || !bornAs || !password) 
+        // Verificar campos obrigatórios
+        if (!cpf || !matricula || !bornAs || !password) {
             return res.status(400).json({ error: 'Missing required fields' });
+        }
 
-        if (!isValidCPF(cpf)) 
+        // Validar CPF
+        if (!IsValidCPF(cpf)) {
             return res.status(400).json({ error: 'Invalid CPF' });
+        }
 
         try {
+            // Chamada ao serviço externo
             const data = await API_CONSUME(
                 'POST',
                 'register',
                 {
                     Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
-                    Session: null
+                    Session: null,
                 },
                 {
                     title: matricula,
                     cpf,
                     birthDate: bornAs,
-                    password
+                    password,
                 }
             );
 
-            return res.status(200).json(data);
-        }
+            // Garantir que o serviço externo retorna dados válidos
+            if (!data) {
+                return res.status(500).json({ error: 'Empty response from external service' });
+            }
 
-        catch (error) {
+            return res.status(200).json(data);
+        } catch (error) {
+            console.error('Error in API_CONSUME:', error);
+
             if (error instanceof Error) {
                 return res.status(500).json({ error: error.message });
             } else {
                 return res.status(500).json({ error: 'An unknown error occurred' });
             }
         }
-
     } else {
         res.setHeader('Allow', ['POST']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+        res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 }

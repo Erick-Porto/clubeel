@@ -10,7 +10,7 @@ const CheckoutPage = () => {
 return(
     <div className={globalStyle.page}>
         <Header options={null} surgeIn={-1} onlyScroll={false}/>
-        <section className={globalStyle.Section}>
+        <section className={globalStyle.Section}style={{ paddingBottom: "20px" }}>
             <CheckoutView/>
         </section>
         <Footer/>

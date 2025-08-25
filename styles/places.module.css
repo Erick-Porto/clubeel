@@ -7,9 +7,9 @@
   background-repeat: no-repeat;
   background-size: cover;
   position: relative;
-  margin-bottom: 20px;
   z-index: 0;
-
+  background-size: cover;
+  background-position-y: 30%;
   &::after {
     content: "";
     height: 100%;
@@ -17,7 +17,7 @@
     position: absolute;
     top: 0;
     background-color: black;
-    opacity: 0.7;
+    opacity: 0.6;
     left: 0;
     z-index: 1;
   }
@@ -47,28 +47,20 @@
   border-radius: 10px;
   width: 350px;
   height: 197px;
-
-  &:hover .placeCardImage {
-    height: 60%;
-  }
+  position: relative;
+  overflow: hidden;
 
   &:hover .placeCardInfo {
-    height: 40%;
-  }
-
-  &:hover .placeCardInfo p {
-    transform: translateY(-10%);
-    top:10%;
-  }
-
-  &:hover .placeCardInfo a {
-    bottom: 30%;
-    display: block;
+    bottom: 0;
   }
 }
 
 .placeCardImage {
-  height: 80%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
   width: 100%;
   background-color: var(--grena);
   background-repeat: no-repeat;
@@ -77,49 +69,47 @@
 }
 
 .placeCardInfo {
-  border: 1px solid var(--grena);
   width: 100%;
-  height: 20%;
+  height: 30%;
   display: flex;
+  padding: 10px;
   flex-direction: column;
   gap: 10px;
+  background: var(--background);
+  border-top: solid 1px;
   justify-content: center;
   align-items: center;
-  transition: all 0.2s linear;
-  position: relative;
-  text-align: center;
+  transition: all 0.1s linear;
+  position: absolute;
+  bottom: -10%;
 }
 
-.placeCardInfo p{
-    top: 50%;
-    transform: translateY(-50%);
-    position: absolute;
-}
 
 .placeCardInfo a{
   color: var(--grena-light);
-  bottom: 10%;
   text-transform: uppercase;
-  display: none;
-  position: absolute;
-  animation: .2s linear places-module__Ax3uKq__fadeIn;
   font-weight: bold;
-
   &:hover{
     color: var(--grena-lighter)
   }
 }
 
-@keyframes fadeIn {
-  from {
-    bottom: 5%;
-    opacity: 0;
-  }
-  to {
-    bottom: 30%;
-    opacity: 1;
-  }
-    
+.placeCardDisabled{
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none;
+  cursor: not-allowed;
+}
+
+.placeCardDisabled span{
+  color: var(--grena-light);
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.placeCardDisabled .placeCardImage{
+  filter: grayscale(1);
 }
 
 .placeContainer{
@@ -127,7 +117,7 @@
   flex-direction: row;
   align-items: center;
   padding: 20px;
-  height: 200px;
+  min-height: 200px;
   width: 60%;
   position: relative;
   margin-bottom: 25px;
@@ -163,7 +153,206 @@
 .placeImage
 {
   position: absolute;
-  top: -3px;
-  border-radius: 0 0 20px 0;
-  right: -2px;
+  top: 0;
+  border-radius: 0px 0px 20px 0px;
+  right: 0;
+}
+
+.dateSelectionContainer{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: var(--grena);
+  gap: 20px;
+  color: white;
+  margin-bottom: 20px;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
+.dateSelectionContentView{
+  max-width: 1064px;
+  width: 100%;
+  display: block;
+  height: 22px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dateSelection{
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 40px;
+  justify-content: center;
+  align-items: center;
+  list-style-type: none;
+}
+
+.dateSelectionItem{
+  text-transform: capitalize;
+  font-weight: 500;
+  transition: all 0.1s linear;
+  cursor: pointer;
+  position: relative;
+  width: calc((1064px - (45px * 6)) / 7);
+  text-align: center;
+
+  &::after{
+    content: "";
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0%;
+    height: 2px;
+    background-color: var(--background);
+    transition: all 0.2s linear;
+  }
+  &:hover::after{
+    width: 100%;
+  }
+}
+
+.dateSelectedItem{
+  text-transform: capitalize;
+  font-weight: 700;
+
+  &::after{
+    content: "";
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 2px;
+    background-color: var(--background);
+    transition: all 0.2s linear;
+  }
+}
+
+.dateSelectionArrow{
+  cursor: pointer;
+  animation: all .5s linear;
+  &:active{
+    transform: scale(0.9);
+  }
+}
+
+.choosingContainer{
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin: 0 auto;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.choosingSteps{
+  width: 100%;
+  display: flex;
+  z-index: 0;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  &::after{
+    content: "";
+    display: flex;
+    flex-direction: row-reverse;
+    position: absolute;
+    width: 0%;
+    top: 50%;
+    right: -10px;
+    z-index: 10;
+    height: calc(100% + 10%);
+    background-color: var(--background);
+    transform: translateY(-50%) scale(1.015);
+    animation: loadLeft-right 5s ease;
+  }
+}
+
+.stepBar{
+  display: block;
+  background-color: var(--grena-light);
+  width: 100%;
+  z-index: -1;
+  height: 5px;
+  left: 0;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+}
+
+.stepItem{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--background);
+  padding: 10px 20px;
+  position: relative;
+  z-index: 2;
+  font-size: 1.5rem;
+  border: 3px solid var(--grena-light);
+  border-radius: 5px;
+  &:nth-child(1){
+    background-color: var(--grena-light);
+    color: white;
+  }
+  &:nth-child(2){
+    background-color: var(--grena-light);
+    color: white;
+  }
+  &:nth-child(3){
+    transform: scale(1.05);
+  }
+}
+
+
+@keyframes loadLeft-right {
+  0% {
+    width: 102%;
+  }
+  100% {
+    width: 0%;
+  }
+  
+}
+
+@media (max-width: 1200px) {
+  .placeList{
+    grid-template: "1fr 1fr";
+  }
+}
+
+@media (max-width: 768px) {
+  .placeContainer{
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .placeImage{
+    position: initial;
+    width: 100%;
+    height: 100%;
+  }
+
+  .placeRules{
+    font-size: 20px;
+    color: var(--grena-light);
+    font-weight: bold;
+  }
+}
+
+@media (max-width: 600px) {
+  .placeList{
+    grid-template: "1fr";
+  }
 }

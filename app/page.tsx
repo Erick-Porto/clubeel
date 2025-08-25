@@ -17,7 +17,6 @@ interface NavOption {
 }
 
 const Home = () => {
-  const [activePage, setActivePage] = useState(0);
   const [navOptions, setNavOptions] = useState<NavOption[]>([
     { text: "Localização", to: 0, page:""},
     { text: "Áreas Esportivas", to: 0, page:""},
@@ -38,25 +37,15 @@ const Home = () => {
 
     setTimeout(updateOffsets, 100);
 
-    const handleScroll = () => {
-      const matchingOption = navOptions.find(option => window.scrollY === option.to);
-      if (matchingOption) {
-        setActivePage(matchingOption.to);
-        console.log('window.scrollY matches one of the navOptions', matchingOption.to);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', updateOffsets);
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', updateOffsets);
     };
   }, [navOptions]);
 
   return (
     <div className={style.page}>
-      <Header options={navOptions} surgeIn={navOptions[0].to} onlyScroll={true} active={activePage}/>
+      <Header options={navOptions} surgeIn={navOptions[0].to} onlyScroll={true}/>
       <Carousel controllers={true} height={95}/>
       <HorizontalNavBar options={navOptions}/>
 

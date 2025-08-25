@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import styles from '@/styles/header.module.css';
-import Logo from '@/images/logo-grena.png';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useUser } from '@/context/UserContext';
 import { useRouter } from 'next/navigation';
@@ -24,9 +22,14 @@ interface HeaderProps {
 
 export default function Header({ options, surgeIn, onlyScroll }: HeaderProps) {
     const [scrollY, setScrollY] = useState(0);
-    const [userOptions, setUserOptions] = useState(false);
-    const { user } = useUser();
+    const [UserOptions, setUserOptions] = useState(false);
+    const { User } = useUser();
     const router = useRouter();
+
+    const logout = () => {
+        localStorage.clear(); // Clear all localStorage data
+        router.push('/login');
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -41,14 +44,15 @@ export default function Header({ options, surgeIn, onlyScroll }: HeaderProps) {
     }, []);
 
     const isActive = (itemTo: number, index: number) => {
-        const nextItemTo = options[index + 1]?.to || Infinity;
+        const nextItemTo = options ? options[index + 1]?.to || Infinity : Infinity;
         return scrollY + 100 >= itemTo && scrollY + 100 < nextItemTo;
     };
 
     return (
         <header className={`${styles.header} ${scrollY >= surgeIn - 5 ? styles.headerActive : ''}`}>
             <Link href={'/'}>
-                <Image src={Logo} alt="Logo do Clube dos Funcionários" width={150} height={50} />
+                <div className={styles.headerLogo}></div>
+                {/* <Image src={Logo} alt="Logo do Clube dos Funcionários" width={150} height={50} /> */}
             </Link>
             {options === null ? null : (
             <nav>
@@ -75,11 +79,11 @@ export default function Header({ options, surgeIn, onlyScroll }: HeaderProps) {
             )}
             <div className={styles.profileOptions}>
                 {
-                    user ?
-                        <p onClick={() => setUserOptions(!userOptions)}>
-                            Olá, <span>{user.name.split(' ')[0].toLowerCase()} </span>
+                    User ?
+                        <p onClick={() => setUserOptions(!UserOptions)}>
+                            Olá, <span>{User.name.split(' ')[0].toLowerCase()} </span>
                             <FontAwesomeIcon
-                                className={`${userOptions ? styles.optionsChevronActive : ''}`}
+                                className={`${UserOptions ? styles.optionsChevronActive : ''}`}
                                 style={{fontSize: 12}}
                                 icon={faChevronDown}
                             />
@@ -89,24 +93,20 @@ export default function Header({ options, surgeIn, onlyScroll }: HeaderProps) {
 
                 <ul className={
                     `${styles.userOptions} 
-                    ${userOptions ? styles.userOptionsActive : ''}`
+                    ${UserOptions ? styles.userOptionsActive : ''}`
                 }>
                     <li>
-                        <span>
-                            meu perfil
-                        </span>
+                        <Link href={'/profile'}>
+                            <span>meu perfil</span>
+                        </Link>
                     </li>
                     <li>
-                        <span>
-                            <Link href={'/cart'}>meus agendamentos</Link>
-                        </span>
+                        <Link href={'/cart'}>
+                            <span>meus agendamentos</span>
+                        </Link>
                     </li>
                     <li
-                        onClick={() => {
-                            localStorage.removeItem("___cfcsn-access-token");
-                            localStorage.removeItem("___cfcsn-user-data");
-                            router.push('/login');
-                        }}
+                        onClick={ ()=>logout() }
                     >
                         <span>
                             sair

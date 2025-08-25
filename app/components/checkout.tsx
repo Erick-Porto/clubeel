@@ -1,94 +1,108 @@
 'use client'
 import style from '@/styles/checkout.module.css'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Payment } from '@mercadopago/sdk-react'
-import { useState,useEffect } from 'react'
-import { toast } from 'react-toastify'
+import { useState, useMemo } from 'react'
 import {initMercadoPago} from "@mercadopago/sdk-react";
 import API_CONSUME from '@/services/api-consume'
+import { useUser } from '@/context/UserContext';
 
 initMercadoPago('TEST-1f6158bd-fb99-4f48-97c7-96d048948e31');
-const groupCartData = async (cartData) => {
 
+const groupCartData = async (cartData: { place: string; hour: number }[], sessionToken: string | null) => {
     const groupedData: Record<string, { 
         place: string; 
         value: number; 
+        total: number; 
         hours: string[]; 
         image: string; 
     }> = {};
 
     for (const item of cartData) {
         try {
-            // Faz a requisição para a API usando API_CONSUME
             const response = await API_CONSUME('get', `place/${item.place}`, {
                 'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
-                'Session': localStorage.getItem('___cfcsn-access-token')
+                'Session': sessionToken,
             }, null);
 
             if (!groupedData[item.place]) {
                 groupedData[item.place] = {
-                    place: response[0].name, // Nome da quadra
-                    value: parseFloat(response[0].price), // Valor
-                    hours: [`${item.hour}:00 - ${item.hour + 1}:00`], // Horários
-                    image: response[0].image, // Imagem
+                    place: response[0].name, 
+                    value: parseFloat(response[0].price), 
+                    total: parseFloat(response[0].price), 
+                    hours: [`${item.hour}:00 - ${item.hour + 1}:00`], 
+                    image: response[0].image, 
                 };
             } else {
-                // Agrupa horários consecutivos
                 const lastHour = parseInt(groupedData[item.place].hours[groupedData[item.place].hours.length - 1].split(' - ')[1].split(':')[0], 10);
                 if (item.hour === lastHour) {
                     groupedData[item.place].hours[groupedData[item.place].hours.length - 1] = `${groupedData[item.place].hours[groupedData[item.place].hours.length - 1].split(' - ')[0]} - ${item.hour + 1}:00`;
                 } else {
                     groupedData[item.place].hours.push(`${item.hour}:00 - ${item.hour + 1}:00`);
                 }
+                groupedData[item.place].total += parseFloat(response[0].price); // Sum the value
             }
         } catch (error) {
-            console.error(`Error fetching data for placeId ${item.placeId}:`, error);
+            console.error(`Error fetching data for place ${item.place}:`, error);
         }
     }
 
     return Object.values(groupedData);
 };
 
-
 const CheckoutView: React.FC = () => {
+    const { cart, accessToken } = useUser();
     const [groupedCartData, setGroupedCartData] = useState<{ 
         place: string; 
         value: number; 
+        total: number; 
         hours: string[]; 
         image: string; 
     }[]>([]);
 
-    const amount = groupedCartData.reduce((sum, item) => sum + item.value, 0); // Calculate dynamically
+    const [isPaymentInitialized, setIsPaymentInitialized] = useState(false); // Adicionado para evitar duplicação
 
-    const initialization = {
-        amount: amount || 100,
-    };
-    
+    const amount = useMemo(() => 
+        groupedCartData.reduce((sum, item) => sum + item.total, 0), 
+        [groupedCartData]
+    );
+
+    const initialization = useMemo(() => ({
+        amount: amount > 0 ? amount : 1,
+    }), [amount]);
+
     const customization = {
+        visual:{
+            style:{
+                customVariables:{
+                    "baseColor": "var(--grena)",
+                }
+            }
+        },
         paymentMethods: {
             bankTransfer: "all",
             creditCard: "all",
             debitCard: "all",
-            mercadoPago: "all",
-          },
+            mercadoPago: ["all"],
+        },
     };
 
     useEffect(() => {
         const fetchData = async () => {
-            const cartData = JSON.parse(localStorage.getItem('___cfcsn-cart')) || [];
-            const groupedData = await groupCartData(cartData);
+            const groupedData = await groupCartData(cart, accessToken);
             setGroupedCartData(groupedData);
+            setIsPaymentInitialized(true); // Garante que o Payment será renderizado apenas após os dados serem carregados
         };
 
-        fetchData().catch((error) => {
-            console.error('Error fetching cart data:', error);
-        });
-    }, []);
+        if (accessToken) {
+            fetchData().catch((error) => {
+                console.error('Error fetching cart data:', error);
+            });
+        }
+    }, [cart, accessToken]);
 
     const cartItens = () => {
-        return (
-            <>
-            {groupedCartData.map((item, index) => (
+        return groupedCartData.map((item, index) => (
             <React.Fragment key={index}>
                 <div className={style.checkoutItem} style={{backgroundImage:`url(${item.image})`}}>
                     <div className={style.checkoutItemData}>
@@ -98,23 +112,28 @@ const CheckoutView: React.FC = () => {
                     </div>
                 </div>
             </React.Fragment>
-            ))}
-            <h2>Total: R${amount}</h2>
-            </>
-        );
+        ));
     };
 
     return (
         <div className={style.checkout}>
             <div className={style.checkoutContainer}>
                 <div className={style.checkoutLeft}>
-                    <Payment
-                        initialization={initialization}
-                        customization={customization}
-                    />
+                    {isPaymentInitialized && ( // Renderiza o Payment apenas após a inicialização
+                        <Payment
+                            initialization={initialization}
+                            customization={customization}
+                            onSubmit={async (status, additionalData) => {
+                                console.log('Payment status:', status);
+                                console.log('Additional data:', additionalData);
+                                return Promise.resolve();
+                            }}
+                        />
+                    )}
                 </div>
                 <div className={style.checkoutRight}>
-                    {cartItens()}
+                    {isPaymentInitialized && cartItens()}
+                    <h2>Total: R${amount}</h2>
                 </div>
             </div>
         </div>

@@ -1,3 +1,8 @@
+:root{
+    --logo-expanded: url('../public/images/logo-cfcsn-horiz.png');
+    --isotipo: url('../public/images/logo-eng-grena.png');
+}
+
 @keyframes surge{
     from{
         top: -100%;
@@ -58,6 +63,9 @@
     }
 }
 .header{
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
     width: 100%;
     height: 70px;
     padding: 10px;
@@ -74,6 +82,19 @@
     display: none;
 }
 
+.headerLogo{
+    background-image: var(--logo-expanded);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 165px;
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all .3s linear;
+}
 .headerActive{
     display: flex;
     top: 0;
@@ -195,4 +216,19 @@
     &:hover span::after{
         width: 100%;
     }
+}
+
+
+@media (max-width: 600px) {
+    .headerLogo{
+        background-image: var(--isotipo);
+        width: 50px;
+        height: 50px;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .header nav{
+        display: none;
+    };
 }
