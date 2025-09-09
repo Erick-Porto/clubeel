@@ -114,32 +114,35 @@
 
 .placeContainer{
   display: flex;
-  flex-direction: row;
   align-items: center;
-  padding: 20px;
-  min-height: 200px;
   width: 60%;
   position: relative;
-  margin-bottom: 25px;
-  border-radius: 20px 0 20px 0;
-  border: solid 3px var(--grena-light);
+  margin-top: 25px;
+  margin-bottom: 50px;
+  border: solid 2px var(--grena-light);
 }
 
 .placeTitle{
   background-color: var(--background);
-  font-size: 32px;
   text-transform: uppercase;
-  text-align: center;
-  padding: 10px;
   position: absolute;
-  left: 20px;
-  top: 0;
+  left: 50%;
+  top: -10;
   color: var(--grena-light);
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   display: flex;
-  gap: 10px;
-  justify-content: center;
+  flex-direction: column;
+  padding: 0 20px;
   align-items: center;
+}
+
+.placeTitle h3{
+  letter-spacing: 3px;
+}
+
+.placeTitle h1{
+  font-weight: bold;
+  font-size: 30px;
 }
 
 .placeRules{

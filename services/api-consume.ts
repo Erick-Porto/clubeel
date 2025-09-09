@@ -32,7 +32,6 @@ const API_CONSUME = async (
         }
 
         const data = await response.json();
-        console.log(data)
         return data
     } catch (err) {
         if (err instanceof Error) {

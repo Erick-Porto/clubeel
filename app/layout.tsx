@@ -32,6 +32,7 @@ export default function RootLayout({
             newestOnTop={false}
             closeOnClick
             rtl={false}
+            escapeMarkup={true}
             pauseOnFocusLoss={false}
             draggable
             pauseOnHover={false}

@@ -10,6 +10,7 @@ interface User {
   barcode: string;
   birthdate: string;
   telephone: string;
+  id:number;
 }
 
 interface UserContextProps {
@@ -17,9 +18,22 @@ interface UserContextProps {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   accessToken: string | null;
   setAccessToken: React.Dispatch<React.SetStateAction<string | null>>;
-  cart: any[];
-  setCart: React.Dispatch<React.SetStateAction<any[]>>;
+  cart: CartItem[] | null;
+  setCart: React.Dispatch<React.SetStateAction<CartItem[] | null>>;
   logout: () => void;
+}
+
+interface CartItem {
+    start_schedule: string; // ISO date string
+    end_schedule: string;   // ISO date string
+    start?: string;         // ISO date string (same as start_schedule)
+    end?: string;           // ISO date string (same as end_schedule)
+    member_id: number;
+    status: number;
+    place_id: number;
+    price: number;
+    place_name?: string | null;
+    place_image?: string | null;
 }
 
 export const UserContext = createContext<UserContextProps | undefined>(undefined);
@@ -27,7 +41,27 @@ export const UserContext = createContext<UserContextProps | undefined>(undefined
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [User, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [cart, setCart] = useState<any[]>([]);
+  const [cart, setCartState] = useState<CartItem[] | null>(null);
+
+  // wrapped setter to help trace unexpected calls (e.g. setState during render)
+  const setCart: React.Dispatch<React.SetStateAction<CartItem[] | null>> = (value) => {
+    // log a trace to help locate caller
+    try {
+      if (typeof window !== 'undefined' && (window as any).__rendering_component) {
+        console.warn(`Deferred setCart called while rendering ${(window as any).__rendering_component}; scheduling after render.`);
+        console.trace('Deferred setCart stacktrace:', value);
+        // defer update to avoid setState during render
+        setTimeout(() => {
+          setCartState(value as any);
+        }, 0);
+        return;
+      }
+      console.trace('setCart called', value);
+    } catch (e) {
+      console.trace('setCart called (trace failed)', value);
+    }
+    setCartState(value as any);
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -37,7 +71,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       if (storedUser) setUser(JSON.parse(storedUser));
       if (storedToken) setAccessToken(storedToken);
-      if (storedCart) setCart(JSON.parse(storedCart));
+      if (storedCart) {
+        try {
+          const parsed = JSON.parse(storedCart);
+          if (Array.isArray(parsed)) setCart(parsed as CartItem[]);
+        } catch (e) {
+          console.warn('Failed to parse stored cart', e);
+        }
+      }
     }
   }, []);
 
@@ -61,30 +102,39 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [accessToken]);
 
-  const updateCart: React.Dispatch<React.SetStateAction<any[]>> = (newCart) => {
-    const resolvedCart = typeof newCart === 'function' ? newCart(cart) : newCart;
-    setCart(resolvedCart); // Atualiza o estado do carrinho
-    if (typeof window !== 'undefined') {
-      if (resolvedCart.length > 0) {
-        localStorage.setItem('___cfcsn-cart', JSON.stringify(resolvedCart)); // Sincroniza com o localStorage
+  // persist cart to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (Array.isArray(cart) && cart.length > 0) {
+        localStorage.setItem('___cfcsn-cart', JSON.stringify(cart));
       } else {
-        localStorage.removeItem('___cfcsn-cart'); // Remove o carrinho do localStorage se estiver vazio
+        localStorage.removeItem('___cfcsn-cart');
       }
+    } catch (e) {
+      console.warn('Failed to persist cart to localStorage', e);
     }
-  };
+  }, [cart]);
+
 
   const logout = () => {
     setUser(null);
     setAccessToken(null);
-    setCart([]);
+    
     if (typeof window !== 'undefined') {
-      localStorage.clear(); // Clear all localStorage data
+      try {
+        localStorage.removeItem('___cfcsn-user-data');
+        localStorage.removeItem('___cfcsn-access-token');
+        localStorage.removeItem('___cfcsn-cart');
+      } catch (e) {
+        console.warn('Error clearing localStorage keys on logout', e);
+      }
     }
   };
 
   return (
     <UserContext.Provider value={{
-      User, setUser, accessToken, setAccessToken, cart, setCart: updateCart, logout
+  User, setUser, accessToken, setAccessToken, cart, setCart, logout
     }}>
       {children}
     </UserContext.Provider>

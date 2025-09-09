@@ -24,7 +24,8 @@ const PlacePage = () => {
         id: "",
         image: "",
         rules: [],
-        schedule: []
+        schedule: [],
+        price: 0
     });
 
     // Função extraída para reutilização no timer
@@ -43,9 +44,10 @@ const PlacePage = () => {
         setData({
             name: response.name || placeName,
             id: response.id || placeID,
+            price: response.price || 0,
             image: response?.image || "",
             rules: response.schedule_rules,
-            schedule: Array.isArray(response?.schedule) 
+            schedule: Array.isArray(response?.schedule)
                 ? response.schedule : []
         });
     };
@@ -72,35 +74,18 @@ const PlacePage = () => {
             />
             <section className={globalStyle.Section} style={{ paddingTop: "100px", paddingBottom: "20px" }}>
             <div className={style.placeContainer}>
-                <h1 className={style.placeTitle}>
-                    <FontAwesomeIcon icon={faMedal}></FontAwesomeIcon>
-                    Você Selecionou:
-                </h1>
-                <div className={style.choosingContainer}>
-                    <div className={style.choosingSteps}>
-                        <div className={style.stepItem}>
-                            Data
-                            <br/>
-                            <b>
-                                {selectedDate
-                                    ? selectedDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Não selecionada'}
-                            </b>
-                        </div>
-                        <div className={style.stepItem}>
-                            Nome:
-                            <br/>
-                            <b>{data.name}</b>
-                        </div>
-                        <div className={style.stepItem}>RESERVE O HORÁRIO</div>
-                    </div>
-                    <div className={style.stepBar}></div>
+                <div className={style.placeTitle}>
+                    <h1>
+                        {data.name}  |  {selectedDate ? selectedDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long'}) : 'Não selecionada'}
+                    </h1>
+                    <h3>Agende seu horário</h3>
                 </div>
             </div>
                 <Schedule
                     src={
                         data.image && typeof data.image === 'string' && data.image.trim() !== '' ? data.image : ""
                     }
-                    reservations={data.schedule}
+                    price={data.price}
                     place={parseInt(data.id)}
                     rules={data.rules}
                 />

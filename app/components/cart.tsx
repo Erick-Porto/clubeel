@@ -13,41 +13,32 @@ import { useUser } from '@/context/UserContext';
 const Cart = () => {
     const { cart, setCart, accessToken } = useUser();
 
-    useEffect(() => {
-        if (cart.length > 0) {
-            const fetchPlaceDetails = async () => {
-                const updatedCart = [];
-                for (const item of cart) {
-                    const response = await API_CONSUME('get', `place/${item.place}`, {
-                        'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
-                        'Session': accessToken
-                    }, null);
-
-                    if (response && response.length >= 0) {
-                        updatedCart.push({
-                            ...item,
-                            name: response[0].name,
-                            image: response[0].image
-                        });
-                    }
-                }
-                setCart(updatedCart);
-            };
-            fetchPlaceDetails();
-        }
-    }, []);
+    // utilitários para interpretar/formatar hour
+    const hhmmssToSeconds = (hms: string) => {
+        const parts = String(hms).split(':').map(p => parseInt(p, 10) || 0);
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 2) return parts[0] * 3600 + parts[1] * 60;
+        return parts[0] * 3600;
+    };
+    const secondsToHHMM = (seconds: number) => {
+        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        return `${h}:${m}`;
+    };
 
     function deleteItems() {
-        setCart([]); // Usa o método do contexto que já sincroniza com o localStorage
+        try {
+            setCart([]);
+        } catch (e) {
+            console.warn('Failed to clear cart', e);
+        }
         toast.success('O carrinho foi limpo com sucesso!');
     }
 
-    function removeItem(item: { hour: number; place: number}) {
+    function removeItem(item: any) {
         setCart(prevCart => {
-            const updatedCart = prevCart.filter(i => !(i.hour === item.hour && i.place === item.place));
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('___cfcsn-cart', JSON.stringify(updatedCart)); // Sincroniza com o localStorage
-            }
+            const base = Array.isArray(prevCart) ? prevCart : [];
+            const updatedCart = base.filter(i => !(i.start_schedule === item.start_schedule && Number(i.place_id) === Number(item.place_id)));
             return updatedCart;
         });
         toast.success('O item foi removido do carrinho com sucesso!');
@@ -59,22 +50,25 @@ const Cart = () => {
                 <FontAwesomeIcon icon={faCartShopping} />
                 Agendamentos a pagar
             </h1>
-            {cart.length !== 0 ? (
+            {Array.isArray(cart) && cart.length !== 0 ? (
             <>
                 <div className={style.cartListContainer}>
-                    {cart.map((item, index) => {
-                        const hour = `${item.hour}:00 - ${item.hour+1}:00`
+                    {cart.map((item: any, index: number) => {
+                        const startSec = hhmmssToSeconds(String(item.start_schedule).split(' ')[1] || '00:00');
+                        const endSec =  hhmmssToSeconds(String(item.end_schedule).split(' ')[1] || '00:00');
+                        const hourDisplay = `${secondsToHHMM(startSec)} - ${secondsToHHMM(endSec)}`
+                        
 
                         return(
                             <div className={style.cartItem} key={index}>
                                 <div>
-                                    <Image alt={'a'} width={150} height={125} src={item.image || '/default-image.jpg'}/>
+                                    <Image alt={'a'} width={150} height={125} src={item.place_image || '/default-image.jpg'}/>
                                 </div>
                                 <div>
-                                    <h3 className={style.cartTitle}> {item.name}</h3>
+                                    <h3 className={style.cartTitle}> {item.place_name}</h3>
                                     <p>
-                                        Horário: {hour}<br/>
-                                        <Link className={style.cartLink} href={`/place/` + (item.name ? item.name.split(' ').join('-').toLowerCase() : '')}>
+                                        Horário: {hourDisplay}<br/>
+                                        <Link className={style.cartLink} href={`/place/` + (item.place_name ? item.place_name.split(' ').join('-').toLowerCase() : '')}>
                                             Ver agendamento
                                         </Link>
                                     </p>

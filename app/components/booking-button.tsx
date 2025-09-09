@@ -9,11 +9,12 @@ interface RedirectProps {
 }
 
 interface CartItem {
-    hour: number;
+    start: number;
+    end: number;
     place: number;
 }
 
-const BookingButton = ({ redirect, text, toCart, onClick }: { redirect: RedirectProps, text: ReactNode, toCart: CartItem[], onClick: () => void }) => {
+const BookingButton = ({ redirect, text, toCart, onClick }: { redirect: RedirectProps, text: ReactNode, toCart: any, onClick: () => void }) => {
     const router = useRouter();
 
     function handlerCartConcat() {
@@ -31,7 +32,7 @@ const BookingButton = ({ redirect, text, toCart, onClick }: { redirect: Redirect
 
     return (
         <button className={style.bookingButton} onClick={() => handlerCartConcat()}>
-            {redirect.redirect ? "Finalizar reserva" : text} {/* Altera o texto dinamicamente */}
+            {text}
         </button>
     );
 }

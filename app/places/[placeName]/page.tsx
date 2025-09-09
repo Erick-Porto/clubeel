@@ -40,8 +40,8 @@ const PlacesPage = () => {
             let localMaxAntecedence = 0; 
             placesArray.forEach((item) => {
                 item.schedule_rules.forEach((rule) => {
-                    if (rule.antecedence > localMaxAntecedence) {
-                        localMaxAntecedence = rule.antecedence; 
+                    if (rule.maximium_antecedence > localMaxAntecedence) {
+                        localMaxAntecedence = rule.maximium_antecedence; 
                     }
                 });
             });
@@ -182,8 +182,8 @@ const PlacesPage = () => {
                                 }
 
                                 else if(rule.type === 'include'){
-                                    if(rule.antecedence > 0){
-                                        const limitDate = new Date(currentDate.getTime() + rule.antecedence * 24 * 60 * 60 * 1000);
+                                    if(rule.maximium_antecedence >= 0){
+                                        const limitDate = new Date(currentDate.getTime() + rule.maximium_antecedence * 24 * 60 * 60 * 1000);
                                         
                                         if (selectedDate.getTime() > limitDate.getTime())
                                             itemIsValid = false
