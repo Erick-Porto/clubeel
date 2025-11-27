@@ -1,126 +1,391 @@
-@keyframes upToDown {
-    0% {
-        transform: translateY(-50%) translateX(100%);
-    }
-    100% {
-        transform:  translateY(-50%) translateX(0);
-    }
-}
-
-.checkout{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+/* Container Principal da Página */
+.checkoutPageContainer {
     width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    min-height: 80vh;
 }
 
-.checkoutContainer{
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
-    width: 100%;
+.checkoutTitle {
+    font-size: 2rem;
+    color: var(--grena);
+    margin-bottom: 30px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
 }
 
-.checkoutLeft{
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    width: 70%;
+/* Layout Grid: Esquerda (Itens) | Direita (Pagamento) */
+.checkoutLayout {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 40px;
+    align-items: start;
 }
 
-.checkoutRight{
-    position: fixed;
-    right: 0;
-    top: 50%;
-    transform: translateX(100%) translateY(-50%);
+/* --- COLUNA ESQUERDA: ITENS DO CARRINHO --- */
+.cartSection {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 30%;
-    gap: 20px;
-    border: solid 3px var(--grena-light);
-    background-color: var(--grena-light);
-    color: #fff;
-    border-radius: 20px 0 0 20px;
-    padding: 20px;
-    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
-    animation: upToDown 1s ease-in-out forwards;
-    animation-delay: 2s;
-}
-
-.cardContainer{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     gap: 20px;
 }
 
-.checkoutItem{
-    background-image: url(https://i.imgur.com/cDDozxR.png);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 80%;
+.cartList {
     display: flex;
-    height: 190px;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+    gap: 16px;
+}
+
+/* Card de Item Individual */
+.cartItem {
+    display: flex;
+    background: white;
+    border-radius: 16px;
+    /* Removido padding geral, o padding vai para os filhos ou ajustado */
+    padding: 0; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border: 1px solid #f0f0f0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     position: relative;
-    color: var(--grena-light);
-    &:hover .checkoutItemData{
-        bottom: 0;
-        transform: translateY(0%);
-        background: var(--background);
-        
-    }
-
-    &::after{
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 1;
-    }
+    overflow: hidden;
 }
 
-.checkoutItemData{
+.cartItem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+}
+
+/* Link que envolve o conteúdo (Area clicável para navegar) */
+.cartItemContent {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1;
+    text-decoration: none;
+    color: inherit;
+    padding: 16px;
+    /* Deixa espaço para o botão de apagar não cobrir o texto no mobile */
+    padding-right: 50px; 
+    align-items: center;
+}
+
+.itemCancelling {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(1);
+}
+
+.scheduleImage {
+    width: 100px;
+    height: 100px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.scheduleInfo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    flex-grow: 1;
+}
+
+.scheduleInfo h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.scheduleInfo h3 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #666;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.priceTag {
+    font-weight: 700;
+    color: var(--grena);
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+/* Botão de Remover */
+.cancelScheduleButton {
     position: absolute;
-    bottom: -20%;
-    transform: translateY(10%);
-    background: var(--background);
-    left: 0;
-    width: 100%;
-    text-align: center;
-    border: none;
-    padding: 5px;
-    transition: all .3s ease-in-out;
-    z-index: 2;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%); /* Centralizado verticalmente */
+    
+    background: #f9f9f9; /* Fundo leve para destacar */
+    border: 1px solid #eee;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #999;
+    transition: all 0.2s ease;
+    z-index: 2; /* Garante que fique acima do link */
 }
 
-@media (max-width: 768px) {
-    .checkoutContainer{
-        flex-direction: column-reverse;
+.cancelScheduleButton:hover {
+    background-color: #fee;
+    color: #d32f2f;
+    border-color: #fdd;
+}
+
+/* Empty State */
+.emptyCheckoutContent {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f9f9f9;
+    border-radius: 16px;
+    color: #777;
+}
+
+/* --- COLUNA DIREITA: RESUMO E PAGAMENTO (Sticky) --- */
+.paymentSection {
+    position: sticky;
+    top: 100px; /* Ajuste conforme altura do Header */
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.summaryHeader {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 10px;
+}
+
+.summaryHeader h2 {
+    font-size: 1.2rem;
+    color: var(--grena);
+    margin: 0;
+}
+
+/* Grupo de Itens no Resumo */
+.summaryGroup {
+    margin-bottom: 15px;
+}
+
+.summaryGroupTitle {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.summaryTotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 2px dashed #eee;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.summaryTotal span:first-child {
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.summaryTotalValue {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--grena);
+}
+
+/* Dados do Comprador */
+.buyerInfo {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #555;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.buyerInfo strong {
+    color: #333;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* --- STATUS MESSAGE (Sucesso/Erro) --- */
+.statusWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+}
+
+.statusIcon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.statusSuccess { background-color: #e6f4ea; color: #1e8e3e; }
+.statusError { background-color: #fce8e6; color: #d93025; }
+
+.statusWrapper h2 { font-size: 2rem; margin-bottom: 10px; color: #333; }
+.statusWrapper p { font-size: 1.1rem; color: #666; margin-bottom: 30px; line-height: 1.5; }
+
+.statusButton {
+    background-color: var(--grena);
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.statusButton:hover { background-color: #800000; transform: translateY(-2px); }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- RESPONSIVIDADE MOBILE --- */
+.mobileSummaryToggle { display: none; }
+/* ... (Mantenha o código anterior até a seção @media) ... */
+
+/* --- Botão de Toggle (Mobile Apenas) --- */
+.mobileSummaryToggle {
+    display: none; /* Escondido no Desktop */
+}
+
+/* --- Ícone de Chevron para animação --- */
+.chevronIcon {
+    transition: transform 0.3s ease;
+}
+.chevronRotated {
+    transform: rotate(180deg);
+}
+
+/* =============================================== */
+/* RESPONSIVIDADE MOBILE                           */
+/* =============================================== */
+
+@media (max-width: 900px) {
+    .checkoutLayout {
+        grid-template-columns: 1fr;
+        gap: 20px;
     }
 
-    .checkoutLeft{
-        width: 100%;
+    .checkoutTitle {
+        font-size: 1.5rem;
+        text-align: center;
+        margin-bottom: 20px;
     }
 
-    .checkoutRight{
-        width: 100%;
-        position: initial;
-        transform: translateX(0) translateY(0);
-        border-radius: 0;
-        box-shadow: none;
-        animation: none;
+    /* BOTÃO DE RESUMO (Visível no Mobile) */
+    .mobileSummaryToggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f5f5f5;
+        padding: 16px 20px;
+        border-radius: 12px 12px 0 0; /* Arredondado em cima */
+        border: 1px solid #eee;
+        cursor: pointer;
+        color: var(--grena);
+        font-weight: 600;
+        font-size: 0.95rem;
+        user-select: none;
+        transition: background-color 0.2s;
+    }
+
+    .mobileSummaryToggle:hover {
+        background-color: #eee;
+    }
+
+    .summaryTotalLabel {
+        color: #333;
+        font-weight: 800;
+        margin-left: 10px;
+    }
+
+    /* SEÇÃO DO CARRINHO (Controlada pelo Toggle) */
+    .cartSection {
+        order: 1;
+        background: white;
+        border: 1px solid #eee;
+        border-top: none; /* Conecta com o botão */
+        border-radius: 0 0 12px 12px;
+        padding: 0 15px;
+        overflow: hidden;
+        
+        /* Animação de altura */
+        max-height: 0;
+        opacity: 0;
+        visibility: hidden;
+        transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s;
+    }
+
+    /* Classe aplicada quando expandido */
+    .cartSectionExpanded {
+        max-height: 1000px; /* Valor seguro para permitir expansão */
+        opacity: 1;
+        visibility: visible;
+        padding: 20px 15px; /* Restaura o padding */
+        margin-bottom: 20px;
+    }
+
+    /* SEÇÃO DE PAGAMENTO (Sempre visível abaixo) */
+    .paymentSection {
+        order: 2;
+        position: static;
+        padding: 20px;
+    }
+    .cartItemContent {
+        padding: 12px;
+        /* No mobile, o botão pode ficar no topo ou mantemos centralizado */
+        padding-right: 50px; 
+    }
+
+    .scheduleImage {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .cancelScheduleButton {
+        width: 36px;
+        height: 36px;
     }
 }

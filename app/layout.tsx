@@ -5,7 +5,9 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 
 import { UserProvider } from '@/context/UserContext';
+import { NextAuthProvider } from '@/components/provider';
 import { ToastContainer } from "react-toastify";
+import { CartProvider } from "@/context/CartContext"; // Importe o CartProvider
 
 
 export const metadata: Metadata = {
@@ -22,9 +24,14 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body >
-        <UserProvider>
+        {/* <UserProvider>
           {children}
-        </UserProvider>
+        </UserProvider> */}
+        <NextAuthProvider>
+          <CartProvider> {/* Adicione o CartProvider aqui */}
+            {children}
+          </CartProvider>
+        </NextAuthProvider>
         <ToastContainer
             position="bottom-right"
             autoClose={5000}

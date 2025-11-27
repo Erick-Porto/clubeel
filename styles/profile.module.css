@@ -1,283 +1,302 @@
-.formContainer
-{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 50%;
-    margin: 0 auto;
-    padding: 25px;
-    border: 2px solid var(--grena-light);
-    border-radius: 0;
-    position: relative;
-    &:nth-child(1){
-        margin-top: 30px;
-        border-bottom: none;
-        border-radius: 20px 0 0 0;
-    }
+/* --- LAYOUT PRINCIPAL --- */
+.profilePageContainer {
+    background-color: #f4f6f8; /* Fundo cinza bem claro para destacar os cards */
+    min-height: 100vh;
+    /* padding-bottom: 60px; */
+}
+
+.profileContentWrapper {
+    max-width: 1200px;
     
-    &:nth-child(2){
-        border-radius: 0 0 20px 0;
-    }
-}
-
-.formTitle
-{
-    font-size: 24px;
-    font-weight: bold;
-    text-align: center;
-    background-color: var(--background);
-    padding: 10px;
-    position: absolute;
-    top: -25px;
-    left: 20px;
-    text-transform: uppercase;
-    color: var(--grena-light);
-}
-
-.formContent
-{
+    /* CORREÇÃO: Remove margem negativa que causava sobreposição errada */
+    margin: 0 auto; 
+    
+    /* Espaço para o avatar que está "vazando" do banner */
+    padding: 60px 20px 0 20px; 
+    
+    position: relative;
+    z-index: 1; /* Menor que o Banner (20) */
     display: grid;
-    grid-template: 70px 70px / 1fr 1fr;
-    gap: 10px;
-    width: 100%;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
 }
 
-.formRow{
-    display: grid;
-    grid-template-columns: 1fr  1fr ;
-    gap: 10px;
-    width: 100%;
-    padding: 10px;
+/* --- SIDEBAR DE NAVEGAÇÃO --- */
+.profileSidebar {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 100px;
 }
 
-.formItem
-{
+.profileMenu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
-    width: 100%;
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* IE 10 and IE 11 */
-    user-select: none; /* Standard syntax */
+    gap: 8px;
 }
 
-.formItemLabel
-{
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: var(--grena-light);
-    text-transform: capitalize;
-}
-
-.formItemInput
-{
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--grena-light);
-    border-radius: 5px;
-    color: var(--grena-dark);
-    font-size: 16px;
-    background-color: var(--background);
-    transition: all 0.3s ease;
-    outline: none;
-    &:focus{
-        border-color: var(--grena-lighter);
-    }
-    &:disabled{
-        background-color:var(--gray-alpha-100);
-        cursor: not-allowed;
-    }
-}
-
-.formItemButton
-{
-    width: 100%;
-    padding: 10px;
-    border-radius: 5px;
-    background-color: var(--grena-light);
-    border:solid 2px var(--grena-light);
-    color: var(--background);
-    font-size: 16px;
-    font-weight: bold;
-    text-transform: uppercase;
+.menuItem {
+    padding: 14px 20px;
+    border-radius: 10px;
     cursor: pointer;
+    font-weight: 600;
+    color: #666;
     transition: all 0.3s ease;
-
-    &:hover{
-        background-color: var(--grena-lighter);
-        border-color: var(--grena-lighter);
-    }
-    &:disabled{
-        display: none;
-    }
-    &:not(:disabled){
-        animation: surgeButton .8s ease-in-out;
-    }
-    &:active{
-        transform: scale(0.98);
-        transition: transform 0.1s ease;
-    }
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
 }
 
-.cancelItemButton
-{
+.menuItem:hover {
+    background-color: #f9f9f9;
+    color: var(--grena);
+}
+
+.menuItemActive {
+    background-color: var(--grena);
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(115, 0, 1, 0.2);
+}
+
+/* --- ÁREA DE CONTEÚDO (DIREITA) --- */
+.contentCard {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 40px;
+    min-height: 400px;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    color: var(--grena);
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+    font-weight: 700;
+}
+
+/* --- ESTILOS DOS FORMULÁRIOS --- */
+.formContainer {
     width: 100%;
-    padding: 10px;
-    border: 2px solid var(--grena-light);
-    border-radius: 5px;
-    background-color: var(--gray-alpha-100);
-    color: var(--grena-light);
-    font-size: 16px;
-    font-weight: bold;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover{
-        background-color: var(--background);
-        border-color: var(--grena-lighter);
-        color: var(--grena-lighter);
-    }
-    &:disabled{
-        display: none;
-    }
-    &:not(:disabled){
-        animation: surgeButton .8s ease-in-out;
-    }
-    &:active{
-        transform: scale(0.98);
-        transition: transform 0.1s ease;
-    }
 }
 
-.passwordRules{
+.formGrid {
     display: grid;
-    height: 100%;
-    width: 100%;
-    align-self: center;
-    grid-template: 1fr 1fr / 1fr 1fr 1fr;
-    justify-content: center;
-    gap: 5px;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.fullWidth {
+    grid-column: 1 / -1;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formLabel {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #444;
+}
+
+.formInput {
+    padding: 12px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    background-color: #fff;
+    color: #333;
+}
+
+.formInput:focus {
+    outline: none;
+    border-color: var(--grena);
+    box-shadow: 0 0 0 3px rgba(115, 0, 1, 0.1);
+}
+
+.formInput:disabled {
+    background-color: #f5f5f5;
+    color: #888;
+    border-color: #eee;
+    cursor: not-allowed;
+}
+
+/* Botões */
+.actionButtons {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.primaryButton {
+    background-color: var(--grena);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+    flex: 1;
+}
+
+.primaryButton:hover {
+    background-color: #800000;
+    transform: translateY(-2px);
+}
+
+.primaryButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.secondaryButton {
+    background-color: transparent;
+    border: 1px solid var(--grena);
+    color: var(--grena);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.secondaryButton:hover {
+    background-color: #fff5f5;
+}
+
+/* --- REGRAS DE SENHA (BADGES) --- */
+.passwordRulesContainer {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.rulesList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-.slideToDownAnimation{
-    animation: slideToDown 1s ease-in-out;
-    opacity: 1;
+.ruleBadge {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background-color: #eee;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s;
 }
 
-@keyframes surgeButton {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-    }
-    100% {
-        transform: scale(1);
-    }
+.ruleMet {
+    background-color: #e6f4ea;
+    color: #1e8e3e;
+    font-weight: 600;
 }
 
-@media (max-width: 768px) {
-    .formContainer{
-        width: 95%;
-    }
-    .formContent{
-        grid-template: 1fr / 1fr;
-    }
-    .formRow{
-        grid-template-columns: 1fr;
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.formItemVisible {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.slideDown {
-    animation: slideDown 0.3s ease-in-out;
-}
-
-.confirmationFormContainer{
-    background-color: black;
-    opacity: 0.6;
+/* --- MODAL --- */
+.modalOverlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100000;
     display: flex;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-}
-
-.confirmationFormContent{
-    background-color: var(--background);
-    width: 90%;
-    max-width: 500px;
     padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    animation: slideDown 0.3s ease-in-out;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10000;
-    border: 2px solid var(--grena-light);
-    opacity: 1;
 }
 
-.confirmationFormTitle{
-    margin-bottom: 5px;
+.modalContent {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     text-align: center;
-
 }
 
-.confirmationFormText{
+.modalTitle {
+    font-size: 1.2rem;
+    color: var(--grena);
     margin-bottom: 10px;
 }
 
-.confirmationForm{
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
+.modalText {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 20px;
 }
 
-.confirmationForm .formItemButton{
-    width: 30%;
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 900px) {
+    .profileContentWrapper {
+        grid-template-columns: 1fr;
+        margin-top: 0;
+        gap: 20px;
+        /* Mais espaço no mobile pois o layout é vertical */
+        padding-top: 90px; 
+    }
+
+    .profileSidebar {
+        position: static;
+        padding: 10px;
+        border-radius: 0 0 16px 16px; /* Arredonda só embaixo se estiver colado no banner */
+        margin-top: -20px; /* Puxa um pouco para cima do banner */
+    }
+
+    .profileMenu {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 5px;
+        gap: 10px;
+    }
+
+    .menuItem {
+        white-space: nowrap;
+        font-size: 0.9rem;
+        padding: 10px 16px;
+        flex-shrink: 0;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr; /* Inputs empilhados */
+    }
+
+    .contentCard {
+        padding: 25px 20px;
+    }
 }

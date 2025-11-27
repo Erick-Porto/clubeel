@@ -1,234 +1,203 @@
-:root{
-    --logo-expanded: url('../public/images/logo-cfcsn-horiz.png');
-    --isotipo: url('../public/images/logo-eng-grena.png');
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  padding: 0 40px;
+  box-sizing: border-box;
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  /* Z-Index altíssimo para garantir prioridade */
+  z-index: 10000;
+  
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: transparent;
+  /* Pointer events auto garante que cliques passem, mas em transparent bg as vezes precisa forçar nos filhos */
 }
 
-@keyframes surge{
-    from{
-        top: -100%;
-    }
-    to{
-        top:0;
-    }
+.headerActive {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  height: 70px; 
 }
 
-@keyframes disaper{
-    from{
-        top: 0;
-        display: flex;
-    }
-    to{
-        top: -100%;
-        display: none;
-    }
+.headerLogo {
+  position: relative;
+  width: 160px;
+  height: 50px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
 }
 
-@keyframes userOptionsVisible {
-    from{
-        opacity: 0;
-        top: 100%;
-    }
-    to{
-        opacity: 1;
-        top: 150%;
-    }
-}
-
-@keyframes userOptionsInvisible {
-    from{
-        opacity: 1;
-        top: 150%;
-    }
-    to{
-        opacity: 0;
-        top: 100%;
-    }
-}
-
-@keyframes chevronRotateActive {
-    from{
-        transform: rotateX(0);
-    }
-    to{
-        transform:rotateX(180deg)
-    }
-}
-
-@keyframes chevronRotateInactive{
-    from{
-        transform: rotateX(180deg);
-    }
-    to{
-        transform:rotateX(0)
-    }
-}
-.header{
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* IE 10 and IE 11 */
-    user-select: none; /* Standard syntax */
-    width: 100%;
-    height: 70px;
-    padding: 10px;
-    top: -100%;
+/* Navegação Desktop */
+.desktopNav {
+    height: 100%;
+    display: flex;
     align-items: center;
-    flex-direction: row;
-    justify-content: space-around;
-    position: fixed;
-    transition: all 0.5s linear;
-    z-index: 999;
-    background-color: var(--background);
-    box-shadow: rgb(115 0 1 / 5%) 0px 10px 10px;
-    animation: disaper 0.5s linear;
-    display: none;
 }
 
-.headerLogo{
-    background-image: var(--logo-expanded);
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 165px;
-    height: 70px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: all .3s linear;
-}
-.headerActive{
-    display: flex;
-    top: 0;
-    animation: surge 0.5s linear;
+.navigateOptions {
+  display: flex;
+  gap: 30px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.navigateOptions{
-    display: flex;
-    flex-direction: row;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 10px;
+/* Estilo base para os itens de navegação (Botões e Links) */
+.navButton, 
+.navLink {
+  background: none;
+  border: none;
+  padding: 8px 0; /* Padding vertical para aumentar área de clique */
+  font-size: 15px;
+  font-weight: 600;
+  color: #4a4a4a;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  position: relative;
+  font-family: inherit; /* Herda fonte do site */
 }
 
-.navigateOptions span{
-    cursor: pointer;
-    position: relative;
-    color: #333;
-    transition: all 0.3s linear;
-    
-    &::after{
-        content: '';
-        width: 0;
-        background-color: var(--grena);
-        height: 1px;
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        transition: all 0.2s linear;
-    }
+.navButton:hover,
+.navLink:hover {
+  color: var(--grena);
 }
 
-.navigateOptions li:hover span::after{
-    width: 100%;
+/* Indicador de Ativo (Ponto) */
+.activePage .navButton::after,
+.navButton:hover::after,
+.navLink:hover::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background-color: var(--grena);
+  border-radius: 50%;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scale(1); /* Scale 1 para mostrar */
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.activePage span{
-    font-weight: bold;
-    color: var(--grena);
-    
-    &::after{
-        width:100%;
-        height:2px;
-    }
-}
-
-.profileOptions{
-    position: relative;
-    cursor: pointer;
-    padding: 10px;
-    text-align: center;
-    transition: all 0.2s linear;
-}
-.profileOptions svg:not(.optionsChevronActive){
-    animation: chevronRotateInactive 0.2s linear;
-}
-
-.optionsChevronActive{
-    transform: rotateX(180deg);
-    animation: chevronRotateActive 0.2s linear;
-}
-
-.profileOptions p{
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-    align-items: center;
-    text-transform: capitalize;
-}
-
-.userOptions{
-    left: 50%;
-    transform: translateX(-50%);
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-    text-align: center;
-    list-style: none;
-    text-transform: capitalize;
-    width: 200px;
-    gap: 15px;
-    padding: 15px;
-    background-color: white;
+/* Estado inativo (esconde o ponto) */
+.navButton::after,
+.navLink::after {
+    content: '';
     position: absolute;
-    flex-direction: column;
-    z-index: 999;
-    transition: all 0.3s linear;
-
-    &:not(.userOptionsActive){
-        animation: userOptionsInvisible 0.3s linear;
-        top: 100%;
-        display: none;
-    }
+    width: 5px;
+    height: 5px;
+    background-color: var(--grena);
+    border-radius: 50%;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    transition: transform 0.3s;
 }
 
-.userOptionsActive{
-    display: flex;
-    animation: userOptionsVisible 0.3s linear;
-    top: 150%;
+/* --- Perfil e Dropdown --- */
+.profileOptions {
+  position: relative;
+  z-index: 10002; /* Acima do logo e nav */
 }
 
-.userOptions span{
-    position: relative;
-    &::after{
-        content: '';
-        width: 0;
-        background-color: #333;
-        height: 1px;
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        transition: all 0.2s linear;
-    }
+.profileButton {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.3s ease;
 }
 
-.userOptions li{
-    cursor: pointer;
-    &:hover span::after{
-        width: 100%;
-    }
+.profileButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
+.profileButton span {
+  font-weight: 700;
+  color: var(--grena);
+  text-transform: capitalize;
+}
 
-@media (max-width: 600px) {
-    .headerLogo{
-        background-image: var(--isotipo);
-        width: 50px;
-        height: 50px;
-        background-size: cover;
-        background-position: center;
-    }
+.optionsChevronActive {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
 
-    .header nav{
-        display: none;
-    };
+/* Dropdown Menu */
+.userOptions {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 200px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  list-style: none;
+}
+
+.userOptionsActive {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.userOptions li {
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #555;
+  transition: background 0.2s ease;
+}
+
+.userOptions li:hover {
+  background-color: #f5f5f5;
+  color: var(--grena);
+}
+
+.userOptions hr {
+  border: 0;
+  border-top: 1px solid #eee;
+  margin: 4px 0;
+}
+
+@media (max-width: 1024px) {
+  .header {
+    padding: 0 20px;
+    height: 70px;
+  }
+  
+  /* Esconde navegação desktop em tablets/mobile */
+  .desktopNav {
+    display: none;
+  }
+  
+  .profileButton span {
+    display: none;
+  }
+  .profileButton {
+    padding: 8px;
+  }
 }

@@ -1,48 +1,140 @@
-.latestAppointmentsContainer{
+.latestAppointmentsContainer {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 60%;
-    position: relative;
-    min-height: 150px;
-    border: 3px solid var(--grena-light);
-    border-radius: 0 0 20px 0;
-    gap: 15px;
-    padding: 25px 10px 15px;
+    width: 100%;
+    gap: 20px;
 }
 
-.latestAppointmentsContainerTitle{
-    background: var(--background);
-    position: absolute;
-    top: 0;
-    left: 20px;
+/* Grid Responsivo Moderno */
+.latestAppointmentsList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+.latestAppointmentsEmpty {
+    text-align: center;
+    color: #888;
+    font-size: 0.95rem;
+    background: #f9f9f9;
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px dashed #ddd;
+}
+
+/* Card Estilo "Booking" */
+.latestAppointmentsItem {
+    background-color: white;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.latestAppointmentsItem:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    border-color: var(--grena-light);
+}
+
+/* Imagem com proporção fixa */
+.imageContainer {
+    width: 100%;
+    height: 160px;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    background-color: #f0f0f0;
+}
+
+.latestAppointmentsItemImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.latestAppointmentsItem:hover .latestAppointmentsItemImage {
+    transform: scale(1.05);
+}
+
+/* Conteúdo do Card */
+.cardContent {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.latestAppointmentsItemTitle {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.infoRow {
     display: flex;
     align-items: center;
-    gap: 10px;
-    transform: translateY(-50%);
-    padding: 0 10px;
-    text-transform: uppercase;
-    font-weight: bold;
-    color: var(--grena);
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #666;
 }
 
-.latestAppointmentsEmpty{
-    text-align: center;
+.infoRow svg {
+    width: 14px;
+    height: 14px;
+    color: var(--grena);
+    opacity: 0.8;
+}
+
+.priceTag {
+    margin-top: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--grena);
+    align-self: flex-start;
+    background: rgba(160, 0, 1, 0.05);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+/* Skeleton Loading (Opcional) */
+.loadingSkeleton {
+    height: 200px;
+    background: #eee;
+    border-radius: 16px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
 }
 
 @media (max-width: 768px) {
-    .latestAppointmentsContainer{
-        width: 95%;
+    .latestAppointmentsList {
+        grid-template-columns: 1fr; /* 1 Coluna no mobile */
+    }
+    
+    .latestAppointmentsItem {
+        flex-direction: row; /* Layout horizontal no mobile (opcional, estilo lista) */
+        align-items: center;
+        padding: 12px;
     }
 
-    .latestAppointmentsContainerTitle{
-        font-size: 20px;
-    }
-}
-
-@media (max-width: 600px) {
-    .latestAppointmentsContainerTitle{
-        font-size: 16px;
+    .imageContainer {
+        width: 100px; /* Imagem menor */
+        height: 100px;
+        flex-shrink: 0;
     }
 }

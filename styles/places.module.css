@@ -1,361 +1,321 @@
+/* Banner Imersivo */
 .placeBanner {
   width: 100%;
-  height: 55svh;
+  height: 40vh; /* Altura mais moderna, nem muito grande nem pequena */
+  min-height: 300px;
   display: flex;
   justify-content: center;
   align-items: center;
   background-repeat: no-repeat;
   background-size: cover;
+  background-position: center;
   position: relative;
-  z-index: 0;
-  background-size: cover;
-  background-position-y: 30%;
-  &::after {
-    content: "";
-    height: 100%;
-    width: 100%;
-    position: absolute;
-    top: 0;
-    background-color: black;
-    opacity: 0.6;
-    left: 0;
-    z-index: 1;
-  }
+  margin-bottom: 40px;
+}
+
+/* Overlay gradiente para legibilidade do texto */
+.placeBanner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+  z-index: 1;
 }
 
 .placeBannerCover {
   z-index: 2;
+  position: relative;
+  color: white;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.placeBannerCover h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  margin: 0;
+}
+
+/* Container do Seletor de Datas */
+.dateSelectionContainer {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 40px auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  text-transform: uppercase;
-  font-size: 32px;
+  gap: 20px;
+  padding: 0 20px;
+  user-select: none;
 }
 
-.placeList {
-  display: grid;
-  grid-template: "1fr 1fr 1fr" auto;
-  gap: 30px;
+.dateSelectionContentView {
+  flex-grow: 1;
+  overflow: hidden;
+  position: relative;
+  /* Máscara para suavizar as bordas laterais */
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 }
 
-.placeCard {
+.dateSelection {
+  display: flex;
+  width: 300%; /* 3 blocos de 7 dias */
+  transform: translateX(-33.333%);
+  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  list-style: none;
+  padding: 10px 0;
+}
+
+.dateSelection.next { transform: translateX(-66.666%); }
+.dateSelection.prev { transform: translateX(0%); }
+
+/* Item de Data (Estilo Cápsula) */
+.dateSelectionItem {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  border-radius: 10px;
-  width: 350px;
-  height: 197px;
-  position: relative;
-  overflow: hidden;
+  justify-content: center;
+  padding: 12px 5px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  color: #666;
+  border: 1px solid transparent;
+}
 
-  &:hover .placeCardInfo {
-    bottom: 0;
-  }
+.dateSelectionItem:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  color: var(--grena);
+}
+
+.dateSelectedItem {
+  background-color: var(--grena) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(115, 0, 1, 0.3);
+  transform: translateY(-2px);
+}
+
+.dateSelectionItem span:first-child {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.dateSelectionItem span:last-child {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* Setas de Navegação */
+.dateSelectionArrow {
+  background: white;
+  border: 1px solid #eee;
+  color: var(--grena);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+
+.dateSelectionArrow:hover:not(:disabled) {
+  background-color: var(--grena);
+  color: white;
+  transform: scale(1.1);
+}
+
+.dateSelectionArrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.dateItemDisabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background-color: #f9f9f9;
+  pointer-events: none; /* Impede o clique via CSS */
+  text-decoration: line-through; /* Opcional: risca o texto */
+}
+/* Grid de Locais */
+.placeList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Card de Local Moderno */
+.placeCard {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid #f0f0f0;
+}
+
+.placeCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+}
+
+.placeCardImageContainer {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
 }
 
 .placeCardImage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 30%;
-  height: 100%;
   width: 100%;
-  background-color: var(--grena);
-  background-repeat: no-repeat;
-  transition: all 0.2s linear;
+  height: 100%;
   background-size: cover;
+  background-position: center;
+  transition: transform 0.5s ease;
+}
+
+.placeCard:hover .placeCardImage {
+  transform: scale(1.05);
+}
+
+/* Badge de Status (Sobre a imagem) */
+.statusBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.available {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: var(--grena);
+}
+
+.unavailable {
+  background-color: rgba(100, 100, 100, 0.9);
+  color: white;
 }
 
 .placeCardInfo {
-  width: 100%;
-  height: 30%;
+  padding: 20px;
   display: flex;
-  padding: 10px;
   flex-direction: column;
-  gap: 10px;
-  background: var(--background);
-  border-top: solid 1px;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.1s linear;
-  position: absolute;
-  bottom: -10%;
+  gap: 15px;
+  flex-grow: 1;
+  justify-content: space-between;
+  background: white;
 }
 
+.placeCardTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
 
-.placeCardInfo a{
-  color: var(--grena-light);
+/* Botão de Ação */
+.placeAction {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 700;
   text-transform: uppercase;
-  font-weight: bold;
-  &:hover{
-    color: var(--grena-lighter)
-  }
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
-.placeCardDisabled{
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none;
+.btnReserve {
+  background-color: var(--grena);
+  color: white;
+  border: none;
+}
+
+.btnReserve:hover {
+  background-color: #5a0000; /* Escurecer um pouco a cor grena */
+  box-shadow: 0 4px 12px rgba(115, 0, 1, 0.2);
+}
+
+.disabledText {
+  color: #999;
+  background-color: #f5f5f5;
   cursor: not-allowed;
 }
 
-.placeCardDisabled span{
-  color: var(--grena-light);
-  font-size: 16px;
-  font-weight: bold;
-  text-transform: uppercase;
+/* Estado Desabilitado do Card */
+.placeCardDisabled {
+  opacity: 0.8;
 }
 
-.placeCardDisabled .placeCardImage{
-  filter: grayscale(1);
+.placeCardDisabled .placeCardImage {
+  filter: grayscale(0.8);
 }
 
-.placeContainer{
-  display: flex;
-  align-items: center;
-  width: 60%;
-  position: relative;
-  margin-top: 25px;
-  margin-bottom: 50px;
-  border: solid 2px var(--grena-light);
-}
-
-.placeTitle{
-  background-color: var(--background);
-  text-transform: uppercase;
-  position: absolute;
-  left: 50%;
-  top: -10;
-  color: var(--grena-light);
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  padding: 0 20px;
-  align-items: center;
-}
-
-.placeTitle h3{
-  letter-spacing: 3px;
-}
-
-.placeTitle h1{
-  font-weight: bold;
-  font-size: 30px;
-}
-
-.placeRules{
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  list-style: none;
-  align-items: center;
-}
-
-.placeImage
-{
-  position: absolute;
-  top: 0;
-  border-radius: 0px 0px 20px 0px;
-  right: 0;
-}
-
-.dateSelectionContainer{
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background-color: var(--grena);
-  gap: 20px;
-  color: white;
-  margin-bottom: 20px;
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
-}
-
-.dateSelectionContentView{
-  max-width: 1064px;
-  width: 100%;
-  display: block;
-  height: 22px;
-  overflow: hidden;
-  position: relative;
-}
-
-.dateSelection{
-  position: absolute;
-  top: 0;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 40px;
-  justify-content: center;
-  align-items: center;
-  list-style-type: none;
-}
-
-.dateSelectionItem{
-  text-transform: capitalize;
-  font-weight: 500;
-  transition: all 0.1s linear;
-  cursor: pointer;
-  position: relative;
-  width: calc((1064px - (45px * 6)) / 7);
-  text-align: center;
-
-  &::after{
-    content: "";
-    display: block;
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0%;
-    height: 2px;
-    background-color: var(--background);
-    transition: all 0.2s linear;
-  }
-  &:hover::after{
-    width: 100%;
-  }
-}
-
-.dateSelectedItem{
-  text-transform: capitalize;
-  font-weight: 700;
-
-  &::after{
-    content: "";
-    display: block;
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    height: 2px;
-    background-color: var(--background);
-    transition: all 0.2s linear;
-  }
-}
-
-.dateSelectionArrow{
-  cursor: pointer;
-  animation: all .5s linear;
-  &:active{
-    transform: scale(0.9);
-  }
-}
-
-.choosingContainer{
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  margin: 0 auto;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.choosingSteps{
-  width: 100%;
-  display: flex;
-  z-index: 0;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  &::after{
-    content: "";
-    display: flex;
-    flex-direction: row-reverse;
-    position: absolute;
-    width: 0%;
-    top: 50%;
-    right: -10px;
-    z-index: 10;
-    height: calc(100% + 10%);
-    background-color: var(--background);
-    transform: translateY(-50%) scale(1.015);
-    animation: loadLeft-right 5s ease;
-  }
-}
-
-.stepBar{
-  display: block;
-  background-color: var(--grena-light);
-  width: 100%;
-  z-index: -1;
-  height: 5px;
-  left: 0;
-  position: absolute;
-  align-items: center;
-  justify-content: center;
-}
-
-.stepItem{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--background);
-  padding: 10px 20px;
-  position: relative;
-  z-index: 2;
-  font-size: 1.5rem;
-  border: 3px solid var(--grena-light);
-  border-radius: 5px;
-  &:nth-child(1){
-    background-color: var(--grena-light);
-    color: white;
-  }
-  &:nth-child(2){
-    background-color: var(--grena-light);
-    color: white;
-  }
-  &:nth-child(3){
-    transform: scale(1.05);
-  }
-}
-
-
-@keyframes loadLeft-right {
-  0% {
-    width: 102%;
-  }
-  100% {
-    width: 0%;
+/* Responsividade */
+@media (max-width: 768px) {
+  .placeBanner {
+    height: 30vh;
+    min-height: 200px;
   }
   
-}
+  .placeBannerCover h1 {
+    font-size: 2rem;
+  }
 
-@media (max-width: 1200px) {
-  .placeList{
-    grid-template: "1fr 1fr";
+  .dateSelectionItem {
+    padding: 8px 2px;
+  }
+  
+  .dateSelectionItem span:first-child {
+    font-size: 1rem;
+  }
+  
+  .dateSelectionItem span:last-child {
+    font-size: 0.7rem;
+  }
+  
+  .dateSelectionArrow {
+    width: 32px;
+    height: 32px;
   }
 }
 
-@media (max-width: 768px) {
-  .placeContainer{
-    width: 100%;
-    flex-direction: column;
+@media (max-width: 480px) {
+  .placeList {
+    grid-template-columns: 1fr; /* 1 coluna no mobile */
+  }
+  
+  .placeBannerCover h1 {
+    font-size: 1.8rem;
+  }
+  
+  .dateSelectionContainer {
+    padding: 0 10px;
     gap: 10px;
-  }
-
-  .placeImage{
-    position: initial;
-    width: 100%;
-    height: 100%;
-  }
-
-  .placeRules{
-    font-size: 20px;
-    color: var(--grena-light);
-    font-weight: bold;
-  }
-}
-
-@media (max-width: 600px) {
-  .placeList{
-    grid-template: "1fr";
   }
 }

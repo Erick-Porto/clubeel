@@ -1,79 +1,52 @@
-:root{
-    --logo-cfcsn-vert: url('../public/images/logo-cfcsn-vert.png');
-    --logo-cfcsn-horiz: url('../public/images/logo-cfcsn-horiz.png');
-}
-
-.LoadingScreen{
-    position: relative;
+.LoadingScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 100%;
     height: 100vh;
+    background-color: var(--background, #fff);
+    z-index: 9999;
 }
 
-.loadingLogo{
-    background-image: var(--logo-cfcsn-horiz);
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position: center;
-    
-    width: 40%;
-    height: 30%;
-    animation: pulse 0.5s linear;
-    animation-iteration-count: 2;
-    margin-bottom: 30px;
+.loadingLogo {
+    /* O controle de tamanho agora é feito via Next Image width/height */
+    margin-bottom: 40px;
+    animation: fadePulse 2s infinite ease-in-out;
 }
 
-.loading{
-    position: relative;
-    width: 50px;
-    height: 50px;
-    bottom: 0;
-}
-
-.loading::after{
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
     height: 100%;
-    border:solid 1px var(--grena);
-    border-bottom:none;
-    border-left:none;
-    /* border-right:none; */
-    border-radius: 100%;
-    animation: rotate 0.8s linear infinite;
 }
 
-@keyframes rotate {
-    from{
-        transform: rotate(0deg);
-    }
-    to{
-        transform: rotate(360deg);
-    }
+/* Spinner Moderno (Anel Fino) */
+.loading {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(115, 0, 1, 0.2); /* Cor Grena muito clara */
+    border-left-color: var(--grena); /* Cor Grena sólida */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
-@keyframes pulse{
-    0%{
-        transform: scale(1);
-    }
-    50%{
-        transform: scale(1.05);
-    }
-    100%{
-        transform: scale(1);
-    }
-
+.loading.small {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
 }
 
-@media (max-width: 768px) {
-    .loadingLogo{
-        background-image: var(--logo-cfcsn-vert);
-        width: 60%;
-        height: 40%;
-    }
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(0.98); }
 }

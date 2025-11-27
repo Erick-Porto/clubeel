@@ -1,99 +1,98 @@
-:root{
+:root {
   --logo-cfcsn-w-vert: url('../public/images/logo-cfcsn-w-vert.png');
   --logo-cfcsn-w-horiz: url('../public/images/logo-cfcsn-w-horiz.png');
 }
 
+/* O Carousel agora ocupa o espaço restante (flex: 1) */
 .carousel {
   position: relative;
-  width: 100%;
-  overflow: hidden;
-  box-shadow: rgb(115 0 1 / 5%) 0px 14px 28px, rgb(115 0 1 / 10%) 0px 10px 10px;
-}
-
-.carouselButtons{
-  position: absolute;
-  font-size: 36px;
+  flex: 1; 
   height: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 999;
-  width: 100%;
-  color: white;
-  padding: 20px;
-}
-
-.carouselButton{
-  cursor: pointer;
+  overflow: hidden;
+  background-color: #000; /* Fundo preto para loading */
 }
 
 .carouselItem {
   position: absolute;
   top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  filter:brightness(0.3);
   background-size: cover;
   background-position: center;
-  transition: opacity 1s ease-in-out;
   opacity: 0;
+  transition: opacity 1.5s ease-in-out, transform 6s ease; /* Zoom suave */
+  transform: scale(1);
+  z-index: 1;
 }
 
 .carouselItem.active {
   opacity: 1;
+  transform: scale(1.05); /* Leve zoom in quando ativo */
+  z-index: 2;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-.coverLogo{
-  z-index: 999;
+/* Overlay Gradiente Moderno */
+.carousel::after {
+  content: '';
   position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-image: var(--logo-cfcsn-w-horiz);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  width: 50%;
-  height: 25%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(var(--grena-rgb), 0.3) 100%);
+  z-index: 3;
+  pointer-events: none;
 }
 
-
-@media (min-width: 600px) {
-  .coverLogo{
-    width: 50%;
-    height: 50%;
-  }
+/* Controles */
+.carouselButtons {
+  position: absolute;
+  bottom: 40px;
+  right: 40px;
+  display: flex;
+  gap: 20px;
+  z-index: 10;
+  color: rgba(255, 255, 255, 0.7);
 }
 
-@media (max-width: 600px) {
-  .coverLogo{
-    background-image: var(--logo-cfcsn-w-vert);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    height: 80%;
-  }
+.carouselButton {
+  cursor: pointer;
+  font-size: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  padding: 10px;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
-  .carouselButtons{
+.carouselButton:hover {
+  background: white;
+  color: var(--grena);
+  transform: scale(1.1);
+}
+
+/* Logo flutuante (opcional no desktop novo, mas mantido para mobile) */
+.coverLogo {
+  display: none; 
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+  .carousel {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 0;
+  }
+  
+  .carouselButtons {
     display: none;
   }
 }

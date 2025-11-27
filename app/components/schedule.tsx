@@ -1,451 +1,494 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import styles from '@/styles/schedule.module.css';
 import BookingButton from '@/components/booking-button';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
-import { useUser } from '@/context/UserContext';
+import { useSession } from 'next-auth/react';
+import { useCart } from '@/context/CartContext';
 import API_CONSUME from '@/services/api-consume';
-import { ApiError } from 'next/dist/server/api-utils';
-import { time } from 'console';
+import { useIsMobile } from '../hooks/useIsMobile';
 
-interface Reservation {
-    start_schedule: string; // ISO date string
-    end_schedule: string;   // ISO date string
-    start?: string;         // ISO date string (same as start_schedule)
-    end?: string;           // ISO date string (same as end_schedule)
-    member_id: number;
-    status: number;
-    place_id: number;
-    price: number;
-    place_name?: string | null;
-    place_image?: string | null;
+// --- INTERFACES ---
+interface Reservation { 
+    id: number; 
+    start_schedule: string; 
+    end_schedule: string; 
+    member_id: number; 
+    status_id: number; 
+    place_id: number; 
+    price: number; 
 }
 
-interface SelectedHour {
-    start_schedule: string; // ISO date string
-    end_schedule: string;   // ISO date string
-    start?: string;         // ISO date string (same as start_schedule)
-    end?: string;           // ISO date string (same as end_schedule)
-    owner: number;
-    status: number;
-    place_id: number;
-    price: number;
+interface SelectedHour { 
+    start_schedule: string; 
+    end_schedule: string; 
+    member_id: number; 
+    status_id: number; 
+    place_id: number; 
+    price: number; 
 }
 
-interface ScheduleProps {
-    place_id?: number;
-    place?: number;
-    src: string;
-    price: number;
-    rules?: any[];
+interface Rule { 
+    type: 'include' | 'exclude'; 
+    start_date: string | null; 
+    end_date: string | null; 
+    start_time: string | null; 
+    end_time: string | null; 
+    quantity: number; 
+    duration: string; 
+    interval: string; 
 }
 
-const secondsToTimeString = (seconds: number) => {
+interface ScheduleProps { place_id?: number; src: string; price: number; rules?: Rule[]; }
+
+// --- HELPERS ---
+const secondsToTimeString = (seconds: number): string => {
+    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
+};
+
+const timeToSeconds = (timeStr: string): number => {
+    if (!timeStr) return 0;
+    const timePart = String(timeStr).split(/T| /)[1] || String(timeStr);
+    const cleanTime = timePart.split('.')[0];
+    const parts = cleanTime.split(':').map(Number);
+    return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+};
+
+const makeDateStringFromSeconds = (dateStr: string, seconds: number): string => {
     const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
     const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
-}
+    return `${dateStr} ${h}:${m}:${s}`;
+};
 
-const HHMMSSToSeconds = (hmsOrIso: string) => {
-    if (!hmsOrIso) return NaN;
-    // aceita tanto "YYYY-MM-DDTHH:MM:SS" quanto "YYYY-MM-DD HH:MM:SS" ou apenas "HH:MM[:SS]"
-    let timePart = String(hmsOrIso);
-    if (timePart.includes('T') || timePart.includes(' ')) {
-        timePart = timePart.split(/T| /)[1] || '';
-    }
-    // remove timezone / milliseconds
-    timePart = timePart.split('.')[0].split('Z')[0].split('+')[0];
-    const parts = timePart.split(':').map(p => Number(p));
-    if (parts.length < 2 || (isNaN(parts[0]) && isNaN(parts[1]))) return NaN;
-    const h = Number(parts[0]) || 0;
-    const m = Number(parts[1]) || 0;
-    const s = Number(parts[2]) || 0;
-    return h * 3600 + m * 60 + s;
-}
+const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, rules = [] }) => {
+    const { data: session } = useSession();
+    const { cart, refreshCart } = useCart();
+    const isMobile = useIsMobile();
 
-const makeISODateFromSeconds = (dateStr: string, seconds: number) => {
-    const time = secondsToTimeString(seconds);
-    // Retorna data/hora no formato local "YYYY-MM-DDTHH:MM:SS" sem converter para UTC (evita deslocamento por timezone)
-    return `${dateStr}T${time}`;
-}
+    const placeId = Number(place_id);
+    const numericPrice = Number(price) || 0; 
+    const userId = Number(session?.user?.id);
 
-const Schedule: React.FC<ScheduleProps> = ({place_id, place, src, price, rules = [] }) => {
-    const { cart, setCart, accessToken, User } = useUser();
-    
-    if (typeof window !== 'undefined') {
-        (window as any).__rendering_component = 'Schedule';
-    }
-    const placeId = Number(place_id ?? place ?? NaN);
-    const currentDate = new Date().toISOString().split('T')[0];
-    const now = new Date();
-    const currentHour = now.getHours() * 3600;
+    const [currentDate, setCurrentDate] = useState<string>("");
 
-    let thisplace = placeId;
-    const hours: number[] = [];
-    const unavailableHours: number[] = [currentHour];
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const dateParam = params.get('date');
+            const cleanDate = (dateParam || new Date().toISOString()).split(/T| /)[0];
+            setCurrentDate(cleanDate);
+        }
+    }, []);
+
     const [selectedHours, setSelectedHours] = useState<SelectedHour[]>([]);
-    const [prevSelectedHours, setPrevSelectedHours] = useState<SelectedHour[]>([]);
     const [reservedHours, setReservedHours] = useState<Reservation[]>([]);
-    const [alternateText, setAlternateText] = useState<string>("Reservar");
-    const [redirect, setRedirect] = useState(false);
     const [disabledHours, setDisabledHours] = useState<number[]>([]);
+    const [anchorHour, setAnchorHour] = useState<number | null>(null);
+
     const [maxQuantity, setMaxQuantity] = useState(2);
-    const [timeInterval, setTimeInterval] = useState(0); 
+    const [timeInterval, setTimeInterval] = useState(0);
     const [timeDuration, setTimeDuration] = useState(3600);
-    const [localPrice, setLocalPrice] = useState(0);
     const [startHourLimit, setStartHourLimit] = useState(0);
     const [endHourLimit, setEndHourLimit] = useState(22 * 3600);
 
-    const fetchData = async (place_id: number) => {
-        
-    if (!place_id || isNaN(Number(place_id)) || place_id === undefined){
-        console.warn('fetchData called with invalid place_id:', place_id);
-        console.trace();
-        return;
-    }
-    try {
-            const response = await API_CONSUME("GET", `schedule/place/${place_id}`, {
-                'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
-                'Session': accessToken
-            }, null);
-            
-            const data = response?.schedules ?? [];
-            
-            let targetDate: string | null = null;
-            if (typeof window !== 'undefined') {
-                const params = new URLSearchParams(window.location.search);
-                const dateParam = params.get('date');
-                if (dateParam) {
-                    const parsed = new Date(dateParam);
-                    if (!isNaN(parsed.getTime())) {
-                        targetDate = parsed.toISOString().split('T')[0];
-                    }
-                }
-            }
+    // --- 1. FETCH RESERVAS ---
+    const fetchData = useCallback(async () => {
+        if (!placeId || isNaN(placeId) || !session?.accessToken || !currentDate) return;
+        try {
+            const response = await API_CONSUME("GET", "schedule/place/", {
+                'Session': session.accessToken
+            }, { 
+                date: currentDate,
+                place_id: placeId
+            });
 
-            const filtered = Array.isArray(data) ? data.filter((item: any) => {
-                if (!item.start_schedule || !item.end_schedule) return false;
-                if(item.status!='1') return false;
-                const s = new Date(item.start_schedule);
-                const e = new Date(item.end_schedule);
-                if (isNaN(s.getTime()) || isNaN(e.getTime())) return false;
-                const sDate = s.toISOString().split('T')[0];
-                const eDate = e.toISOString().split('T')[0];
-                if (sDate !== currentDate) return false;
-                if (sDate !== eDate) return false;
-                if (targetDate !== null) return sDate === targetDate;
-                return false;
-            }) : [];
+            let rawData: Reservation[] = [];
+            
+            if (Array.isArray(response)) {
+                rawData = response;
+            } else if (response?.schedules) {
+                if (Array.isArray(response.schedules)) {
+                    rawData = response.schedules;
+                } else if (typeof response.schedules === 'object') {
+                    Object.values(response.schedules).forEach((dateGroup: any) => {
+                        if (typeof dateGroup === 'object') {
+                            Object.values(dateGroup).forEach((itemsArray: any) => {
+                                if (Array.isArray(itemsArray)) {
+                                    rawData.push(...itemsArray);
+                                }
+                            });
+                        }
+                    });
+                }
+            } else if (response?.data && Array.isArray(response.data)) {
+                rawData = response.data;
+            }
+            
+            const filtered = rawData.filter(item => {
+                if (!item.start_schedule) return false;
+                const itemDate = String(item.start_schedule).split(/T| /)[0];
+                const isConfirmed = ['1', '2'].includes(String(item.status_id));
+                const isThisPlace = Number(item.place_id) === placeId;
+                return itemDate === currentDate && isConfirmed && isThisPlace;
+            });
+            
             setReservedHours(filtered);
-            setSelectedHours([]);
         } catch (error) {
             console.error('Error fetching reserved hours:', error);
         }
-    };
-    
-    useEffect(() => {
-        if (!thisplace || isNaN(thisplace)) return;
-        fetchData(thisplace);
-    }, [thisplace, accessToken]);
+    }, [placeId, session?.accessToken, currentDate]);
 
     useEffect(() => {
-        if (!thisplace || isNaN(thisplace)) return;
-        const interval = setInterval(() => {
-            fetchData(thisplace);
-        }, 30000);
+        fetchData();
+        const interval = setInterval(fetchData, 10000);
         return () => clearInterval(interval);
-    }, [thisplace, accessToken]);
+    }, [fetchData]);
 
+    // --- 2. REGRAS ---
     useEffect(() => {
+        if (!currentDate) return;
         let localDisabled: number[] = [];
-        let localStart = null;
-        let localEnd = null;
+        let localStart = 7 * 3600;
+        let localEnd = 22 * 3600;
         let localMaxQuantity = 2;
         let localDuration = 3600;
         let localInterval = 0;
 
-        rules.forEach((rule: any) => {
-            const valid = (rule.start_date === null && rule.end_date === null) ||
-                (rule.start_date && rule.end_date && currentDate >= rule.start_date && currentDate <= rule.end_date);
+        rules.forEach((rule) => {
+            const valid = (!rule.start_date && !rule.end_date) || (currentDate >= (rule.start_date || '') && currentDate <= (rule.end_date || ''));
             if (!valid) return;
 
-            if (rule.type === 'exclude') {
-                if (rule.start_time && rule.end_time) {
-                    const start = HHMMSSToSeconds(rule.start_time);
-                    const end = HHMMSSToSeconds(rule.end_time);
-                    for (let t = start; t < end; t += 3600) {
-                        const hour = t;
-                        if (hour !== currentHour && !localDisabled.includes(hour)) localDisabled.push(hour);
-                    }
+            if (rule.type === 'exclude' && rule.start_time && rule.end_time) {
+                const start = timeToSeconds(rule.start_time);
+                const end = timeToSeconds(rule.end_time);
+                for (let t = start; t < end; t += 3600) {
+                    if (!localDisabled.includes(t)) localDisabled.push(t);
                 }
             }
 
             if (rule.type === 'include') {
-                if (rule.start_time === null) {
-                    localStart = 7 * 3600;
-                } else {
-                    localStart = HHMMSSToSeconds(rule.start_time);
-                }
-
-                if (rule.end_time === null) {
-                    localEnd = 22 * 3600;
-                } else {
-                    localEnd = HHMMSSToSeconds(rule.end_time);
-                }
-
-                if (localStart !== null && localEnd !== null) {
-                    for (let i = 0; i < endHourLimit; i+=3600) {
-                        if (i < localStart || i >= localEnd ) {
-                            if (!localDisabled.includes(i)) localDisabled.push(i);
-                        }
-                    }
-                }
-
+                localStart = rule.start_time ? timeToSeconds(rule.start_time) : localStart;
+                localEnd = rule.end_time ? timeToSeconds(rule.end_time) : localEnd;
                 localMaxQuantity = rule.quantity || localMaxQuantity;
-                localDuration = rule.duration ? HHMMSSToSeconds(rule.duration) : localDuration;
-                localInterval = rule.interval ? HHMMSSToSeconds(rule.interval) : localInterval;
+                localDuration = rule.duration ? timeToSeconds(rule.duration) : localDuration;
+                localInterval = rule.interval ? timeToSeconds(rule.interval) : localInterval;
             }
         });
 
+        for (let i = 0; i < 24 * 3600; i += 3600) {
+            if (i < localStart || i >= localEnd) {
+                if (!localDisabled.includes(i)) localDisabled.push(i);
+            }
+        }
+
         setDisabledHours(localDisabled);
-        setStartHourLimit(localStart !== null ? localStart : 0);
-        setEndHourLimit(Math.max(0, localEnd !== null ? localEnd : 0));
+        setStartHourLimit(localStart);
+        setEndHourLimit(localEnd);
         setMaxQuantity(localMaxQuantity);
         setTimeDuration(localDuration);
         setTimeInterval(localInterval);
-    }, [rules, currentDate, currentHour]);
+    }, [rules, currentDate]);
+
+    // --- 3. CÁLCULOS DE OCUPAÇÃO ---
+    
+    // A. Meus Confirmados (Nesta Quadra)
+    const myConfirmedSeconds = useMemo(() => {
+        return reservedHours
+            .filter(r => Number(r.member_id) === userId)
+            .map(r => timeToSeconds(r.start_schedule));
+    }, [reservedHours, userId]);
+
+    // B. Meus no Carrinho (Nesta Quadra) - Para validação local
+    const localCartSeconds = useMemo(() => {
+        if (!cart || !Array.isArray(cart)) return [];
+        return cart.filter(item => {
+            const itemDate = String(item.start_schedule).split(/T| /)[0];
+            return Number(item.place_id) === placeId && itemDate === currentDate;
+        }).map(item => timeToSeconds(item.start_schedule));
+    }, [cart, placeId, currentDate]);
+
+    // C. Meus no Carrinho (GLOBAL - Todas as Quadras) - Para evitar conflito de horário
+    const globalCartSeconds = useMemo(() => {
+        if (!cart || !Array.isArray(cart)) return [];
+        return cart.filter(item => {
+            const itemDate = String(item.start_schedule).split(/T| /)[0];
+            return itemDate === currentDate; // Mesma data, qualquer quadra
+        }).map(item => timeToSeconds(item.start_schedule));
+    }, [cart, currentDate]);
+
+    // D. Selecionados Agora
+    const selectedSeconds = selectedHours.map(h => timeToSeconds(h.start_schedule));
+
+    // E. Total de Slots "Meus" nesta quadra (para adjacência)
+    const allLocalSlots = useMemo(() => {
+        const combined = Array.from(new Set([...myConfirmedSeconds, ...localCartSeconds, ...selectedSeconds]));
+        return combined.sort((a, b) => a - b);
+    }, [myConfirmedSeconds, localCartSeconds, selectedSeconds]);
+
+    // F. Contagem Global para Limite (Carrinho Global + Confirmados Locais)
+    const globalCountOnDate = useMemo(() => {
+        if (!cart || !Array.isArray(cart)) return 0;
+        const cartCount = cart.filter(item => {
+            const itemDate = String(item.start_schedule).split(/T| /)[0];
+            return itemDate === currentDate;
+        }).length;
+        return cartCount + myConfirmedSeconds.length;
+    }, [cart, currentDate, myConfirmedSeconds]);
 
     useEffect(() => {
-        if (Array.isArray(cart) && cart.length >= maxQuantity) {
-            setAlternateText("Finalize seu pedido");
-            setRedirect(true);
+        if (selectedSeconds.length === 0) {
+            setAnchorHour(null);
         }
-        else if (0 < selectedHours.length && selectedHours.length <= maxQuantity) {
-            setAlternateText("Reservar");
-        }
-        else {
-            setAlternateText("Selecione um Horário");
-        }
-    }, [cart, maxQuantity, selectedHours]);
+    }, [selectedSeconds.length]);
 
-    const genStart = Math.max(now.getHours() * 3600, startHourLimit);
-    const genEnd = Math.min(22 * 3600, endHourLimit);
-    const step = Math.max(0, (timeDuration + timeInterval));
-
-    for(let h = genStart; h < genEnd; h += step) {
-        hours.push(Math.floor(h));
+    // --- 4. VALIDAÇÕES ---
+    const step = timeDuration + timeInterval;
+    const hours: number[] = [];
+    const now = new Date();
+    const todayString = now.toISOString().split(/T| /)[0];
+    const isToday = currentDate === todayString;
+    const currentHourSeconds = now.getHours() * 3600 + now.getMinutes() * 60;
+    
+    for (let h = startHourLimit; h < endHourLimit; h += step) {
+        hours.push(h);
     }
 
-    const toggleSelectHour = (hourParam: number) => {
-        const hour = Number(hourParam);
-        if (isHourReserved(hour)) return;
-        setSelectedHours(prev => {
-            // if exists, remove it
-            if (prev.some(h => HHMMSSToSeconds(h.start_schedule) === hour)) {
-                const filtered = prev.filter(h => HHMMSSToSeconds(h.start_schedule) !== hour);
-                return filtered;
-            }
+    const isHourReserved = (hour: number) => reservedHours.some(res => timeToSeconds(res.start_schedule) === hour);
 
-            const totalAlready = (Array.isArray(cart) ? cart.length : 0) + prevSelectedHours.length + prev.length;
-            if (totalAlready >= maxQuantity) {
-                toast.error(`Você já atingiu o limite máximo de ${maxQuantity} horários reservados.`+'\n\n'+`
-                    Verifique em "Meus Agendamentos" `);
-                return prev;
-            }
+    // Bloqueia se: Desabilitado, Reservado (Outros), Passado OU EM CONFLITO GLOBAL (Carrinho em outra quadra)
+    const isHourBlocked = (hour: number) => {
+        if (disabledHours.includes(hour)) return true;
+        
+        if (isHourReserved(hour)) {
+            const reservation = reservedHours.find(r => timeToSeconds(r.start_schedule) === hour);
+            if (Number(reservation?.member_id) !== userId) return true; 
+        }
 
-            if (unavailableHours.includes(hour) || disabledHours.includes(hour)) {
-                toast.error('Horário indisponível.');
-                return prev;
-            }
+        if (isToday && hour < currentHourSeconds) return true;
 
-            const startIso = makeISODateFromSeconds(currentDate, hour);
-            const endIso = makeISODateFromSeconds(currentDate, hour + timeDuration);
+        // CORREÇÃO: Verifica se já tenho ESSE horário no carrinho (mesmo que em outra quadra)
+        // Se eu já tenho esse horário no carrinho, está bloqueado para nova seleção.
+        // (Exceto se for desta quadra, pois aí seria "No Carrinho", tratado depois)
+        if (globalCartSeconds.includes(hour) && !localCartSeconds.includes(hour)) {
+            return true;
+        }
 
-            const newEntry: SelectedHour = {
-                owner: User?.id ?? 0,
-                status: 3,
-                start_schedule: startIso,
-                end_schedule: endIso,
-                start: startIso,
-                end: endIso,
-                place_id: placeId,
-                price: localPrice
-            };
-            const newArray = [...prev, newEntry];
-
-            return newArray;
-        });
+        return false;
     };
 
-    const handleReserve = async () => {
-        if (!Array.isArray(selectedHours) || selectedHours.length === 0) {
-            toast.info('Selecione ao menos um horário.');
+    const checkAdjacency = (hour: number): boolean => {
+        if (allLocalSlots.length === 0) return true;
+        const minSlot = allLocalSlots[0];
+        const maxSlot = allLocalSlots[allLocalSlots.length - 1];
+        const prevNeighbor = minSlot - step;
+        const nextNeighbor = maxSlot + step;
+        return hour === prevNeighbor || hour === nextNeighbor;
+    };
+
+    // --- 5. AÇÕES ---
+    const toggleSelectHour = (hour: number) => {
+        // 1. Desmarcar
+        if (selectedSeconds.includes(hour)) {
+            setSelectedHours(prev => prev.filter(h => timeToSeconds(h.start_schedule) !== hour));
             return;
         }
 
-        // build new cart items from selectedHours and fetch place info in sequence
-        const newCart: Reservation[] = [];
-        for (const i of selectedHours) {
-            try {
-                const placeResp: any = await API_CONSUME('GET', `place/${i.place_id}`, {
-                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
-                    'Session': accessToken
-                }, null);
-                const dataInfo = placeResp?.data ?? placeResp ?? {};
+        // 2. Já tenho (Local - Confirmado ou Carrinho)
+        if (myConfirmedSeconds.includes(hour) || localCartSeconds.includes(hour)) return;
 
-                newCart.push({
-                    start_schedule: i.start_schedule, // already ISO
-                    end_schedule: i.end_schedule,     // already ISO
-                    start: i.start,                   // ISO
-                    end: i.end,                       // ISO
-                    member_id: i.owner,
-                    status: 3,
-                    price: localPrice,
-                    place_id: i.place_id,
-                    place_name: dataInfo?.name ?? null,
-                    place_image: dataInfo?.image ?? null
-                });
-            } catch (e) {
-                console.warn('place fetch failed for', i.place_id, e);
-                newCart.push({
-                    start_schedule: i.start_schedule,
-                    end_schedule: i.end_schedule,
-                    start: i.start,
-                    end: i.end,
-                    member_id: i.owner,
-                    status: 3,
-                    price: localPrice,
-                    place_id: i.place_id,
-                    place_name: null,
-                    place_image: null
-                });
+        // 3. Conflito de Horário (Global)
+        // Se este horário já está no carrinho em OUTRA quadra, bloqueia.
+        if (globalCartSeconds.includes(hour)) {
+            toast.error("Você já possui um agendamento neste horário em outra quadra.");
+            return;
+        }
+
+        // 4. Limite de Quantidade (Global)
+        const currentTotal = globalCountOnDate + selectedHours.length;
+        if (currentTotal >= maxQuantity) {
+            toast.error(`Limite global de ${maxQuantity} agendamentos por dia atingido.`);
+            return;
+        }
+
+        // 5. Adjacência (Local)
+        if (!checkAdjacency(hour)) {
+            toast.info("Selecione apenas horários consecutivos (nesta quadra).");
+            return;
+        }
+
+        const newEntry: SelectedHour = {
+            member_id: userId,
+            status_id: 3,
+            place_id: placeId,
+            price: numericPrice,
+            start_schedule: makeDateStringFromSeconds(currentDate, hour),
+            end_schedule: makeDateStringFromSeconds(currentDate, hour + timeDuration),
+        };
+
+        setSelectedHours(prev => [...prev, newEntry].sort((a, b) => timeToSeconds(a.start_schedule) - timeToSeconds(b.start_schedule)));
+    };
+
+    const handleReserve = async () => {
+        if (!session?.accessToken) {
+            toast.error("Sessão inválida.");
+            return;
+        }
+        if (selectedHours.length === 0) {
+            toast.info("Selecione um horário.");
+            return;
+        }
+
+        try {
+            const response = await API_CONSUME("POST", "schedule/", {
+                'Session': session.accessToken
+            }, selectedHours);
+
+            if (response?.error || response?.status === 500) {
+                console.warn("Backend retornou erro, mas tentando atualizar...");
             }
+
+            await refreshCart();
+            setSelectedHours([]);
+            setAnchorHour(null);
+            toast.success('Adicionado ao carrinho!');
+        } catch (error) {
+            console.error("Erro ao reservar:", error);
+            await refreshCart();
         }
-
-
-        // store reservedHours as Reservation[] with ISO strings
-        setReservedHours(prev => ( [
-            ...(Array.isArray(prev) ? prev : []),
-            ...selectedHours.map(s => ({
-                start_schedule: s.start_schedule,
-                end_schedule: s.end_schedule,
-                start: s.start,
-                end: s.end,
-                member_id: s.owner,
-                status: 3,
-                place_id: s.place_id,
-                price: localPrice
-            }))
-        ]) as any);
-
-        // Atualiza o cart usando os itens que acabamos de construir (newCart).
-        // Mescla com o cart existente para não sobrescrever itens anteriores.
-        if (typeof setCart === 'function') {
-            setCart(prev => ([ ...(Array.isArray(prev) ? prev : []), ...newCart ]));
-        }
-        
-        const response = API_CONSUME("POST", "schedule/", {
-            'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
-            'Session': accessToken
-        }, newCart);
-
-        // limpa seleção atual para evitar efeitos visuais/resubmissões
-        setSelectedHours([]);
-        toast.success('Horários adicionados ao carrinho com sucesso!');
     };
 
-    const isHourInCart = (hour: number) => {
-        if (!Array.isArray(cart)) return false;
-        return cart.some((item: any) => {
-        const ss = String(item.start_schedule || item.start || '');
-        const seconds = HHMMSSToSeconds(ss);
-        if (isNaN(seconds)) return false;
-        return seconds === hour && Number(item.place_id ?? item.place) === Number(placeId);
-        });
-    };
-
-    const isHourReserved = (hour: number) => {
-        return reservedHours.some(res => {
-        const ss = String(res.start_schedule || res.start || '');
-        const es = String(res.end_schedule || res.end || '');
-        const s = HHMMSSToSeconds(ss);
-        const e = HHMMSSToSeconds(es);
-        if (isNaN(s) || isNaN(e)) return false;
-        return hour >= s && hour < e;
-        })
-    };
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try { delete (window as any).__rendering_component; } catch (e) {}
-        }
-        setLocalPrice(price);
-    }, [price]);
-
-    const formatHourDisplay = (hour: number) => {
-        let start = secondsToTimeString(hour);
-        let end = secondsToTimeString(endHourLimit);
-        if (hour + timeDuration > endHourLimit) {
-          end = secondsToTimeString(endHourLimit);
-        } else {
-          end = secondsToTimeString(hour + timeDuration);
-        }
-        // if seconds are "00" show HH:MM for compact display
-        const display = (t: string) => t.endsWith(':00') ? t.slice(0,5) : t;
-        return window.innerWidth <= 768 ? `${display(start)} ${display(end)}` : `${display(start)} - ${display(end)}`;
+    const ActionButtons = () => {
+        const isAddDisabled = selectedHours.length === 0;
+        return (
+            <div className={styles.actionButtonsWrapper}>
+                <BookingButton
+                    text={isAddDisabled ? 'Selecione um horário' : `Adicionar ${selectedHours.length} Horário(s)`}
+                    itemsToValidate={selectedHours}
+                    onClick={handleReserve}
+                    disabled={isAddDisabled}
+                />
+                {(cart?.length || 0) > 0 && (
+                    <BookingButton
+                        text="Finalizar (Ir ao Carrinho)"
+                        redirectPath="/checkout"
+                        itemsToValidate={[]}
+                        onClick={() => {}}
+                        disabled={false}
+                    />
+                )}
+            </div>
+        );
     };
 
     return (
         <div className={styles.placeContainer}>
             <div className={styles.scheduleContainer}>
-                <h1 className={styles.scheduleTitle}>Horários</h1>
-                <ul className={styles.scheduleList}>
-                    {hours.map((hour, index) => {
-                        const isCurrentHour = hour === currentHour;
-                        const isDisabled = disabledHours.includes(hour);
-                        const isReserved = isHourReserved(hour);
-                        const inCart = isHourInCart(hour);
-                        
-                        return (
-                            <li
-                                key={index}
-                                className={`
-                                    ${styles.scheduleItem}
-                                    ${isDisabled ? styles.unavailableHour : ''}
-                                    ${selectedHours.some(h => HHMMSSToSeconds(h.start_schedule) === hour) ? styles.selected : ''}
-                                    ${isCurrentHour ? styles.currentHour : ''}
-                                    ${isReserved ? styles.reserved : ''}
-                                    ${inCart ? styles.inCart : ''}
-                                `}
-                                onClick={() => toggleSelectHour(hour)}
-                            >
-                                {formatHourDisplay(hour)}
-                            </li>
-                        );
-                    })}
-                </ul>
+                <div className={styles.legendContainer}>
+                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendAvailable}`}></span> Disponível</div>
+                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendSelected}`}></span> Selecionado</div>
+                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendOccupied}`}></span> Ocupado (Outro)</div>
+                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendInCart}`}></span> Seu Horário</div>
+                </div>
+
+                {hours.length === 0 ? (
+                    <div className={styles.emptyState}>Sem horários.</div>
+                ) : (
+                    <ul className={styles.scheduleList}>
+                        {hours.map((hour) => {
+                            const isReservedByOthers = reservedHours.some(r => timeToSeconds(r.start_schedule) === hour && Number(r.member_id) !== userId);
+                            
+                            const isMyConfirmed = myConfirmedSeconds.includes(hour);
+                            const isMyCart = localCartSeconds.includes(hour);
+                            const isMySelection = selectedSeconds.includes(hour);
+                            
+                            const isPast = isToday && hour < currentHourSeconds;
+                            const isRuleDisabled = disabledHours.includes(hour);
+                            
+                            // Verifica conflito global (Carrinho em outra quadra neste horário)
+                            const isGlobalConflict = globalCartSeconds.includes(hour) && !localCartSeconds.includes(hour);
+
+                            const isBlocked = isReservedByOthers || isPast || isRuleDisabled || isGlobalConflict;
+
+                            const isMine = isMyConfirmed || isMyCart;
+                            
+                            const totalCount = globalCountOnDate + selectedHours.length;
+                            const limitReached = totalCount >= maxQuantity;
+                            
+                            let isNonAdjacent = false;
+                            if (!isBlocked && !isMine && !isMySelection) {
+                                if (limitReached) {
+                                    isNonAdjacent = true; 
+                                } else {
+                                    isNonAdjacent = !checkAdjacency(hour);
+                                }
+                            }
+
+                            let itemClass = styles.scheduleItem;
+                            if (isMySelection) itemClass += ` ${styles.selected}`;
+                            else if (isMine) itemClass += ` ${styles.inCart}`;
+                            else if (isReservedByOthers) itemClass += ` ${styles.reserved}`;
+                            else if (isBlocked) itemClass += ` ${styles.unavailableHour}`;
+                            else if (isNonAdjacent) itemClass += ` ${styles.nonAdjacent}`;
+
+                            let label = `R$ ${numericPrice.toFixed(2)}`;
+                            if (isMyConfirmed) label = "Confirmado";
+                            else if (isMyCart) label = "No Carrinho";
+                            else if (isGlobalConflict) label = "Conflito Horário";
+                            else if (isBlocked) label = "Indisponível";
+
+                            return (
+                                <li
+                                    key={hour}
+                                    className={itemClass}
+                                    onClick={() => {
+                                        if (isBlocked || isMine) return;
+                                        toggleSelectHour(hour);
+                                    }}
+                                >
+                                    <span className={styles.timeLabel}>
+                                        {secondsToTimeString(hour)}
+                                        <span className={styles.timeSeparator}>-</span>
+                                        {secondsToTimeString(hour + timeDuration)}
+                                    </span>
+                                    <span className={styles.priceLabel}>{label}</span>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+                <div className={styles.mobileSpacer}></div>
             </div>
-            <div className={styles.calendarContainer}>
-                {(src && typeof src === 'string' && src.trim() !== '')
-                    ? <Image
-                        src={src}
-                        width={400}
-                        height={275}
-                        alt="Quadra"
-                        unoptimized // Remova esta linha se quiser otimização, mas pode ajudar para URLs externas
-                    />
-                    : <div style={{width: 400, height: 300, background: "#eee"}}>Imagem não disponível</div>
-                }
-                <BookingButton
-                    redirect={{ redirect: redirect, pathname: 'checkout' }}
-                    text={alternateText}
-                    toCart={selectedHours as any}
-                    onClick={handleReserve}
-                />
+
+            <div className={styles.rightColumn}>
+                <div className={styles.calendarImageContainer}>
+                    {src ? (
+                        <Image src={src} width={400} height={275} alt="Local" unoptimized style={{objectFit: 'cover'}} />
+                    ) : <div className={styles.imagePlaceholder}>Imagem não disponível</div>
+                    }
+                </div>
+                <div className={styles.desktopActions}>
+                    <h3>Resumo</h3>
+                    <p>Selecionado Agora: <strong>R$ {(selectedHours.length * numericPrice).toFixed(2)}</strong></p>
+                    <ActionButtons />
+                </div>
             </div>
+
+            {isMobile && (
+                <div className={styles.mobileBottomBar}>
+                    <div className={styles.mobileSummary}>
+                        <span>Total:</span>
+                        <strong>R$ {(selectedHours.length * numericPrice).toFixed(2)}</strong>
+                    </div>
+                    <div className={styles.mobileButtons}>
+                       <ActionButtons />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

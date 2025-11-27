@@ -1,147 +1,137 @@
 .page {
-  --gray-rgb: 0, 0, 0;
-  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
-  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
-
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-
+  --header-height: 80px;
+  --page-bg: var(--background);
+  
+  /* Padrão para TODAS as páginas: Ocupa a tela, mas permite scroll */
+  width: 100vw;
+  min-height: 100vh; 
+  
   display: flex;
   flex-direction: column;
-  justify-items: center;
-  min-height: 100svh;
-  font-family: 'Nunito', sans-serif;
+  background-color: var(--page-bg);
+  
+  /* Garante espaço para o Header fixo em todas as páginas */
+  padding-top: var(--header-height);
+  
+  overflow-x: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-  .page {
-    --gray-rgb: 255, 255, 255;
-    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
-    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
-
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-  }
-}
-
+/* Container interno da Home */
 .main {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  grid-row-start: 2;
+  flex: 1; 
 }
 
-.main ol {
-  font-family: var(--font-geist-mono);
-  padding-left: 0;
-  margin: 0;
-  font-size: 14px;
-  line-height: 24px;
-  letter-spacing: -0.01em;
-  list-style-position: inside;
-}
-
-.main li:not(:last-of-type) {
-  margin-bottom: 8px;
-}
-
-.main code {
-  font-family: inherit;
-  background: var(--gray-alpha-100);
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.ctas {
+/* Estilos de Seção da Home */
+.Section {
+  width: 100%;
+  min-height: 100vh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: flex;
-  gap: 16px;
-}
-
-.ctas a {
-  appearance: none;
-  border-radius: 128px;
-  height: 48px;
-  padding: 0 20px;
-  border: none;
-  border: 1px solid transparent;
-  transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s;
-  cursor: pointer;
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  line-height: 20px;
-  font-weight: 500;
+  padding: 40px 20px;
+  box-sizing: border-box;
 }
 
-a.primary {
-  background: var(--foreground);
-  color: var(--background);
-  gap: 8px;
-}
-
-a.secondary {
-  border-color: var(--gray-alpha-200);
-  min-width: 180px;
-}
-
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  a.primary:hover {
-    background: var(--button-primary-hover);
-    border-color: transparent;
-  }
-
-  a.secondary:hover {
-    background: var(--button-secondary-hover);
-    border-color: transparent;
-  }
-}
-
-@media (max-width: 600px) {
-  .page {
-    height: 100%;
-    width: 100%;
-  }
-
-  .main {
-    align-items: center;
-  }
-
-  .main ol {
-    text-align: center;
-  }
-
-  .ctas {
-    flex-direction: column;
-  }
-
-  .ctas a {
-    font-size: 14px;
-    height: 40px;
-    padding: 0 16px;
-  }
-
-  a.secondary {
-    min-width: auto;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
-  }
-}
-
-.Section{
-  padding-top: 70px;
-  position: relative;
-  flex-direction: column;
+.contentWrapper {
+  width: 100%;
+  /* max-width: 1200px; */
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
   align-items: center;
+}
+
+.sectionTitle {
+  font-size: 2.5rem;
+  color: var(--grena);
+  font-weight: 800;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.sectionTitle::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background-color: var(--grena-light);
+  margin: 15px auto 0;
+  border-radius: 2px;
+}
+
+.footerContainer {
+  width: 100%;
+  scroll-snap-align: start;
+  background-color: var(--grena);
+  margin-top: auto;
+}
+
+/* ========================================== */
+/* MOBILE / TABLET (<= 1024px)                */
+/* ========================================== */
+@media (max-width: 1024px) {
+  
+  /* --- REGRAS ESPECÍFICAS DA HOME PAGE (App Mode) --- */
+  .homePage {
+    padding-top: 0; /* Home controla seu próprio padding */
+    height: 100dvh; /* Trava altura */
+    overflow: hidden; /* Trava scroll da janela */
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  /* Se não for homePage, .page mantém o comportamento padrão (scroll vertical + padding) */
+
+  /* O container .main DENTRO da homePage vira o slider horizontal */
+  .homePage .main {
+    flex-direction: row;
+    height: 100%;
+    width: 100vw;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .homePage .main::-webkit-scrollbar { display: none; }
+
+  .Section {
+    min-width: 100vw;
+    width: 100vw;
+    height: 100%;
+    justify-content: flex-start; 
+    /* Padding ajustado para Home (considerando Header e Navbar) */
+    padding: 90px 20px 120px; 
+    overflow-y: auto; 
+    scroll-snap-align: center;
+  }
+
+  .sectionSocial { order: 1; }
+  .sectionMap { order: 2; }
+  .sectionSports { order: 3; }
+
+  .sectionMap {
+    padding: 0; 
+    padding-top: 80px;
+    padding-bottom: 80px;
+    overflow: hidden;
+  }
+
+  .footerContainer { display: none; }
+
+  .sectionTitle {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+  }
 }

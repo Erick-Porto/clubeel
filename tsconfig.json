@@ -23,6 +23,7 @@
       "@/public/*": ["./public/*"],
       "@/styles/*": ["./styles/*"],
       "@/components/*": ["./app/components/*"],
+      "@/hooks/*": ["./app/hooks/*"],
       "@/pages/*": ["./app/*"],
       "@/api/*": ["./src/pages/api/*"],
       "@/images/*": ["./public/images/*"],

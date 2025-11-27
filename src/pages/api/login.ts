@@ -5,11 +5,10 @@ export default async function LoginHandler(req: NextApiRequest, res: NextApiResp
     if (req.method === 'POST') {
         const { login, password } = req.body;
         if (!login || !password) return res.status(400).json({ error: 'Missing login or password' });
-
         try {
             const data = await API_CONSUME('POST', 'login',
                 {
-                    Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
+                    Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
                     Session: null,
                 },
                 { 
@@ -17,7 +16,7 @@ export default async function LoginHandler(req: NextApiRequest, res: NextApiResp
                     password
                 }
             );
-
+            
             if (!data || !data.token || !data.user) {
                 return res.status(401).json({ error: 'Invalid login credentials' });
             }

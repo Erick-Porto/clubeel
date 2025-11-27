@@ -1,123 +1,126 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import style from '@/styles/latest-appointments.module.css';
-import { faCalendarDays } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import API_CONSUME from '@/services/api-consume';
-import { useUser } from '@/context/UserContext';
-import {Loading} from '@/components/loading';
-const LatestAppointments: React.FC = () => {
-    const { User, accessToken } = useUser();
-    const [appointments, setAppointments] = useState<any[] | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+import { useSession } from 'next-auth/react';
+import { Loading } from '@/components/loading';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCalendarAlt, faClock, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
+import Image from 'next/image';
+
+// Interfaces
+interface Appointment {
+    id: number;
+    place_name: string;
+    place_image?: string;
+    start_schedule: string;
+    end_schedule: string;
+    price: number;
+    status_id: number;
+}
+
+interface LatestAppointmentsProps {
+    appointmentStatus: number; // 1 = Confirmado, 10 = Histórico, etc.
+}
+
+const LatestAppointments = ({ appointmentStatus }: LatestAppointmentsProps) => {
+    const { data: session, status } = useSession();
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchAppointments = useCallback(async () => {
+        if (status !== 'authenticated' || !session?.accessToken) return;
+
+        try {
+            setIsLoading(true);
+            // Assumindo que o endpoint 'schedule/' retorna os agendamentos do usuário
+            // Caso seu backend filtre por status na URL, altere para `schedule/status/${appointmentStatus}`
+            const response = await API_CONSUME("GET", `schedule/member/${session.user.id}`, {
+                'Session': session.accessToken
+            });
+
+            const data: Appointment[] = Array.isArray(response) ? response : (response?.data || []);
+            
+            const filtered = data.filter(item => Number(item.status_id) === appointmentStatus);
+            
+            filtered.sort((a, b) => new Date(b.start_schedule).getTime() - new Date(a.start_schedule).getTime());
+
+            setAppointments(filtered);
+        } catch (error) {
+            console.error("Erro ao buscar agendamentos:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [session, status, appointmentStatus]);
 
     useEffect(() => {
-        if (!User?.id || !accessToken) {
-            return;
-        }
-
-        let mounted = true;
-        const fetchAppointments = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response: any = await API_CONSUME("GET", `schedule/member/${User.id}`, {
-                    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-                    'Session': accessToken
-                }, null);
-                const schedulesRaw = Array.isArray(response?.schedules) ? response.schedules : [];
-                // manter apenas schedules com status === '1'
-                const schedules = schedulesRaw.filter((s: any) => String(s.status) === '1');
-
-                // busca dados do place para cada schedule em paralelo
-                const enriched = await Promise.all(schedules.map(async (s: any) => {
-                    const placeId = s.place_id ?? s.place ?? null;
-                    if (!placeId) return s;
-                    try {
-                        const placeResp: any = await API_CONSUME("GET", `place/${placeId}`, {
-                            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-                            'Session': accessToken
-                        }, null);
-                        const data = placeResp?.data ?? placeResp ?? {};
-                        return {
-                            ...s,
-                            place_name: s.place_name ?? data?.name ?? s.place_name,
-                            place_image: s.place_image ?? data?.image ?? s.place_image
-                        };
-                    } catch (err) {
-                        // se falhar, retorna schedule original
-                        console.warn('Failed to fetch place for', placeId, err);
-                        return s;
-                    }
-                }));
-
-                if (mounted) setAppointments(enriched);
-            } catch (e: any) {
-                if (mounted) {
-                    setError('Erro ao carregar agendamentos.');
-                    setAppointments([]);
-                    console.error('Failed to fetch appointments', e);
-                }
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        };
-
         fetchAppointments();
-        return () => { mounted = false; };
-    }, [User?.id, accessToken]);
+    }, [fetchAppointments]);
+
+    if (status === 'loading' || isLoading) {
+        return (
+            <div className={style.latestAppointmentsList}>
+                <div className={style.loadingSkeleton}></div>
+                <div className={style.loadingSkeleton}></div>
+                <div className={style.loadingSkeleton}></div>
+            </div>
+        );
+    }
+
+    if (appointments.length === 0) {
+        return (
+            <div className={style.latestAppointmentsEmpty}>
+                Nenhum agendamento encontrado nesta categoria.
+            </div>
+        );
+    }
 
     return (
         <div className={style.latestAppointmentsContainer}>
-            <h1 className={style.latestAppointmentsContainerTitle}>
-                <FontAwesomeIcon icon={faCalendarDays} />
-                Últimos agendamentos
-            </h1>
+            <div className={style.latestAppointmentsList}>
+                {appointments.map((item) => {
+                    const startDate = new Date(item.start_schedule);
+                    const endDate = new Date(item.end_schedule);
+                    
+                    const dateStr = startDate.toLocaleDateString('pt-BR');
+                    const timeStr = `${startDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
+                    
+                    // CORREÇÃO DO ERRO: Conversão explícita para Number
+                    const price = item.price;
 
-            {loading && (
-                <div className={style.latestAppointmentsEmpty}>
-                    <Loading/>
-                </div>
-            )}
-
-            {!loading && error && (
-                <div className={style.latestAppointmentsEmpty}>
-                    <h2>{error}</h2>
-                </div>
-            )}
-
-            {!loading && !error && Array.isArray(appointments) && appointments.length === 0 && (
-                <div className={style.latestAppointmentsEmpty}>
-                    <h2>Nenhum agendamento encontrado.</h2>
-                </div>
-            )}
-
-            {!loading && !error && Array.isArray(appointments) && appointments.length > 0 && (
-                <ul className={style.latestAppointmentsList}>
-                    {appointments.map((a, idx) => {
-                        const start = a.start_schedule || a.start || a.start_date || '';
-                        const end = a.end_schedule || a.end || a.end_date || '';
-                        const placeName = a.place_name || a.place?.name || a.place || 'Local desconhecido';
-                        const startDisplay = start ? new Date(start.replace(' ', 'T')).toLocaleString() : '';
-                        const endDisplay = end ? new Date(end.replace(' ', 'T')).toLocaleString() : '';
-                        return (
-                            <li key={idx} className={style.latestAppointmentsItem}>
-                                <div className={style.latestAppointmentsItemTitle}>
-                                    {placeName}
+                    return (
+                        <div key={item.id} className={style.latestAppointmentsItem}>
+                            <div className={style.imageContainer}>
+                                <Image 
+                                    src={item.place_image || '/images/placeholder.jpg'} 
+                                    alt={item.place_name || 'Local'}
+                                    fill
+                                    className={style.latestAppointmentsItemImage}
+                                />
+                            </div>
+                            
+                            <div className={style.cardContent}>
+                                <h3 className={style.latestAppointmentsItemTitle}>{item.place_name}</h3>
+                                
+                                <div className={style.infoRow}>
+                                    <FontAwesomeIcon icon={faCalendarAlt} />
+                                    <span>{dateStr}</span>
                                 </div>
-                                {a.place_image && (
-                                    <img src={a.place_image} alt={placeName} style={{width:60, height:60, objectFit:'cover', borderRadius:4}} />
-                                )}
-                                <div className={style.latestAppointmentsItemTime}>
-                                    {startDisplay}{endDisplay ? ` — ${endDisplay}` : ''}
+                                
+                                <div className={style.infoRow}>
+                                    <FontAwesomeIcon icon={faClock} />
+                                    <span>{timeStr}</span>
                                 </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
+
+                                <div className={style.priceTag}>
+                                    R$ {isNaN(price) ? '0.00' : price.toFixed(2)}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };

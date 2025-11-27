@@ -2,290 +2,396 @@ import { useState, useEffect } from "react";
 import style from "@/styles/profile.module.css";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
-import { useUser } from '@/context/UserContext';
+import { faCheck, faTimes, faSpinner, faLock } from "@fortawesome/free-solid-svg-icons";
+import { useSession } from "next-auth/react"; 
+import API_CONSUME from "@/services/api-consume";
+import CryptoJS from "crypto-js";
 
-export const Modal = ({ modalState, setModalState }: { modalState: boolean; setModalState: React.Dispatch<React.SetStateAction<boolean>> }) => {
+// --- TIPOS ---
+interface FormData {
+    name: string;
+    email: string;
+    telephone: string;
+    cpf: string;
+    title: string;
+}
+
+interface ModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: (password: string) => Promise<void>;
+}
+
+// --- MODAL ---
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm }) => {
+    const [password, setPassword] = useState("");
+    const [isConfirming, setIsConfirming] = useState(false);
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                setModalState(false);
-            }
+            if (event.key === "Escape") onClose();
         };
         window.addEventListener("keydown", handleKeyDown);
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [setModalState]);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!password) return toast.error("Insira sua senha.");
+        
+        setIsConfirming(true);
+        try {
+            await onConfirm(password);
+            setPassword("");
+        } catch (error) {
+            console.error("Erro no modal:", error);
+        } finally {
+            setIsConfirming(false);
+        }
+    };
+
+    if (!isOpen) return null;
 
     return (
-        <>
-            <div style={modalState ? { display: 'block' } : { display: 'none' }} className={style.confirmationFormContainer}>
-            </div>
-            <div style={modalState ? { display: 'block' } : { display: 'none' }} className={style.confirmationFormContent}>
-                <h1 className={style.confirmationFormTitle}>Confirme sua senha</h1>
-                <p className={style.confirmationFormText}>É necessário que confirme sua senha para alterar seus dados.</p>
-                <form action="" className={style.confirmationForm}>
-                    <input type="password" className={style.formItemInput} />
-                    <input type="submit" value="Confirmar" className={style.formItemButton} />
+        <div className={style.modalOverlay} onClick={onClose}>
+            <div className={style.modalContent} onClick={e => e.stopPropagation()}>
+                <div style={{marginBottom: 15, color: 'var(--grena)'}}>
+                    <FontAwesomeIcon icon={faLock} size="2x" />
+                </div>
+                <h2 className={style.modalTitle}>Confirme sua senha</h2>
+                <p className={style.modalText}>Para salvar estas alterações, precisamos verificar que é você.</p>
+                
+                <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap: 15}}>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={style.formInput}
+                        placeholder="Senha atual"
+                        autoFocus
+                    />
+                    <div style={{display:'flex', gap: 10}}>
+                        <button type="button" className={style.secondaryButton} onClick={onClose} style={{flex:1}}>
+                            Cancelar
+                        </button>
+                        <button type="submit" className={style.primaryButton} disabled={isConfirming} style={{flex:1}}>
+                            {isConfirming ? <FontAwesomeIcon icon={faSpinner} spin /> : "Confirmar"}
+                        </button>
+                    </div>
                 </form>
             </div>
-        </>
+        </div>
     );
 };
 
-const sendData = async (
-    event: React.FormEvent<HTMLFormElement>,
-    formData: { [key: string]: string },
-    setModalState: React.Dispatch<React.SetStateAction<boolean>>,
-    isEditable: boolean
-) => {
-    event.preventDefault();
-    if (!isEditable) {
-        setModalState(true); // Open the modal only when the button text is "Salvar"
-    }
-};
-
+// --- DADOS PESSOAIS ---
 export const ProfileForm = () => {
-    const { User, setUser } = useUser();
-    const [isEditable, setIsEditable] = useState(true);
+    const { data: session, update: updateSession } = useSession();
+    const [isEditable, setIsEditable] = useState(false);
     const [modalState, setModalState] = useState(false);
-    const [formData, setFormData] = useState({
-        name: "",
-        email: "",
-        telephone: "",
-        cpf: "",
-        title: "",
-        barcode: "",
-        password: "************"
+    const [formData, setFormData] = useState<FormData>({
+        name: "", email: "", telephone: "", cpf: "", title: ""
     });
 
     useEffect(() => {
-        if (User) {
+        if (session?.user && !isEditable) {
             setFormData({
-                name: User.name,
-                email: User.email,
-                telephone: User.telephone,
-                cpf: User.cpf,
-                title: User.title,
-                barcode: User.barcode,
-                password: "************"
+                name: session.user.name || "",
+                email: session.user.email || "",
+                telephone: session.user.telephone || "",
+                cpf: session.user.cpf || "",
+                title: session.user.title || "",
             });
         }
-    }, [User]);
+    }, [session, isEditable]);
 
-    const handleToEdit = () => {
-        setIsEditable(!isEditable);
+    // Ativa modo de edição sem submeter
+    const enableEdit = (e: React.MouseEvent) => {
+        e.preventDefault(); // Impede submit acidental
+        setIsEditable(true);
     };
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = event.target;
-        setFormData((prevData) => ({ ...prevData, [name]: value }));
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Só abre o modal se estiver no modo edição e clicou em Salvar
+        setModalState(true);
+    };
+
+    const handleUpdateProfile = async (currentPassword: string) => {
+        if (!session?.accessToken) throw new Error("Sessão inválida.");
+
+        try {
+            const cpfClean = formData.cpf.replace(/\D/g, ''); 
+            const encryptedPassword = CryptoJS.SHA256(currentPassword).toString();
+
+            // 1. Valida senha via Login
+            const loginResponse = await API_CONSUME("POST", "login", {
+                'Content-Type': 'application/json'
+            }, {
+                login: cpfClean,
+                password: encryptedPassword
+            });
+
+            if (!loginResponse || loginResponse.error || (loginResponse.status && loginResponse.status !== 200)) {
+                throw new Error("Senha incorreta");
+            }
+
+            // 2. Atualiza Dados
+            await API_CONSUME("PUT", `member/${session.user.id}`, {
+                'Session': session.accessToken
+            }, {
+                email: formData.email,
+                telephone: formData.telephone
+            });
+
+            toast.success("Perfil atualizado com sucesso!");
+            
+            await updateSession({
+                ...session,
+                user: { ...session.user, email: formData.email, telephone: formData.telephone }
+            });
+
+            setModalState(false);
+            setIsEditable(false);
+
+        } catch (error: any) {
+            console.error("Erro update profile:", error);
+            if (error.message === "Senha incorreta") {
+                toast.error("Senha incorreta.");
+            } else {
+                const msg = error?.response?.data?.error || "Erro ao atualizar dados.";
+                toast.error(msg);
+            }
+            throw error;
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditable(false);
+        if (session?.user) {
+            setFormData({
+                name: session.user.name || "",
+                email: session.user.email || "",
+                telephone: session.user.telephone || "",
+                cpf: session.user.cpf || "",
+                title: session.user.title || "",
+            });
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     return (
         <div className={style.formContainer}>
-            <h1 className={style.formTitle}>Dados do perfil</h1>
-            <form className={style.formContent} onSubmit={(e) => sendData(e, formData, setModalState, isEditable)}>
-                <div className={style.formItem}>
-                    <label className={style.formItemLabel} htmlFor="cpf">cpf</label>
-                    <input className={style.formItemInput} type="cpf" id="cpf" name="cpf" value={formData.cpf} disabled />
-                </div>
-                <div className={style.formItem}>
-                    <label className={style.formItemLabel} htmlFor="matricula">matricula</label>
-                    <input className={style.formItemInput} type="matricula" id="matricula" name="matricula" value={formData.title} disabled />
-                </div>
-                <div className={style.formItem} style={{ gridRow: "2", gridColumn: "1 / 3" }}>
-                    <label className={style.formItemLabel} htmlFor="name">nome</label>
-                    <input className={style.formItemInput} type="text" id="name" name="name" value={formData.name} disabled />
-                </div>
-                <div className={style.formItem}>
-                    <label className={style.formItemLabel} htmlFor="email">email</label>
-                    <input className={style.formItemInput} type="email" id="email" name="email" onChange={handleChange} value={formData.email} disabled={isEditable} required />
-                </div>
-                <div className={style.formItem}>
-                    <label className={style.formItemLabel} htmlFor="telefone">telefone</label>
-                    <input className={style.formItemInput} type="text" id="telefone" name="telefone" onChange={handleChange} value={formData.telephone} disabled={isEditable} required />
-                </div>
-                <div className={style.formItem}>
-                    {isEditable ? (
-                        <></>
-                    ) : (
-                        <input type="button" className={isEditable ? style.formItemButton : style.cancelItemButton} onClick={handleToEdit} value={isEditable ? "atualizar dados" : "cancelar edição"} />
-                    )}
-                </div>
-                <div className={style.formItem}>
-                    {isEditable ? (
-                        <input type="button" className={isEditable ? style.formItemButton : style.cancelItemButton} onClick={handleToEdit} value={isEditable ? "atualizar dados" : "cancelar edição"} />
-                    ) : (
-                        <input type="submit" className={style.formItemButton} disabled={isEditable} value={"salvar dados"} />
-                    )}
+            <h2 className={style.sectionTitle}>Dados Pessoais</h2>
+            
+            {/* O onSubmit aqui só é chamado pelo botão type="submit" (Salvar) */}
+            <form onSubmit={handleFormSubmit}>
+                <div className={style.formGrid}>
+                    <div className={`${style.formGroup} ${style.fullWidth}`}>
+                        <label className={style.formLabel}>Nome Completo</label>
+                        <input className={style.formInput} value={formData.name} disabled />
+                    </div>
+                    
+                    <div className={style.formGroup}>
+                        <label className={style.formLabel}>CPF</label>
+                        <input className={style.formInput} value={formData.cpf} disabled />
+                    </div>
+                    
+                    <div className={style.formGroup}>
+                        <label className={style.formLabel}>Matrícula</label>
+                        <input className={style.formInput} value={formData.title} disabled />
+                    </div>
+
+                    <div className={style.formGroup}>
+                        <label className={style.formLabel}>Email</label>
+                        <input 
+                            className={style.formInput} 
+                            name="email" 
+                            type="email"
+                            value={formData.email} 
+                            onChange={handleChange} 
+                            disabled={!isEditable} 
+                            required
+                        />
+                    </div>
+
+                    <div className={style.formGroup}>
+                        <label className={style.formLabel}>Telefone</label>
+                        <input 
+                            className={style.formInput} 
+                            name="telephone" 
+                            value={formData.telephone} 
+                            onChange={handleChange} 
+                            disabled={!isEditable} 
+                            required
+                        />
+                    </div>
+
+                    <div className={style.actionButtons}>
+                        {!isEditable ? (
+                            // CORREÇÃO: onClick chama enableEdit que tem preventDefault
+                            <button 
+                                type="button" 
+                                className={style.primaryButton} 
+                                onClick={enableEdit}
+                            >
+                                Editar Dados
+                            </button>
+                        ) : (
+                            <>
+                                {/* Apenas este botão dispara o onSubmit */}
+                                <button type="submit" className={style.primaryButton}>Salvar</button>
+                                <button type="button" className={style.secondaryButton} onClick={handleCancelEdit}>Cancelar</button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </form>
-            <Modal modalState={modalState} setModalState={setModalState} />
+            <Modal isOpen={modalState} onClose={() => setModalState(false)} onConfirm={handleUpdateProfile} />
         </div>
     );
 }
 
+// --- SENHA ---
 export const PasswordForm = () => {
-    const [isEditable, setIsEditable] = useState({ state: false, message: "" });
+    const { data: session } = useSession();
     const [modalState, setModalState] = useState(false);
-    const [passwordRules, setPasswordRules] = useState({
-        length: false,
-        uppercase: false,
-        lowercase: false,
-        number: false,
-        special: false,
-        repeatable: false,
-    });
-
-    const [formData, setFormData] = useState({
-        nova_senha_1: "",
-        nova_senha_2: ""
-    });
-
-    const handleToEdit = (s: boolean, m: string) => setIsEditable({ state: s, message: m });
+    const [passwords, setPasswords] = useState({ new1: "", new2: "" });
+    const [rules, setRules] = useState({ length: false, uppercase: false, lowercase: false, number: false, special: false });
     
+    const passwordsMatch = passwords.new1 !== "" && passwords.new1 === passwords.new2;
+    const allRulesMet = Object.values(rules).every(Boolean);
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = event.target;
-        const unavailableChars = /[^a-zA-Z0-9!@#$%¨&*\-_=+§£¢¬(){}[\]]/.test(value);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setPasswords(prev => ({ ...prev, [e.target.name]: val }));
 
-        if (value.length > 0 && unavailableChars) {
-            toast.error(`A senha não pode conter o caracter: ${value[value.length - 1]}`);
-            event.target.value = value.slice(0, -1);
-            setFormData((prevData) => ({ ...prevData, [name]: value }));
-            return;
-        } else {
-            setFormData((prevData) => ({ ...prevData, [name]: value }));
-        }
-
-        if (name === "nova_senha_1") {
-            const password = value;
-
-            const hasUppercase = /[A-Z]/.test(password);
-            const hasLowercase = /[a-z]/.test(password);
-            const hasNumber = /[0-9]/.test(password);
-            const hasSpecialChar = /[!@#$%¨&*\-_=+§£¢¬]/.test(password);
-            const hasMinLength = password.length >= 8;
-
-            setPasswordRules({
-                uppercase: hasUppercase,
-                lowercase: hasLowercase,
-                number: hasNumber,
-                special: hasSpecialChar,
-                length: hasMinLength,
-                repeatable: false,
+        if (e.target.name === 'new1') {
+            setRules({
+                length: val.length >= 8,
+                uppercase: /[A-Z]/.test(val),
+                lowercase: /[a-z]/.test(val),
+                number: /[0-9]/.test(val),
+                special: /[!@#$%¨&*\-_=+§£¢¬]/.test(val),
             });
         }
+    };
 
-        // Check if passwords match
-        if (name === "nova_senha_2") {
-            const repeatable = formData.nova_senha_1 === value;
+    const handleUpdate = async (currentPassword: string) => {
+        if (!session?.accessToken) throw new Error("Sessão inválida.");
+        
+        try {
+            const cpfClean = session.user.cpf.replace(/\D/g, '');
+            const encryptedCurrent = CryptoJS.SHA256(currentPassword).toString();
+            
+            // 1. Validação via Login
+            const loginResponse = await API_CONSUME("POST", "login", {
+                Session: null
+            }, {
+                login: cpfClean,
+                password: encryptedCurrent,
+            });
 
-            setPasswordRules({
-                ...passwordRules,
-                repeatable: repeatable,
-            })
+            if (!loginResponse || loginResponse.error || (loginResponse.status && loginResponse.status !== 200)) {
+                throw new Error("Senha incorreta");
+            }
+
+            // 2. Update
+            await API_CONSUME("PUT", `change-password/`, {
+                'Session': session.accessToken
+            }, { 
+                cpf: cpfClean, 
+                new_password: CryptoJS.SHA256(passwords.new1).toString() 
+            });
+
+            toast.success("Senha alterada!");
+            setRules({
+                length: false,
+                uppercase: false,
+                lowercase: false,
+                number: false,
+                special: false,
+            });
+            setModalState(false);
+            setPasswords({ new1: "", new2: "" });
+        } catch (error: any) {
+            console.error("Erro update password:", error);
+            if (error.message === "Senha incorreta") {
+                toast.error("Senha atual incorreta.");
+            } else {
+                const msg = error?.response?.data?.error || "Erro ao alterar senha.";
+                toast.error(msg);
+            }
+            throw error;
         }
     };
 
     return (
         <div className={style.formContainer}>
-            <h1 className={style.formTitle}>Senha</h1>
-            <form className={style.formContent}
-            style={ isEditable.message === 'rules' ? {gridTemplate:'70px 1fr 70px / 1fr 1fr'} : { }}
-            onSubmit={(e) => sendData(e, formData, setModalState, false)}>
-                {isEditable.state === true && isEditable.message === "rules" ? (
-                    <div className={`${style.formItem} ${style.formItemVisible}`} style={{ transition: 'all .3s ease-in-out', gridRow: "2 / 3", gridColumn: "1 / 3" }}>
-                        <div className={style.formItemInput} id="password_rules" style={{ cursor: 'default', border: 'none' }}>
-                            <ul className={style.passwordRules}>
-                                <li style={{...(passwordRules.length ? { color: 'green' } : {})}}>
-                                    <FontAwesomeIcon style={{ marginRight: '5px' }} icon={passwordRules.length ? faCheck : faXmark} />Oito ou mais caracteres
-                                </li>
-                                <li style={{...(passwordRules.uppercase ? { color: 'green' } : {})}}>
-                                    <FontAwesomeIcon style={{ marginRight: '5px' }} icon={passwordRules.uppercase ? faCheck : faXmark} />Uma letra maiúscula
-                                </li>
-                                <li style={{...(passwordRules.lowercase ? { color: 'green' } : {})}}>
-                                    <FontAwesomeIcon style={{ marginRight: '5px' }} icon={passwordRules.lowercase ? faCheck : faXmark} />Uma letra minúscula
-                                </li>
-                                <li style={{...(passwordRules.number ? { color: 'green' } : {})}}>
-                                    <FontAwesomeIcon style={{ marginRight: '5px' }} icon={passwordRules.number ? faCheck : faXmark} />Um número
-                                </li>
-                                <li style={{...(passwordRules.special ? { color: 'green' } : {})}}>
-                                    <FontAwesomeIcon style={{ marginRight: '5px' }} icon={passwordRules.special ? faCheck : faXmark} />Um caractere especial
-                                </li>
-                            </ul>
-                        </div>
+            <h2 className={style.sectionTitle}>Alterar Senha</h2>
+            
+            <div className={style.passwordRulesContainer}>
+                <ul className={style.rulesList}>
+                    <li className={`${style.ruleBadge} ${rules.length ? style.ruleMet : ''}`}>
+                        <FontAwesomeIcon icon={rules.length ? faCheck : faTimes} /> Min. 8 caracteres
+                    </li>
+                    <li className={`${style.ruleBadge} ${rules.uppercase ? style.ruleMet : ''}`}>
+                        <FontAwesomeIcon icon={rules.uppercase ? faCheck : faTimes} /> Maiúscula
+                    </li>
+                    <li className={`${style.ruleBadge} ${rules.lowercase ? style.ruleMet : ''}`}>
+                        <FontAwesomeIcon icon={rules.lowercase ? faCheck : faTimes} /> Minúscula
+                    </li>
+                    <li className={`${style.ruleBadge} ${rules.number ? style.ruleMet : ''}`}>
+                        <FontAwesomeIcon icon={rules.number ? faCheck : faTimes} /> Número
+                    </li>
+                    <li className={`${style.ruleBadge} ${rules.special ? style.ruleMet : ''}`}>
+                        <FontAwesomeIcon icon={rules.special ? faCheck : faTimes} /> Especial
+                    </li>
+                    <li className={`${style.ruleBadge} ${passwordsMatch ? style.ruleMet : ''}`}>
+                        <FontAwesomeIcon icon={passwordsMatch ? faCheck : faTimes} /> Senhas iguais
+                    </li>
+                </ul>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); setModalState(true); }}>
+                <div className={style.formGrid}>
+                    <div className={style.formGroup}>
+                        <label className={style.formLabel}>Nova Senha</label>
+                        <input 
+                            type="password" 
+                            className={style.formInput} 
+                            name="new1" 
+                            value={passwords.new1} 
+                            onChange={handleChange} 
+                        />
                     </div>
-                ) : isEditable.state && isEditable.message === "repeat" ? (
-                    <div className={`${style.formItem} ${style.formItemVisible}`} style={{ transition: 'all .3s ease-in-out', gridRowStart: 2, gridColumnStart: 1 }}>
-                        <div className={style.formItemInput} id="password_rules" style={{ cursor: 'default', border: 'none' }}>
-                            <ul className={style.passwordRules}>
-                                <li style={{ flexWrap: 'nowrap', wordBreak: 'keep-all', whiteSpace: 'nowrap',
-                                    ...(passwordRules.repeatable ? { color: 'green' } : {})
-                                }}>
-                                    <FontAwesomeIcon style={{ marginRight: '5px' }} icon={passwordRules.repeatable ? faCheck : faXmark} />As senhas devem coincidir
-                                </li>
-                            </ul>
-                        </div>
+                    <div className={style.formGroup}>
+                        <label className={style.formLabel}>Confirme a Nova Senha</label>
+                        <input 
+                            type="password" 
+                            className={style.formInput} 
+                            name="new2" 
+                            value={passwords.new2} 
+                            onChange={handleChange} 
+                            disabled={!allRulesMet}
+                        />
                     </div>
-                ) : (
-                    <></>
-                )}
-
-                <div className={style.formItem}>
-                    <label className={style.formItemLabel} htmlFor="nova_senha_1">nova senha</label>
-                    <input
-                        className={style.formItemInput}
-                        onFocus={() => handleToEdit(true, "rules")}
-                        onBlur={() => handleToEdit(false, "rules")}
-                        type="password"
-                        id="nova_senha_1"
-                        name="nova_senha_1"
-                        onChange={
-                            handleChange
-                        }
-                        required
-                    />
-                </div>
-
-                <div
-                    className={style.formItem}
-                >
-                    <label className={style.formItemLabel} htmlFor="nova_senha_2">repita nova senha</label>
-                    <input
-                        className={style.formItemInput}
-                        type="password"
-                        onFocus={
-                            () => handleToEdit(true, "repeat")
-                        }
-                        onBlur={
-                            () => handleToEdit(false, "repeat")
-                        }
-                        disabled={
-                            passwordRules.length &&
-                            passwordRules.uppercase &&
-                            passwordRules.lowercase &&
-                            passwordRules.number &&
-                            passwordRules.special ?
-                            false : true
-                        }
-                        id="nova_senha_2"
-                        name="nova_senha_2"
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-
-                <div className={`${style.formItem} ${passwordRules.repeatable ? style.slideDown : ''}`} style={{ gridColumnStart: 2, ...(passwordRules.repeatable ? { gridRowStart: 2 } : {}) }}>
-                    <input
-                        type="submit"
-                        className={style.formItemButton}
-                        value={"salvar senha"}
-                    />
+                    
+                    <div className={style.actionButtons}>
+                        <button 
+                            type="submit" 
+                            className={style.primaryButton} 
+                            disabled={!allRulesMet || !passwordsMatch}
+                        >
+                            Atualizar Senha
+                        </button>
+                    </div>
                 </div>
             </form>
+            <Modal isOpen={modalState} onClose={() => setModalState(false)} onConfirm={handleUpdate} />
         </div>
     );
 }

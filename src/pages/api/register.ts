@@ -1,3 +1,5 @@
+// pages/api/register.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import API_CONSUME from '@/services/api-consume';
 
@@ -44,17 +46,14 @@ function IsValidCPF(cpf: string): boolean {
 
 export default async function RegisterHandler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
-        const { cpf, matricula, bornAs, password } = req.body;
+        const { cpf, title, birthDate, password } = req.body;
 
         // Verificar campos obrigatórios
-        if (!cpf || !matricula || !bornAs || !password) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
+        if (!cpf || !title || !birthDate || !password) return res.status(400).json({ error: "Missing required fields" });
 
         // Validar CPF
-        if (!IsValidCPF(cpf)) {
-            return res.status(400).json({ error: 'Invalid CPF' });
-        }
+        if (!IsValidCPF(cpf)) return res.status(400).json({ error: 'Invalid CPF' });
+    
 
         try {
             // Chamada ao serviço externo
@@ -62,27 +61,30 @@ export default async function RegisterHandler(req: NextApiRequest, res: NextApiR
                 'POST',
                 'register',
                 {
-                    Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
+                    Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
                     Session: null,
                 },
                 {
-                    title: matricula,
+                    title,
                     cpf,
-                    birthDate: bornAs,
+                    birthDate,
                     password,
                 }
             );
 
-            // Garantir que o serviço externo retorna dados válidos
+            // Esta verificação agora só será acionada se a API retornar 'null' intencionalmente
+            // em uma resposta de sucesso, o que é improvável.
             if (!data) {
-                return res.status(500).json({ error: 'Empty response from external service' });
+                return res.status(500).json({ error: 'Empty but successful response from external service' });
             }
 
             return res.status(200).json(data);
         } catch (error) {
-            console.error('Error in API_CONSUME:', error);
+            // Graças às alterações no API_CONSUME, este bloco agora receberá o erro detalhado.
+            console.error('Error in RegisterHandler:', error);
 
             if (error instanceof Error) {
+                // A mensagem de erro da API externa será enviada ao frontend.
                 return res.status(500).json({ error: error.message });
             } else {
                 return res.status(500).json({ error: 'An unknown error occurred' });

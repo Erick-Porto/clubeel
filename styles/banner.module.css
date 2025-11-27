@@ -1,0 +1,179 @@
+.bannerContainer {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    margin-top: 70px; /* Compensação do Header fixo */
+    background-color: #e0e0e0;
+    /* CORREÇÃO: Z-Index alto para o avatar flutuar sobre o conteúdo abaixo */
+    z-index: 1; 
+    overflow: visible; /* Permite que o avatar "vaze" para fora */
+}
+
+/* Imagem de Capa (Presa dentro da caixa) */
+.bannerImageWrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Corta a imagem para não vazar */
+    border-radius: 0 0 0 0; /* Opcional: arredondar cantos inferiores se quiser */
+    z-index: 0;
+}
+
+.bannerImage {
+    object-fit: cover;
+    object-position: center;
+    width: 100%;
+    height: 100%;
+}
+
+.bannerOverlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 100%);
+    z-index: 1;
+}
+
+/* Container do Avatar e Texto */
+.profileContent {
+    position: absolute;
+    /* Faz o conteúdo descer para fora da capa */
+    bottom: -50px; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1200px;
+    padding: 0 20px;
+    display: flex;
+    align-items: flex-end;
+    gap: 25px;
+    z-index: 30; /* Garante que texto/avatar fiquem acima da própria imagem */
+    pointer-events: none; /* Permite clicar no fundo se não acertar o avatar */
+}
+
+/* Avatar */
+.avatarWrapper {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    padding: 4px;
+    background-color: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    pointer-events: auto; /* Reativa cliques no avatar */
+}
+
+.avatarImage {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #f0f0f0;
+}
+
+.editAvatarButton {display: none!important;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--grena, #a00001);
+    color: white;
+    border: 3px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    pointer-events: auto;
+}
+
+.editAvatarButton:hover {
+    transform: scale(1.1);
+}
+
+/* Texto */
+.userInfo {
+    padding-bottom: 60px; /* Empurra o texto para cima para ficar DENTRO da capa escura */
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+    flex-grow: 1;
+    pointer-events: auto;
+}
+
+.userName {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.1;
+    text-transform: capitalize;
+}
+
+.userTitle {
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0.95;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge {
+    background-color: rgba(255,255,255,0.25);
+    backdrop-filter: blur(4px);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .bannerContainer {
+        height: 220px;
+        margin-top: 0;
+    }
+
+    .profileContent {
+        flex-direction: column;
+        align-items: center;
+        bottom: -60px;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .avatarWrapper {
+        width: 120px;
+        height: 120px;
+    }
+
+    .userInfo {
+        /* No mobile, o texto desce para o fundo branco */
+        padding-bottom: 0; 
+        color: #333; 
+        text-shadow: none;
+        margin-top: 5px;
+        width: 100%;
+    }
+
+    .userName {
+        font-size: 1.5rem;
+    }
+
+    .userTitle {
+        justify-content: center;
+        color: #666;
+    }
+
+    .badge {
+        background-color: var(--grena);
+        color: white;
+        border: none;
+    }
+}

@@ -1,19 +1,47 @@
 "use client"
 
-import { useEffect } from 'react';
 import style from '@/styles/cart.module.css'
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarXmark, faCartShopping } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faCartShopping, faCalendarAlt, faClock } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import API_CONSUME from '@/services/api-consume';
-import { useUser } from '@/context/UserContext';
+import { useCart, CartItem } from '@/context/CartContext';
+import { useSession } from 'next-auth/react';
+import { useMemo } from 'react';
 
 const Cart = () => {
-    const { cart, setCart, accessToken } = useUser();
+    const { data: session } = useSession();
+    const { cart, refreshCart, isLoading } = useCart();
 
-    // utilitários para interpretar/formatar hour
+    const handleRemoveItem = async (scheduleId: number) => {
+        if (!session?.accessToken) {
+            toast.error("Sessão inválida. Por favor, faça login novamente.");
+            return;
+        }
+        try {
+            await API_CONSUME(
+                'DELETE',
+                `schedule/${scheduleId}`,
+                {
+                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
+                    'Session': session.accessToken
+                }
+            );
+            toast.success("Agendamento removido com sucesso!");
+            await refreshCart();
+        } catch (error) {
+            console.error("Erro ao remover agendamento:", error);
+            toast.error("Não foi possível remover o agendamento.");
+        }
+    };
+
+    const total = useMemo(() => {
+        if (!cart) return 0;
+        return cart.reduce((acc, item) => acc + (parseFloat(String(item.price)) || 0), 0);
+    }, [cart]);
+
     const hhmmssToSeconds = (hms: string) => {
         const parts = String(hms).split(':').map(p => parseInt(p, 10) || 0);
         if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
@@ -26,76 +54,86 @@ const Cart = () => {
         return `${h}:${m}`;
     };
 
-    function deleteItems() {
-        try {
-            setCart([]);
-        } catch (e) {
-            console.warn('Failed to clear cart', e);
-        }
-        toast.success('O carrinho foi limpo com sucesso!');
+    if (isLoading) {
+        return (
+            <div className={style.emptyCart}>
+                <p>Carregando carrinho...</p>
+            </div>
+        );
     }
 
-    function removeItem(item: any) {
-        setCart(prevCart => {
-            const base = Array.isArray(prevCart) ? prevCart : [];
-            const updatedCart = base.filter(i => !(i.start_schedule === item.start_schedule && Number(i.place_id) === Number(item.place_id)));
-            return updatedCart;
-        });
-        toast.success('O item foi removido do carrinho com sucesso!');
+    if (!cart || cart.length === 0) {
+        return (
+            <div className={style.emptyCart}>
+                <FontAwesomeIcon icon={faCartShopping} size="2x" />
+                <p>Seu carrinho está vazio.</p>
+            </div>
+        );
     }
 
     return (
         <div className={style.cartContainer}>
-            <h1 className={style.cartContainerTitle}>
-                <FontAwesomeIcon icon={faCartShopping} />
-                Agendamentos a pagar
-            </h1>
-            {Array.isArray(cart) && cart.length !== 0 ? (
-            <>
-                <div className={style.cartListContainer}>
-                    {cart.map((item: any, index: number) => {
-                        const startSec = hhmmssToSeconds(String(item.start_schedule).split(' ')[1] || '00:00');
-                        const endSec =  hhmmssToSeconds(String(item.end_schedule).split(' ')[1] || '00:00');
-                        const hourDisplay = `${secondsToHHMM(startSec)} - ${secondsToHHMM(endSec)}`
-                        
+            <div className={style.cartListContainer}>
+                {cart.map((item: CartItem, index: number) => {
+                    const startSec = hhmmssToSeconds(String(item.start_schedule).split(' ')[1] || '00:00');
+                    const endSec =  hhmmssToSeconds(String(item.end_schedule).split(' ')[1] || '00:00');
+                    const hourDisplay = `${secondsToHHMM(startSec)} - ${secondsToHHMM(endSec)}`
+                    
+                    const isoDate = String(item.start_schedule).split(' ')[0];
+                    const date = isoDate ? isoDate.split('-').reverse().join('/') : '--/--';
+                    
+                    // CORREÇÃO: Garantir number para toFixed
+                    const numericPrice = item.price || 0;
 
-                        return(
-                            <div className={style.cartItem} key={index}>
-                                <div>
-                                    <Image alt={'a'} width={150} height={125} src={item.place_image || '/default-image.jpg'}/>
-                                </div>
-                                <div>
-                                    <h3 className={style.cartTitle}> {item.place_name}</h3>
-                                    <p>
-                                        Horário: {hourDisplay}<br/>
-                                        <Link className={style.cartLink} href={`/place/` + (item.place_name ? item.place_name.split(' ').join('-').toLowerCase() : '')}>
-                                            Ver agendamento
-                                        </Link>
-                                    </p>
-                                </div>
-                                <div>
-                                    <button
-                                        className={style.cartRemoveButton}
-                                        onClick={() => removeItem(item)}
-                                    >
-                                        <FontAwesomeIcon icon={faCalendarXmark} />
-                                    </button>
+                    return(
+                        <div className={style.cartItem} key={item.id || index}>
+                            <div className={style.cartItemImageContainer}>
+                                <Image 
+                                    alt={item.place.name || 'Local'} 
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    className={style.cartItemImage} 
+                                    src={item.place.image || '/images/placeholder.jpg'}
+                                />
+                            </div>
+                            
+                            <div className={style.cartItemDetails}>
+                                <h3 className={style.cartItemTitle}>{item.place.name}</h3>
+                                <div className={style.cartItemInfo}>
+                                    <span>
+                                        <FontAwesomeIcon icon={faCalendarAlt} width={14} />
+                                        {date}
+                                    </span>
+                                    <span>
+                                        <FontAwesomeIcon icon={faClock} width={14} />
+                                        {hourDisplay}
+                                    </span>
+                                    <span className={style.cartItemPrice}>
+                                        R$ {numericPrice.toFixed(2)}
+                                    </span>
                                 </div>
                             </div>
-                        )})}
+                            
+                            <button 
+                                className={style.removeItemButton} 
+                                onClick={() => handleRemoveItem(item.id)}
+                                title="Remover item"
+                            >
+                                <FontAwesomeIcon icon={faTrashAlt} />
+                            </button>
+                        </div>
+                    )})}
+            </div>
+            
+            <div className={style.cartSummary}>
+                <div className={style.totalPrice}>
+                    <span>Total a Pagar</span>
+                    <span>R$ {total.toFixed(2)}</span>
                 </div>
-                <div className={style.cartOptions}>
-                    <Link href={'/checkout'}><button className={style.cartButton}>Finalizar compra</button></Link>
-                    <button className={style.cartButton} onClick={deleteItems}>Limpar carrinho</button>
-                </div>
-            </>
-            ) : 
-            (<div className={style.cartEmpty}>
-                <h1>Você não possuí agendamentos em aberto.
-                    <br/>
-                    <Link href={"/"} className={style.cartLink}>Agende já!</Link>
-                </h1>
-            </div>)}
+                <Link href="/checkout" className={style.checkoutButton}>
+                    Finalizar Compra
+                </Link>
+            </div>
         </div>
     )
 }

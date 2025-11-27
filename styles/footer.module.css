@@ -2,144 +2,123 @@
     --logo-cfcsn-w-vert: url('../public/images/logo-cfcsn-w-vert.png');
     --logo-cfcsn-w-horiz: url('../public/images/logo-cfcsn-w-horiz.png');
 }
-
 .footer {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    background-color: var(--grena);
-    color: white;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-    /* margin-top: 50px; */
-  }
-
-  .footerCopy{
-    gap: 10px;
-  }
-
-  .footerBody{
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* IE 10 and IE 11 */
-    user-select: none;
-    width: 100%;
-    padding: 5% 10%;
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    justify-content: center;
-    align-items: center;
-  }
-
-.socialMedia{
-  font-size: 32px;
-}
-
-.footerBodyItem{
+  background-color: var(--grena);
+  color: white;
+  width: 100%;
   display: flex;
-  width: 40%;
-  margin: 0 auto;
-  justify-content: center;
-  align-items: center;
   flex-direction: column;
-  gap: 15px;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
 }
 
-  .footerLogo{
-    width: 100%;
-    height: 80px;
-    background-image: var(--logo-cfcsn-w-horiz);
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position: center;
-  }
+.footerBody {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2 colunas no desktop */
+  gap: 40px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
 
-  .footerBottom{
-    width: 100%;
-    padding: 20px;
-    background-color: var(--foreground);
-  }
+/* Esquerda */
+.footerInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
 
-  .footerBottom p {
+.footerLogo {
+  position: relative;
+  width: 200px;
+  height: 80px;
+}
+
+.contactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contactInfo p {
+  font-size: 16px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.contactInfo a {
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.contactInfo a:hover {
+  border-color: white;
+}
+
+/* Direita */
+.footerSocial {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 20px;
+}
+
+.footerSocial h2 {
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.8;
+}
+
+.socialIcons {
+  display: flex;
+  gap: 20px;
+}
+
+.socialIcons a {
+  font-size: 32px;
+  color: white;
+  transition: transform 0.2s ease;
+  opacity: 0.9;
+}
+
+.socialIcons a:hover {
+  transform: translateY(-5px);
+  opacity: 1;
+}
+
+/* Bottom */
+.footerBottom {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.footerBottom a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .footerBody {
+    grid-template-columns: 1fr;
     text-align: center;
   }
-
-  .footerCopy{
-    display: flex;
-    width: 100%;
-    justify-content: center;
+  .footerInfo {
     align-items: center;
   }
-
-  .footer img {
-    flex-shrink: 0;
-    width: 45%;
-    height: 100%;
+  .footerSocial {
+    align-items: center;
   }
-
-  .footerBodyItem:nth-child(1) a, .footerBottom a {
-    position: relative;
-    
-    &::after{
-      content: '';
-      width: 0%;
-      position: absolute;
-      height: 2px;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: white;
-      transition: all 0.3s ease-in-out;
-    }
-  }
-  
-  @media (hover: hover) and (pointer: fine) {  
-    .footer a:hover::after {
-      width: 100%;
-    }
-  }
-  
-  /* @media (max-width: 1280px) {
-    .footer {
-      margin-top: 100px;
-    }
-} */
-
-  @media (max-width: 600px) {
-    .footer {
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-    }
-    .footerCopy{
-      flex-direction: column;
-      gap: 5px;
-    }
-    .footerPipeline{
-      display: none;
-    }
-
-    .footerBody {
-      flex-direction: column;
-      gap: 50px;
-    }
-
-    .footerBodyItem {
-      width: 100%;
-      text-align: center;
-    }
-
-    .footerLogo{
-      background-image: var(--logo-cfcsn-w-vert);
-      height: 130px;
-    }
-
-    .footerBodyItem:nth-child(1) p{
-      font-size: 14px;
-    }
-
-    .socialMedia{
-      font-size: 40px;
-    }
-  }
+}

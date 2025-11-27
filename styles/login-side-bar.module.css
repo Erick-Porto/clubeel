@@ -3,152 +3,166 @@
     --logo-horiz: url('../public/images/logo-cfcsn-horiz.png');
 }
 
-.sidebar{
-    position: absolute;
-    z-index: 100;
+.sidebar {
+    position: relative;
+    width: 480px;
+    height: 100%;
     background: var(--background);
-    width: 25%;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    height: 100%;
-    padding: 30px;
-    box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
-    animation: entry 0.5s ease-in-out;
+    padding: 60px;
+    z-index: 20;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.05);
 }
 
-.fullGridRow{
-    grid-column:1 / 3
-}
-
-
-.sidebarHeader{
-    width: 100%;
+.sidebarHeader {
+    margin-bottom: 40px;
     display: flex;
-    height: 25%;
-    background-size: contain;
-    align-items: center;
-    background-image: var(--logo-horiz);
-    background-repeat: no-repeat;
-    background-position: center;
+    justify-content: center;
 }
 
-.sidebarBody{
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(5,1fr);
-    gap: 10px;
+.logoImage {
+    width: 180px;
+    height: auto;
+    object-fit: contain;
 }
 
-.gridRow{
+.welcomeTitle {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--grena);
+    margin-bottom: 10px;
     text-align: center;
-  }
-
-.buttonOutlined{
-    background-color: var(--background);
-    color: var(--grena-lighter);
-    border: solid 2px var(--grena-lighter);
-}
-.buttonOutlined:hover{
-    background-color: var(--grena-lighter);
-    color: var(--background);
-    cursor: pointer;
 }
 
-.button{
-    background-color: var(--grena-light);
-    border: none;
-    color: white;
-}
-.button:hover{
-    background-color: var(--grena-lighter);
-    cursor: pointer;
+.loginMessage {
+    text-align: center;
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 30px;
+    line-height: 1.5;
 }
 
-.actionText{
-    color: var(--grena-light);
-    cursor: pointer;
-    position: relative;
-}
-
-.actionText::after{
-    content: '';
-    position: absolute;
-    bottom: 0px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 1px;
-    background-color: var(--grena-lighter);
-    transition: all 0.3s;
-}
-
-.actionText:hover::after{
+.sidebarBody {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     width: 100%;
 }
 
-
-@keyframes entry {
-    from {
-        transform: translateX(-100%);
-    }
-    to {
-        transform: translateX(0);
-    }
+.inputGroup {
+    position: relative;
+    width: 100%;
 }
 
-@keyframes exit {
-    from {
-        transform: translateX(0);
-    }
-    to {
-        transform: translateX(-100%);
-    }
+.sidebarBody input[type="text"],
+.sidebarBody input[type="password"],
+.sidebarBody input[type="date"],
+.sidebarBody input[type="email"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+    color: #333;
 }
 
-
-@media (max-width: 1200px) {
-    .sidebar{
-        width: 30%;
-    }
+.sidebarBody input:focus {
+    border-color: var(--grena);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(var(--grena-rgb), 0.1);
 }
 
-@media (max-width: 1024px) {
-    .sidebar{
-        width: 40%;
-    }
+/* Link "Esqueceu a senha?" */
+.forgotPasswordLink {
+    font-size: 0.85rem;
+    color: #888;
+    cursor: pointer;
+    transition: color 0.2s;
+    align-self: flex-end; /* Alinha à direita */
+    margin-top: -8px; /* Aproxima do input de senha */
+    margin-bottom: 5px;
+    font-weight: 500;
 }
 
-@media (max-width: 768px) {
-
+.forgotPasswordLink:hover {
+    color: var(--grena);
+    text-decoration: underline;
 }
 
-@media (max-width: 600px) {
-    .sidebar{
+.button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 8px;
+    border: none;
+    background-color: var(--grena);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 5px;
+    box-shadow: 0 4px 12px rgba(var(--grena-rgb), 0.2);
+}
+
+.button:hover:not(:disabled) {
+    background-color: var(--grena-dark, #800000);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(var(--grena-rgb), 0.3);
+}
+
+.button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.actionTextContainer {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.actionText {
+    font-size: 0.9rem;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.actionText span {
+    color: var(--grena);
+    font-weight: 700;
+    margin-left: 5px;
+}
+
+.actionText:hover span {
+    text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+    .sidebar {
+        position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 75%;
-        height: 80%;
-        border-radius: 15px;
-        gap: 15px;
-        padding: 15px;
+        width: 90%;
+        max-width: 400px;
+        height: auto;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        padding: 30px 25px;
     }
 
-    .sidebarBody{
-        grid-template-columns: 1fr;
-    }
-
-    .gridRow{
-        grid-column: 1 / 2;
-    }
-    .sidebarHeader{
-        background-image: var(--logo-vert);
-    }
-
-    .loginMessage{
-        text-align: center;
-        width: 80%;
-        margin: 0 auto;
+    .sidebarHeader {
+        margin-bottom: 20px;
     }
 }

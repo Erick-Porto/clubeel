@@ -1,99 +1,109 @@
 'use client'
 
-import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import withAuth from "@/components/auth";
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import Schedule from '@/app/components/schedule';
 import Footer from '@/components/footer';
 import Header from '@/components/header';
 import globalStyle from "@/styles/page.module.css";
 import style from "@/styles/places.module.css";
-import Schedule from '@/components/schedule';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMedal } from '@fortawesome/free-solid-svg-icons';
 import API_CONSUME from '@/services/api-consume';
-import { useUser } from '@/context/UserContext';
+import { useSession } from 'next-auth/react';
+import { LoadingScreen } from '@/components/loading';
+
+interface PlaceData {
+    name: string;
+    id: string;
+    image: string;
+    rules: any[];
+    schedule: any[];
+    price: number;
+}
 
 const PlacePage = () => {
     const params = useParams();
     const searchParams = useSearchParams();
-    const { accessToken } = useUser();
-    const placeName = params?.placeName as string | " ";
-    const placeID = parseInt(placeName.split("-")[placeName.split("-").length - 1])
-    const [data, setData] = useState({
-        name: "",
-        id: "",
-        image: "",
-        rules: [],
-        schedule: [],
-        price: 0
-    });
+    const router = useRouter();
+    const { data: session, status } = useSession();
+    
+    const placeName = params?.placeName as string || "";
+    const placeID = placeName.split("-").pop() || "";
 
-    // Função extraída para reutilização no timer
-    const fetchData = async () => {
-        const response = await API_CONSUME("GET", `place/${placeID}`, {
-            'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_API_TOKEN,
-            'Session': accessToken
-        }, null);
+    const [data, setData] = useState<PlaceData | null>(null);
 
-        let schedule_rules = response.schedule_rules;
+    const fetchData = useCallback(async () => {
+        if (status !== 'authenticated' || !session || !placeID) {
+            return;
+        }
 
-        response.schedule_rules.forEach((rule: any) => {
-            schedule_rules.push(rule);
-        });
+        try {
+            const response = await API_CONSUME("GET", `place/${placeID}`, {
+                'Session': (session as any).accessToken
+            }, null);
 
-        setData({
-            name: response.name || placeName,
-            id: response.id || placeID,
-            price: response.price || 0,
-            image: response?.image || "",
-            rules: response.schedule_rules,
-            schedule: Array.isArray(response?.schedule)
-                ? response.schedule : []
-        });
-    };
+            setData({
+                name: response.name || placeName.split("-").slice(0, -1).join(" "),
+                id: response.id || placeID,
+                // CORREÇÃO AQUI: Garante que o preço é um número
+                price: Number(response.price) || 0, 
+                image: response?.image || "",
+                rules: response.schedule_rules || [],
+                schedule: Array.isArray(response?.schedule) ? response.schedule : []
+            });
+        } catch (error) {
+            console.error("Erro ao buscar dados do local:", error);
+            router.push('/'); 
+        }
+    }, [placeID, placeName, session, status, router]);
 
-    useEffect(() => {
-        fetchData();
-    }, [placeName, placeID, accessToken]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            fetchData();
-        }, 30000);
+        const interval = setInterval(fetchData, 150000);
         return () => clearInterval(interval);
-    }, [placeID, accessToken]);
+    }, [fetchData]);
 
     const selectedDateString = searchParams.get('date');
-    const selectedDate = selectedDateString ? new Date(selectedDateString) : null;
+    const dateParts = selectedDateString ? selectedDateString.split('-') : [];
+    const selectedDate = dateParts.length === 3 
+        ? new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2])) 
+        : new Date();
+
+    if (status === 'loading' || !data) {
+        return <LoadingScreen />;
+    }
+
     return (
         <div className={globalStyle.page}>
-            <Header
-                options={null}
-                surgeIn={0}
-                onlyScroll={false}
-            />
-            <section className={globalStyle.Section} style={{ paddingTop: "100px", paddingBottom: "20px" }}>
-            <div className={style.placeContainer}>
-                <div className={style.placeTitle}>
-                    <h1>
-                        {data.name}  |  {selectedDate ? selectedDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long'}) : 'Não selecionada'}
-                    </h1>
-                    <h3>Agende seu horário</h3>
+            <Header options={null} surgeIn={0} onlyScroll={false} />
+            
+            <div className={style.placeBanner} style={{ backgroundImage: `url(${data.image})`, height: '30vh', minHeight: '250px' }}>
+                <div className={style.placeBannerCover}>
+                    <h1 style={{fontSize: '2.5rem'}}>{data.name}</h1>
                 </div>
             </div>
-                <Schedule
-                    src={
-                        data.image && typeof data.image === 'string' && data.image.trim() !== '' ? data.image : ""
-                    }
-                    price={data.price}
-                    place={parseInt(data.id)}
-                    rules={data.rules}
-                />
+
+            <section className={globalStyle.Section} style={{paddingTop: '20px'}}>
+                <div className={style.placeTitle} style={{ position: 'relative', top: 0, left: 0, transform: 'none', width: '100%', marginBottom: '40px', marginTop: '0' }}>
+                    <h2 style={{ color: '#333', textAlign: 'center', fontSize: '1.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        Agendamento para <span style={{ color: 'var(--grena)', fontWeight: 'bold' }}>
+                            {selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long'})}
+                        </span>
+                    </h2>
+                </div>
+                
+                {data.id && (
+                    <Schedule
+                        src={data.image || ""}
+                        price={data.price} // Agora já é um número seguro
+                        place_id={parseInt(data.id)}
+                        rules={data.rules}
+                    />
+                )}
             </section>
             <Footer />
         </div>
     );
 };
 
-export default withAuth(PlacePage);
-
+export default PlacePage;

@@ -1,17 +1,50 @@
-.bookingButton{
+.bookingButton {
     background-color: var(--grena);
     color: white;
-    padding: 10px 20px;
+    padding: 14px 24px;
     border: none;
+    border-radius: 50px;
     text-transform: uppercase;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
-    transition: all .2s ease;
-    font-size: 18px;
-    &:hover{
-      background-color: var(--grena-light);
+    transition: all .3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    font-size: 14px;
+    letter-spacing: 1px;
+    width: 100%;
+    box-shadow: 0 4px 15px rgba(115, 0, 1, 0.2);
+    
+    /* Garante alinhamento igual para <button> e <a> */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none; /* Remove sublinhado do Link */
+    line-height: 1;
+}
+
+.bookingButton:hover:not(:disabled) {
+    background-color: #5a0000;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(115, 0, 1, 0.3);
+}
+
+.bookingButton:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: 0 2px 10px rgba(115, 0, 1, 0.2);
+}
+
+.bookingButton:disabled {
+    background-color: #e0e0e0;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+@media (max-width: 1024px) {
+    .bookingButton {
+        padding: 12px 20px;
+        font-size: 13px;
+        width: auto;
+        min-width: 140px;
     }
-    &:active{
-      transform: scale(0.95);
-    }
-  }
+}

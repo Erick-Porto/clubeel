@@ -1,0 +1,16 @@
+.page {
+    display: flex;
+    flex-direction: row; /* Desktop: Lado a lado (Sidebar | Carrossel) */
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--background);
+    position: relative;
+}
+
+/* Mobile: Mantém a lógica de sobreposição/empilhamento */
+@media (max-width: 900px) {
+    .page {
+        flex-direction: column;
+    }
+}
