@@ -17,8 +17,12 @@ interface Rule {
     type: 'include' | 'exclude';
     start_date: string | null;
     end_date: string | null;
+    start_time: string | null;
+    end_time: string | null;
     weekdays: { name: string }[] | null;
-    maximium_antecedence: number;
+    maximum_antecedence: number;
+    minimum_antecedence: number;
+    status_id: number;
 }
 
 interface Place {
@@ -47,42 +51,83 @@ const isPlaceAvailableOnDate = (place: Place, selectedDate: Date): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let isAvailable = true;
+    // Por padrão, a quadra está FECHADA até que uma regra diga o contrário
+    if (!place.schedule_rules || place.schedule_rules.length === 0) return false;
+
+    let isAllowed = false; // Começa fechado
+    let isBlocked = false; // Bloqueio explícito
+
+    const selectedWeekday = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const diffDays = getDaysDifference(selectedDate, today);
+
+    // Passado é sempre bloqueado
+    if (diffDays < 0) return false;
 
     for (const rule of place.schedule_rules) {
-        const ruleStartDate = rule.start_date ? new Date(rule.start_date) : null;
-        const ruleEndDate = rule.end_date ? new Date(rule.end_date) : null;
+        // Ignora regras inativas
+        if (rule.status_id !== null && Number(rule.status_id) !== 1) continue;
+
+        // 1. Validação de Intervalo de Datas (Start/End)
+        const ruleStartDate = rule.start_date ? new Date(rule.start_date+ "T00:00:00") : null;
+        const ruleEndDate = rule.end_date ? new Date(rule.end_date+ "T23:59:59") : null;
+        
+        if (ruleStartDate) ruleStartDate.setHours(0,0,0,0);
+        if (ruleEndDate) ruleEndDate.setHours(23,59,59,999);
 
         const isDateInRange =
             (!ruleStartDate || selectedDate >= ruleStartDate) &&
             (!ruleEndDate || selectedDate <= ruleEndDate);
 
-        if (!isDateInRange) continue;
+        // Se a data não bate com a vigência desta regra, pula para a próxima regra
+        if (!isDateInRange) continue; 
 
-        const weekdays = rule.weekdays?.map(wd => wd.name.toLowerCase()) || [];
-        const selectedWeekday = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-
+        // 2. Regras de Bloqueio (EXCLUDE)
         if (rule.type === 'exclude') {
-            if (weekdays.length === 0 || weekdays.includes(selectedWeekday)) {
-                isAvailable = false;
-                break;
+            if(rule.start_time || rule.end_time) {
+                // Regras com horário específico não são tratadas aqui
+                continue;
             }
-        } else if (rule.type === 'include') {
-            if (rule.maximium_antecedence >= 0) {
-                // Verifica antecedência
-                const diff = getDaysDifference(selectedDate, today);
-                if (diff > rule.maximium_antecedence) {
-                    isAvailable = false;
-                    break;
-                }
-            }
-            if (weekdays.length > 0 && !weekdays.includes(selectedWeekday)) {
-                isAvailable = false;
-                break;
+            // Se não tiver dias específicos ou se o dia bater, bloqueia
+            if (!rule.weekdays || rule.weekdays.length === 0) {
+                isBlocked = true;
+            } else {
+                const ruleDays = rule.weekdays.map((d: any) => (d.name || d).toLowerCase());
+                if (ruleDays.includes(selectedWeekday)) 
+                    isBlocked = true;
             }
         }
+        
+        // 3. Regras de Permissão (INCLUDE)
+        else if (rule.type === 'include') {
+            let ruleIsValid = true;
+
+            // A. Verifica Dia da Semana
+            if (rule.weekdays && rule.weekdays.length > 0) {
+                const ruleDays = rule.weekdays.map((d: any) => (d.name || d).toLowerCase());
+                if (!ruleDays.includes(selectedWeekday)) 
+                    ruleIsValid = false;
+            }
+
+            // B. Verifica Antecedência MÁXIMA (Não pode ser muito longe)
+            if (rule.maximum_antecedence !== null && rule.maximum_antecedence >= 0) {
+                if (diffDays > rule.maximum_antecedence)
+                    ruleIsValid = false;
+            }
+
+            // C. Verifica Antecedência MÍNIMA (Não pode ser muito perto)
+            if (rule.minimum_antecedence !== null && rule.minimum_antecedence >= 0) {
+                if (diffDays < rule.minimum_antecedence) 
+                    ruleIsValid = false;
+            }
+
+            // Se passou por todas as checagens DESTA regra, libera o dia
+            if (ruleIsValid)
+                isAllowed = true;
+        }
     }
-    return isAvailable;
+
+    // O dia está disponível se: Foi permitido por alguma regra E NÃO foi bloqueado por nenhuma
+    return isAllowed && !isBlocked;
 };
 
 
@@ -97,7 +142,6 @@ const PlacesPage = () => {
     const [places, setPlaces] = useState<Place[]>([]);
     const [group, setGroup] = useState<Group | null>(null);
     
-    // Estado principal agora é a DATA SELECIONADA
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [weekView, setWeekView] = useState<Date[]>([]);
     const [maxAntecedence, setMaxAntecedence] = useState(0);
@@ -121,13 +165,30 @@ const PlacesPage = () => {
 
             const newMaxAntecedence = placesArray.reduce((max, place) => {
                 const placeMax = place.schedule_rules.reduce((ruleMax, rule) => {
-                    const ant = rule.maximium_antecedence !== undefined ? rule.maximium_antecedence : 0;
-                    return Math.max(ruleMax, ant);
+                    if (rule.status_id !== 1) {
+                        return ruleMax;
+                    }
+                    // Se não tem nenhuma regra de antecedência, mantém o acumulado atual
+                    if (rule.maximum_antecedence === null && rule.minimum_antecedence === null) {
+                        return ruleMax;
+                    }
+
+                        // Sanitiza os valores (null vira 0 para comparação)
+                    const maxAnt = rule.maximum_antecedence !== null ? rule.maximum_antecedence : 0;
+                        // Se a lógica for "limite máximo do calendário", o mínimo não deveria limitar o teto,
+                        // mas mantendo sua lógica de fallback:
+                    const minAnt = rule.minimum_antecedence !== null ? rule.minimum_antecedence : 0;
+
+                        // Pega o maior valor entre o Max definido, o Min definido ou o acumulado
+                        // Se rule.maximum_antecedence existir, ele é a prioridade para definir o "teto"
+                    const currentRuleLimit = maxAnt > minAnt ? maxAnt : minAnt;
+
+                    return Math.max(ruleMax, currentRuleLimit);
                 }, 0);
-                return Math.max(max, placeMax);
-            }, 0);
-            
-            setMaxAntecedence(newMaxAntecedence);
+            return Math.max(max, placeMax);
+        }, 0);
+
+        setMaxAntecedence(newMaxAntecedence);
 
         } catch (error) {
             console.error("Error fetching places:", error);
@@ -294,8 +355,7 @@ const PlacesPage = () => {
                                         <Link
                                             className={`${style.placeAction} ${style.btnReserve}`}
                                             href={{
-                                                pathname: `/place/${item.name.replace(/\s+/g, '-').toLowerCase()}-${item.id}`,
-                                                query: { date: selectedDate.toISOString().split('T')[0] }
+                                                pathname: `/place/${item.name.replace(/\s+/g, '-').toLowerCase()}-${item.id}`
                                             }}
                                         >
                                             Reservar Horário

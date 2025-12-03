@@ -1,84 +1,72 @@
-// services/api-consume.ts
+import { toast } from "react-toastify";
+import { signOut } from "next-auth/react"; // 1. Importar signOut
 
-interface Headers {
-    // Authorization: string;
-    Session: string | null;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.100.48:8000/api";
+
+async function API_CONSUME(method: string, endpoint: string, headers: any = {}, body: any = null) {
+    try {
+        const config: RequestInit = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_LARA_API_TOKEN}`,
+                ...headers
+            },
+            cache: 'no-store'
+        };
+
+        if (body) {
+            config.body = JSON.stringify(body);
+        }
+
+        const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}/${endpoint}`;
+
+        const response = await fetch(url, config);
+        console.log(`API_CONSUME Response Status: ${response.status} for URL: ${url}`);
+        if (response.status >= 500) {
+            console.error(`Erro Crítico de Servidor (${response.status}) em: ${url}`);
+            handleCriticalError();
+            return { error: true, status: response.status, message: "Servidor indisponível" };
+        }
+
+        if (response.status === 419) {
+             handleCriticalError();
+             return { error: true, status: 419, message: "Sessão expirada." };
+        }
+
+        const responseData = await response.json().catch(() => null);
+        console.log('API_CONSUME Response Data:', responseData);
+        return responseData;
+
+    } catch (error: any) {
+        console.error("API_CONSUME Error:", error);
+
+        if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+            console.error("Falha de conexão com a API.");
+            handleCriticalError();
+            return { error: true, status: 0, message: "Erro de Conexão com a API" };
+        }
+        throw error;
+    }
 }
 
-const API_CONSUME = async (
-    method: string,
-    route: string,
-    headers: Headers | null,
-    body: object | null,
-) => {
-    try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_LARA_API}/api/${route}`, {
-            method: method,
-            headers: Object.fromEntries(
-                Object.entries({
-                    'ngrok-skip-browser-warning': 'true',
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_LARA_API_TOKEN}`,
-                    'Session': headers.Session,
-                })
-                    .filter(([_, value]) => value != null)
-                    .map(([key, value]) => [key, String(value)])
-            ),
-            body: body ? JSON.stringify(body) : undefined,
-        });
+function handleCriticalError() {
+    if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        
+        if (currentPath !== '/login' && !window.location.search.includes('maintenance=true')) {
+            
+            console.warn("Falha crítica detectada. Realizando logout forçado...");
 
-        // 🔹 Tratamento específico para 404
-        if (response.status === 404) {
-            console.warn(`API route not found: ${route}`);
-            return {
-                error: true,
-                status: 404,
-                message: "Rota não encontrada.",
-            };
-        }
-
-        // 🔹 Tratamento para outros erros (400, 401, 500 etc.)
-        if (!response.ok) {
-            const errorText = await response.text();
-            try {
-                const errorData = JSON.parse(errorText);
-                return {
-                    error: true,
-                    status: response.status,
-                    message: errorData.message || `API Error: ${response.status}`,
-                    details: errorData,
-                };
-            } catch {
-                return {
-                    error: true,
-                    status: response.status,
-                    message: `API Error: ${response.status} - ${errorText}`,
-                };
-            }
-        }
-
-        // 🔹 Sucesso → retorna JSON
-        const data = await response.json();
-        console.log('Successful API response:', data);
-        return data;
-
-    } catch (err) {
-        console.error('Error in API_CONSUME:', err);
-
-        if (err instanceof Error) {
-            return {
-                error: true,
-                status: 500,
-                message: err.message,
-            };
-        } else {
-            return {
-                error: true,
-                status: 500,
-                message: 'An unknown error occurred in API_CONSUME',
-            };
+            signOut({ 
+                callbackUrl: '/login?maintenance=true',
+                redirect: true 
+            }).catch(() => {
+                window.location.href = '/login?maintenance=true';
+            });
         }
     }
-};
+}
 
 export default API_CONSUME;

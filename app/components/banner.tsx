@@ -50,10 +50,6 @@ const Banner = ({ user, lastScheduleImage }: BannerProps) => {
                         height={150}
                         className={style.avatarImage}
                     />
-                    {/* Botão visual de editar (funcionalidade futura) */}
-                    <div className={style.editAvatarButton} title="Alterar foto">
-                        <FontAwesomeIcon icon={faCamera} style={{fontSize: '14px'}} />
-                    </div>
                 </div>
 
                 {/* Informações de Texto */}

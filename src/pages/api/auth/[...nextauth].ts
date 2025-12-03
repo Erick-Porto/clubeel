@@ -37,7 +37,7 @@ export const authOptions: NextAuthOptions = {
               accessToken: data.token,
             };
           }
-
+          console.log("Login failed: Invalid response", data);
           // Se a resposta da API não for o esperado, lance um erro genérico.
           throw new Error("Resposta inválida da API de autenticação.");
 

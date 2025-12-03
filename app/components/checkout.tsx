@@ -40,7 +40,7 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: any) => string }>
             if (!groupedMap[groupKey]) {
                 groupedMap[groupKey] = {
                     groupKey: groupKey,
-                    place_name: it.place_name || 'Quadra',
+                    place_name: it.place.name || 'Quadra',
                     date: formatDateBR(isoDate), 
                     isoDate: isoDate, 
                     schedules: []
@@ -57,7 +57,7 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: any) => string }>
 
         // Criação da Preferência MP
         const items = cart.map((it: CartItem) => {
-            const title = `${it.place_name} - ${it.start_schedule}`;
+            const title = `${it.place.name} - ${it.start_schedule}`;
             const unit_price = it.price <= 0 ? 0.01 : it.price;
             return { title, quantity: 1, unit_price };
         });
@@ -81,7 +81,6 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: any) => string }>
                 <h2>Resumo do Pedido</h2>
             </div>
 
-            {/* Lista de Itens Agrupados (Estilo Recibo) */}
             {groupedCart.map((g) => (
                 <div key={g.groupKey} className={style.summaryGroup}>
                     <span className={style.summaryGroupTitle}>{g.place_name} • {g.date}</span>

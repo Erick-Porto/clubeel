@@ -10,62 +10,36 @@ import { useCart } from '@/context/CartContext';
 import API_CONSUME from '@/services/api-consume';
 import { useIsMobile } from '../hooks/useIsMobile';
 
-// --- INTERFACES ---
-interface Reservation { 
-    id: number; 
+interface ReservationPayload {
+    member_id: number;
+    place_id: number;
     start_schedule: string; 
-    end_schedule: string; 
-    member_id: number; 
-    status_id: number; 
-    place_id: number; 
+    end_schedule: string;   
+    price: number;
+    status_id: number;
+}
+
+interface LoadedContent {
+    start: string;
+    end: string;
+    owner: number | null;
+    status: number | null;
+}
+
+interface ScheduleProps { 
+    place_id?: number; 
+    src: string; 
     price: number; 
+    dateProp?: string; 
+    rules?: any[]; 
 }
 
-interface SelectedHour { 
-    start_schedule: string; 
-    end_schedule: string; 
-    member_id: number; 
-    status_id: number; 
-    place_id: number; 
-    price: number; 
-}
-
-interface Rule { 
-    type: 'include' | 'exclude'; 
-    start_date: string | null; 
-    end_date: string | null; 
-    start_time: string | null; 
-    end_time: string | null; 
-    quantity: number; 
-    duration: string; 
-    interval: string; 
-}
-
-interface ScheduleProps { place_id?: number; src: string; price: number; rules?: Rule[]; }
-
-// --- HELPERS ---
-const secondsToTimeString = (seconds: number): string => {
-    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    return `${h}:${m}`;
+// --- FUNÇÃO AUXILIAR GMT-3 ---
+const createGMT3Date = (dateStr: string, timeStr: string): Date => {
+    return new Date(`${dateStr}T${timeStr}:00-03:00`);
 };
 
-const timeToSeconds = (timeStr: string): number => {
-    if (!timeStr) return 0;
-    const timePart = String(timeStr).split(/T| /)[1] || String(timeStr);
-    const cleanTime = timePart.split('.')[0];
-    const parts = cleanTime.split(':').map(Number);
-    return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
-};
-
-const makeDateStringFromSeconds = (dateStr: string, seconds: number): string => {
-    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${dateStr} ${h}:${m}:${s}`;
-};
-
-const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, rules = [] }) => {
+const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) => {
     const { data: session } = useSession();
     const { cart, refreshCart } = useCart();
     const isMobile = useIsMobile();
@@ -74,316 +48,172 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, rules = [] })
     const numericPrice = Number(price) || 0; 
     const userId = Number(session?.user?.id);
 
-    const [currentDate, setCurrentDate] = useState<string>("");
+    const [currentDate, setCurrentDate] = useState<string>(dateProp || new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const params = new URLSearchParams(window.location.search);
-            const dateParam = params.get('date');
-            const cleanDate = (dateParam || new Date().toISOString()).split(/T| /)[0];
-            setCurrentDate(cleanDate);
-        }
-    }, []);
+        if (dateProp) setCurrentDate(dateProp);
+    }, [dateProp]);
 
-    const [selectedHours, setSelectedHours] = useState<SelectedHour[]>([]);
-    const [reservedHours, setReservedHours] = useState<Reservation[]>([]);
-    const [disabledHours, setDisabledHours] = useState<number[]>([]);
-    const [anchorHour, setAnchorHour] = useState<number | null>(null);
+    const [loadedContent, setLoadedContent] = useState<LoadedContent[]>([])
+    const [selectedItems, setSelectedItems] = useState<LoadedContent[]>([]);
+    const [localQuantity, setLocalQuantity] = useState<number>(0);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const [maxQuantity, setMaxQuantity] = useState(2);
-    const [timeInterval, setTimeInterval] = useState(0);
-    const [timeDuration, setTimeDuration] = useState(3600);
-    const [startHourLimit, setStartHourLimit] = useState(0);
-    const [endHourLimit, setEndHourLimit] = useState(22 * 3600);
-
-    // --- 1. FETCH RESERVAS ---
+    // 1. FETCH
     const fetchData = useCallback(async () => {
-        if (!placeId || isNaN(placeId) || !session?.accessToken || !currentDate) return;
+        if (!placeId || !session?.accessToken || !currentDate) return;
         try {
-            const response = await API_CONSUME("GET", "schedule/place/", {
+            const response = await API_CONSUME("POST", "schedule/time-options/", {
                 'Session': session.accessToken
-            }, { 
+            }, {
                 date: currentDate,
                 place_id: placeId
             });
 
-            let rawData: Reservation[] = [];
+            let newContent: LoadedContent[] = [];
             
-            if (Array.isArray(response)) {
-                rawData = response;
-            } else if (response?.schedules) {
-                if (Array.isArray(response.schedules)) {
-                    rawData = response.schedules;
-                } else if (typeof response.schedules === 'object') {
-                    Object.values(response.schedules).forEach((dateGroup: any) => {
-                        if (typeof dateGroup === 'object') {
-                            Object.values(dateGroup).forEach((itemsArray: any) => {
-                                if (Array.isArray(itemsArray)) {
-                                    rawData.push(...itemsArray);
-                                }
-                            });
-                        }
-                    });
-                }
-            } else if (response?.data && Array.isArray(response.data)) {
-                rawData = response.data;
+            if (response) {
+                if (response.quantity !== undefined) setLocalQuantity(response.quantity);
+
+                const listToMap = Array.isArray(response) ? response : (response.data || response.options || []);
+                
+                const mappedContent: LoadedContent[] = listToMap.map((item: any) => ({
+                    start: item[0],
+                    end: item[1],
+                    owner: item[2],
+                    status: item[3]
+                }));
+                
+                mappedContent.sort((a, b) => a.start.localeCompare(b.start));
+                setLoadedContent(mappedContent);
             }
-            
-            const filtered = rawData.filter(item => {
-                if (!item.start_schedule) return false;
-                const itemDate = String(item.start_schedule).split(/T| /)[0];
-                const isConfirmed = ['1', '2'].includes(String(item.status_id));
-                const isThisPlace = Number(item.place_id) === placeId;
-                return itemDate === currentDate && isConfirmed && isThisPlace;
-            });
-            
-            setReservedHours(filtered);
-        } catch (error) {
-            console.error('Error fetching reserved hours:', error);
+        } catch(error) {
+            console.error('Error fetching time options:', error);
         }
     }, [placeId, session?.accessToken, currentDate]);
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 10000);
-        return () => clearInterval(interval);
+        setSelectedItems([]); 
     }, [fetchData]);
 
-    // --- 2. REGRAS ---
-    useEffect(() => {
-        if (!currentDate) return;
-        let localDisabled: number[] = [];
-        let localStart = 7 * 3600;
-        let localEnd = 22 * 3600;
-        let localMaxQuantity = 2;
-        let localDuration = 3600;
-        let localInterval = 0;
+    // 2. CÁLCULOS
+    const userOwnedIndices = useMemo(() => {
+        return loadedContent
+            .map((item, index) => (item.owner === userId && (item.status === 1 || item.status === 3)) ? index : -1)
+            .filter(index => index !== -1);
+    }, [loadedContent, userId]);
 
-        rules.forEach((rule) => {
-            const valid = (!rule.start_date && !rule.end_date) || (currentDate >= (rule.start_date || '') && currentDate <= (rule.end_date || ''));
-            if (!valid) return;
+    const userTotalAppointments = userOwnedIndices.length;
 
-            if (rule.type === 'exclude' && rule.start_time && rule.end_time) {
-                const start = timeToSeconds(rule.start_time);
-                const end = timeToSeconds(rule.end_time);
-                for (let t = start; t < end; t += 3600) {
-                    if (!localDisabled.includes(t)) localDisabled.push(t);
-                }
+    // 3. SELEÇÃO
+    const toggleSelectHour = (item: LoadedContent, index: number) => {
+        if (selectedItems.includes(item)) {
+            setSelectedItems(prev => prev.filter(i => i !== item));
+            return;
+        }
+        if (item.status !== null) return; 
+
+        if ((userTotalAppointments + selectedItems.length + 1) > localQuantity) {
+            toast.error(`Limite de ${localQuantity} agendamentos atingido.`);
+            return;
+        }
+
+        const currentSelectionIndices = selectedItems.map(sel => loadedContent.indexOf(sel));
+        const allMyIndices = [...userOwnedIndices, ...currentSelectionIndices].sort((a, b) => a - b);
+
+        if (allMyIndices.length > 0) {
+            const firstIndex = allMyIndices[0];
+            const lastIndex = allMyIndices[allMyIndices.length - 1];
+            const isPrev = index === firstIndex - 1;
+            const isNext = index === lastIndex + 1;
+
+            if (!isPrev && !isNext) {
+                toast.info("Selecione apenas horários consecutivos.");
+                return;
+            }
+        }
+
+        setSelectedItems(prev => [...prev, item].sort((a, b) => a.start.localeCompare(b.start)));
+    };
+
+    // 4. RESERVAR (CORRIGIDO)
+    const handleReserve = async () => {
+        if (!session?.accessToken) return toast.error("Sessão inválida.");
+        if (selectedItems.length === 0) return toast.info("Selecione um horário.");
+
+        const payload: ReservationPayload[] = selectedItems.map(item => {
+            // 1. Validação com Date Object (GMT-3)
+            const startObj = createGMT3Date(currentDate, item.start);
+            const endObj = createGMT3Date(currentDate, item.end);
+
+            if (isNaN(startObj.getTime()) || isNaN(endObj.getTime())) {
+                 console.error("Data inválida gerada para:", item);
+                 toast.error("Erro ao processar data.");
+                 throw new Error("Data inválida");
             }
 
-            if (rule.type === 'include') {
-                localStart = rule.start_time ? timeToSeconds(rule.start_time) : localStart;
-                localEnd = rule.end_time ? timeToSeconds(rule.end_time) : localEnd;
-                localMaxQuantity = rule.quantity || localMaxQuantity;
-                localDuration = rule.duration ? timeToSeconds(rule.duration) : localDuration;
-                localInterval = rule.interval ? timeToSeconds(rule.interval) : localInterval;
-            }
+            // 2. Formatação Correta para o Backend ("YYYY-MM-DD HH:mm:ss")
+            // Usamos template string simples pois já temos os valores corretos nas variáveis
+            const startString = `${currentDate} ${item.start}:00`;
+            const endString = `${currentDate} ${item.end}:00`;
+
+            return {
+                member_id: userId,
+                place_id: placeId,
+                price: numericPrice,
+                status_id: 3,
+                start_schedule: startString, // Agora envia a string formatada corretamente
+                end_schedule: endString
+            };
         });
 
-        for (let i = 0; i < 24 * 3600; i += 3600) {
-            if (i < localStart || i >= localEnd) {
-                if (!localDisabled.includes(i)) localDisabled.push(i);
-            }
-        }
-
-        setDisabledHours(localDisabled);
-        setStartHourLimit(localStart);
-        setEndHourLimit(localEnd);
-        setMaxQuantity(localMaxQuantity);
-        setTimeDuration(localDuration);
-        setTimeInterval(localInterval);
-    }, [rules, currentDate]);
-
-    // --- 3. CÁLCULOS DE OCUPAÇÃO ---
-    
-    // A. Meus Confirmados (Nesta Quadra)
-    const myConfirmedSeconds = useMemo(() => {
-        return reservedHours
-            .filter(r => Number(r.member_id) === userId)
-            .map(r => timeToSeconds(r.start_schedule));
-    }, [reservedHours, userId]);
-
-    // B. Meus no Carrinho (Nesta Quadra) - Para validação local
-    const localCartSeconds = useMemo(() => {
-        if (!cart || !Array.isArray(cart)) return [];
-        return cart.filter(item => {
-            const itemDate = String(item.start_schedule).split(/T| /)[0];
-            return Number(item.place_id) === placeId && itemDate === currentDate;
-        }).map(item => timeToSeconds(item.start_schedule));
-    }, [cart, placeId, currentDate]);
-
-    // C. Meus no Carrinho (GLOBAL - Todas as Quadras) - Para evitar conflito de horário
-    const globalCartSeconds = useMemo(() => {
-        if (!cart || !Array.isArray(cart)) return [];
-        return cart.filter(item => {
-            const itemDate = String(item.start_schedule).split(/T| /)[0];
-            return itemDate === currentDate; // Mesma data, qualquer quadra
-        }).map(item => timeToSeconds(item.start_schedule));
-    }, [cart, currentDate]);
-
-    // D. Selecionados Agora
-    const selectedSeconds = selectedHours.map(h => timeToSeconds(h.start_schedule));
-
-    // E. Total de Slots "Meus" nesta quadra (para adjacência)
-    const allLocalSlots = useMemo(() => {
-        const combined = Array.from(new Set([...myConfirmedSeconds, ...localCartSeconds, ...selectedSeconds]));
-        return combined.sort((a, b) => a - b);
-    }, [myConfirmedSeconds, localCartSeconds, selectedSeconds]);
-
-    // F. Contagem Global para Limite (Carrinho Global + Confirmados Locais)
-    const globalCountOnDate = useMemo(() => {
-        if (!cart || !Array.isArray(cart)) return 0;
-        const cartCount = cart.filter(item => {
-            const itemDate = String(item.start_schedule).split(/T| /)[0];
-            return itemDate === currentDate;
-        }).length;
-        return cartCount + myConfirmedSeconds.length;
-    }, [cart, currentDate, myConfirmedSeconds]);
-
-    useEffect(() => {
-        if (selectedSeconds.length === 0) {
-            setAnchorHour(null);
-        }
-    }, [selectedSeconds.length]);
-
-    // --- 4. VALIDAÇÕES ---
-    const step = timeDuration + timeInterval;
-    const hours: number[] = [];
-    const now = new Date();
-    const todayString = now.toISOString().split(/T| /)[0];
-    const isToday = currentDate === todayString;
-    const currentHourSeconds = now.getHours() * 3600 + now.getMinutes() * 60;
-    
-    for (let h = startHourLimit; h < endHourLimit; h += step) {
-        hours.push(h);
-    }
-
-    const isHourReserved = (hour: number) => reservedHours.some(res => timeToSeconds(res.start_schedule) === hour);
-
-    // Bloqueia se: Desabilitado, Reservado (Outros), Passado OU EM CONFLITO GLOBAL (Carrinho em outra quadra)
-    const isHourBlocked = (hour: number) => {
-        if (disabledHours.includes(hour)) return true;
-        
-        if (isHourReserved(hour)) {
-            const reservation = reservedHours.find(r => timeToSeconds(r.start_schedule) === hour);
-            if (Number(reservation?.member_id) !== userId) return true; 
-        }
-
-        if (isToday && hour < currentHourSeconds) return true;
-
-        // CORREÇÃO: Verifica se já tenho ESSE horário no carrinho (mesmo que em outra quadra)
-        // Se eu já tenho esse horário no carrinho, está bloqueado para nova seleção.
-        // (Exceto se for desta quadra, pois aí seria "No Carrinho", tratado depois)
-        if (globalCartSeconds.includes(hour) && !localCartSeconds.includes(hour)) {
-            return true;
-        }
-
-        return false;
-    };
-
-    const checkAdjacency = (hour: number): boolean => {
-        if (allLocalSlots.length === 0) return true;
-        const minSlot = allLocalSlots[0];
-        const maxSlot = allLocalSlots[allLocalSlots.length - 1];
-        const prevNeighbor = minSlot - step;
-        const nextNeighbor = maxSlot + step;
-        return hour === prevNeighbor || hour === nextNeighbor;
-    };
-
-    // --- 5. AÇÕES ---
-    const toggleSelectHour = (hour: number) => {
-        // 1. Desmarcar
-        if (selectedSeconds.includes(hour)) {
-            setSelectedHours(prev => prev.filter(h => timeToSeconds(h.start_schedule) !== hour));
-            return;
-        }
-
-        // 2. Já tenho (Local - Confirmado ou Carrinho)
-        if (myConfirmedSeconds.includes(hour) || localCartSeconds.includes(hour)) return;
-
-        // 3. Conflito de Horário (Global)
-        // Se este horário já está no carrinho em OUTRA quadra, bloqueia.
-        if (globalCartSeconds.includes(hour)) {
-            toast.error("Você já possui um agendamento neste horário em outra quadra.");
-            return;
-        }
-
-        // 4. Limite de Quantidade (Global)
-        const currentTotal = globalCountOnDate + selectedHours.length;
-        if (currentTotal >= maxQuantity) {
-            toast.error(`Limite global de ${maxQuantity} agendamentos por dia atingido.`);
-            return;
-        }
-
-        // 5. Adjacência (Local)
-        if (!checkAdjacency(hour)) {
-            toast.info("Selecione apenas horários consecutivos (nesta quadra).");
-            return;
-        }
-
-        const newEntry: SelectedHour = {
-            member_id: userId,
-            status_id: 3,
-            place_id: placeId,
-            price: numericPrice,
-            start_schedule: makeDateStringFromSeconds(currentDate, hour),
-            end_schedule: makeDateStringFromSeconds(currentDate, hour + timeDuration),
-        };
-
-        setSelectedHours(prev => [...prev, newEntry].sort((a, b) => timeToSeconds(a.start_schedule) - timeToSeconds(b.start_schedule)));
-    };
-
-    const handleReserve = async () => {
-        if (!session?.accessToken) {
-            toast.error("Sessão inválida.");
-            return;
-        }
-        if (selectedHours.length === 0) {
-            toast.info("Selecione um horário.");
-            return;
-        }
-
         try {
-            const response = await API_CONSUME("POST", "schedule/", {
+            await API_CONSUME("POST", "schedule/", {
+                'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
                 'Session': session.accessToken
-            }, selectedHours);
-
-            if (response?.error || response?.status === 500) {
-                console.warn("Backend retornou erro, mas tentando atualizar...");
-            }
+            }, payload);
 
             await refreshCart();
-            setSelectedHours([]);
-            setAnchorHour(null);
+            setSelectedItems([]);
             toast.success('Adicionado ao carrinho!');
+            fetchData(); 
         } catch (error) {
             console.error("Erro ao reservar:", error);
-            await refreshCart();
+            toast.error("Erro ao adicionar ao carrinho.");
+            fetchData();
         }
     };
 
-    const ActionButtons = () => {
-        const isAddDisabled = selectedHours.length === 0;
-        return (
-            <div className={styles.actionButtonsWrapper}>
+    // 5. RENDER
+    const allActiveIndices = useMemo(() => {
+        const currentSelectionIndices = selectedItems.map(sel => loadedContent.indexOf(sel));
+        return [...userOwnedIndices, ...currentSelectionIndices].sort((a, b) => a - b);
+    }, [userOwnedIndices, selectedItems, loadedContent]);
+    
+    const minActiveIndex = allActiveIndices.length > 0 ? allActiveIndices[0] : -1;
+    const maxActiveIndex = allActiveIndices.length > 0 ? allActiveIndices[allActiveIndices.length - 1] : -1;
+    const limitReached = (userTotalAppointments + selectedItems.length) >= localQuantity;
+
+    const ActionButtons = () => (
+        <div className={styles.actionButtonsWrapper}>
+            <BookingButton
+                text={selectedItems.length === 0 ? 'Selecione um horário' : `Adicionar ${selectedItems.length} Horário(s)`}
+                itemsToValidate={selectedItems}
+                onClick={handleReserve}
+                disabled={selectedItems.length === 0}
+            />
+            {(cart && cart.length > 0) && (
                 <BookingButton
-                    text={isAddDisabled ? 'Selecione um horário' : `Adicionar ${selectedHours.length} Horário(s)`}
-                    itemsToValidate={selectedHours}
-                    onClick={handleReserve}
-                    disabled={isAddDisabled}
+                    text="Finalizar (Ir ao Carrinho)"
+                    redirectPath="/checkout"
+                    itemsToValidate={[]}
+                    onClick={() => {}}
+                    disabled={false}
                 />
-                {(cart?.length || 0) > 0 && (
-                    <BookingButton
-                        text="Finalizar (Ir ao Carrinho)"
-                        redirectPath="/checkout"
-                        itemsToValidate={[]}
-                        onClick={() => {}}
-                        disabled={false}
-                    />
-                )}
-            </div>
-        );
-    };
+            )}
+        </div>
+    );
 
     return (
         <div className={styles.placeContainer}>
@@ -391,69 +221,64 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, rules = [] })
                 <div className={styles.legendContainer}>
                     <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendAvailable}`}></span> Disponível</div>
                     <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendSelected}`}></span> Selecionado</div>
-                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendOccupied}`}></span> Ocupado (Outro)</div>
-                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendInCart}`}></span> Seu Horário</div>
+                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendConfirmed}`}></span> Confirmado</div>
+                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendInCart}`}></span> No Carrinho</div>
+                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendOccupied}`}></span> Ocupado</div>
                 </div>
 
-                {hours.length === 0 ? (
-                    <div className={styles.emptyState}>Sem horários.</div>
+                {loadedContent.length === 0 ? (
+                    <div className={styles.emptyState}>
+                        {isLoading ? "Carregando horários..." : "Nenhum horário disponível para esta data."}
+                    </div>
                 ) : (
                     <ul className={styles.scheduleList}>
-                        {hours.map((hour) => {
-                            const isReservedByOthers = reservedHours.some(r => timeToSeconds(r.start_schedule) === hour && Number(r.member_id) !== userId);
+                        {loadedContent.map((item, index) => {
+                            const isSelected = selectedItems.includes(item);
                             
-                            const isMyConfirmed = myConfirmedSeconds.includes(hour);
-                            const isMyCart = localCartSeconds.includes(hour);
-                            const isMySelection = selectedSeconds.includes(hour);
-                            
-                            const isPast = isToday && hour < currentHourSeconds;
-                            const isRuleDisabled = disabledHours.includes(hour);
-                            
-                            // Verifica conflito global (Carrinho em outra quadra neste horário)
-                            const isGlobalConflict = globalCartSeconds.includes(hour) && !localCartSeconds.includes(hour);
+                            let itemClass = styles.scheduleItem;
+                            let label = `R$ ${numericPrice.toFixed(2)}`;
+                            let isClickable = true;
+                            let isBlocked = false;
 
-                            const isBlocked = isReservedByOthers || isPast || isRuleDisabled || isGlobalConflict;
+                            if (item.owner === userId) {
+                                if (item.status === 1 || item.status === 2) {
+                                    itemClass += ` ${styles.myConfirmed}`;
+                                    label = "Confirmado";
+                                    isBlocked = true;
+                                } else if (item.status === 3) {
+                                    itemClass += ` ${styles.inCart}`;
+                                    label = "No Carrinho";
+                                    isBlocked = true;
+                                }
+                            } else if (item.owner !== 0) {
+                                itemClass += ` ${styles.reservedByOthers}`;
+                                label = "Ocupado";
+                                isBlocked = true;
+                            }
 
-                            const isMine = isMyConfirmed || isMyCart;
-                            
-                            const totalCount = globalCountOnDate + selectedHours.length;
-                            const limitReached = totalCount >= maxQuantity;
-                            
+                            if (isSelected) itemClass += ` ${styles.selected}`;
+
                             let isNonAdjacent = false;
-                            if (!isBlocked && !isMine && !isMySelection) {
-                                if (limitReached) {
-                                    isNonAdjacent = true; 
-                                } else {
-                                    isNonAdjacent = !checkAdjacency(hour);
+                            if (!isBlocked && !isSelected && allActiveIndices.length > 0) {
+                                const isNeighbor = index === minActiveIndex - 1 || index === maxActiveIndex + 1;
+                                if (!isNeighbor || limitReached) {
+                                    isNonAdjacent = true;
+                                    itemClass += ` ${styles.nonAdjacent}`;
                                 }
                             }
 
-                            let itemClass = styles.scheduleItem;
-                            if (isMySelection) itemClass += ` ${styles.selected}`;
-                            else if (isMine) itemClass += ` ${styles.inCart}`;
-                            else if (isReservedByOthers) itemClass += ` ${styles.reserved}`;
-                            else if (isBlocked) itemClass += ` ${styles.unavailableHour}`;
-                            else if (isNonAdjacent) itemClass += ` ${styles.nonAdjacent}`;
-
-                            let label = `R$ ${numericPrice.toFixed(2)}`;
-                            if (isMyConfirmed) label = "Confirmado";
-                            else if (isMyCart) label = "No Carrinho";
-                            else if (isGlobalConflict) label = "Conflito Horário";
-                            else if (isBlocked) label = "Indisponível";
+                            isClickable = !isBlocked;
 
                             return (
                                 <li
-                                    key={hour}
+                                    key={`${index}-${item.start}`}
                                     className={itemClass}
                                     onClick={() => {
-                                        if (isBlocked || isMine) return;
-                                        toggleSelectHour(hour);
+                                        if (isClickable) toggleSelectHour(item, index);
                                     }}
                                 >
                                     <span className={styles.timeLabel}>
-                                        {secondsToTimeString(hour)}
-                                        <span className={styles.timeSeparator}>-</span>
-                                        {secondsToTimeString(hour + timeDuration)}
+                                        {item.start} - {item.end}
                                     </span>
                                     <span className={styles.priceLabel}>{label}</span>
                                 </li>
@@ -473,7 +298,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, rules = [] })
                 </div>
                 <div className={styles.desktopActions}>
                     <h3>Resumo</h3>
-                    <p>Selecionado Agora: <strong>R$ {(selectedHours.length * numericPrice).toFixed(2)}</strong></p>
+                    <p>Selecionado Agora: <strong>R$ {(selectedItems.length * numericPrice).toFixed(2)}</strong></p>
                     <ActionButtons />
                 </div>
             </div>
@@ -482,10 +307,17 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, rules = [] })
                 <div className={styles.mobileBottomBar}>
                     <div className={styles.mobileSummary}>
                         <span>Total:</span>
-                        <strong>R$ {(selectedHours.length * numericPrice).toFixed(2)}</strong>
+                        <strong>R$ {(selectedItems.length * numericPrice).toFixed(2)}</strong>
                     </div>
                     <div className={styles.mobileButtons}>
-                       <ActionButtons />
+                       <div style={{minWidth: '140px'}}>
+                            <BookingButton
+                                text={selectedItems.length === 0 ? 'Adicionar' : `Adicionar (${selectedItems.length})`}
+                                itemsToValidate={selectedItems}
+                                onClick={handleReserve}
+                                disabled={selectedItems.length === 0}
+                            />
+                       </div>
                     </div>
                 </div>
             )}

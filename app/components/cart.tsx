@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 
 const Cart = () => {
     const { data: session } = useSession();
-    const { cart, refreshCart, isLoading } = useCart();
+    const { cart, refreshCart, isLoading, removeCartItem } = useCart();
 
     const handleRemoveItem = async (scheduleId: number) => {
         if (!session?.accessToken) {
@@ -21,15 +21,7 @@ const Cart = () => {
             return;
         }
         try {
-            await API_CONSUME(
-                'DELETE',
-                `schedule/${scheduleId}`,
-                {
-                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
-                    'Session': session.accessToken
-                }
-            );
-            toast.success("Agendamento removido com sucesso!");
+            removeCartItem(scheduleId);
             await refreshCart();
         } catch (error) {
             console.error("Erro ao remover agendamento:", error);
@@ -75,6 +67,7 @@ const Cart = () => {
         <div className={style.cartContainer}>
             <div className={style.cartListContainer}>
                 {cart.map((item: CartItem, index: number) => {
+                    console.log(item)
                     const startSec = hhmmssToSeconds(String(item.start_schedule).split(' ')[1] || '00:00');
                     const endSec =  hhmmssToSeconds(String(item.end_schedule).split(' ')[1] || '00:00');
                     const hourDisplay = `${secondsToHHMM(startSec)} - ${secondsToHHMM(endSec)}`

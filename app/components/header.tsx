@@ -74,7 +74,7 @@ export default function Header({
                 <div className={styles.headerLogo}>
                     <Image 
                         src="/images/logo-cfcsn-horiz.png" 
-                        alt="Logo CFCSN"
+                        alt="Logo CFCSN" 
                         fill
                         style={{ objectFit: 'contain', objectPosition: 'left' }}
                         priority
@@ -86,7 +86,7 @@ export default function Header({
                 <nav className={styles.desktopNav}>
                     <ul className={styles.navigateOptions}>
                         
-                        {/* CORREÇÃO AQUI: Verifica se profileOptions existe (truthy) antes de mapear */}
+                        {/* CORREÇÃO AQUI: '&& profileOptions' garante que não seja undefined */}
                         {options === null && profileOptions && (
                             profileOptions.map((opt, index) => (
                                 <li key={index} className={opt.active ? styles.activePage : ''}>
@@ -101,12 +101,11 @@ export default function Header({
                             ))
                         )}
 
-                        {/* Menu Principal (Home) */}
+                        {/* Menu Principal */}
                         {options && options.length > 0 && (
                             onlyScroll ? (
                                 options.map((item, index) => {
                                     const isActive = activeSection === item.id;
-                                    
                                     return (
                                         <li key={index} className={isActive ? styles.activePage : ""}>
                                             <button 

@@ -40,12 +40,11 @@ const LatestAppointments = ({ appointmentStatus }: LatestAppointmentsProps) => {
                 'Session': session.accessToken
             });
 
-            const data: Appointment[] = Array.isArray(response) ? response : (response?.data || []);
+            const data: Appointment[] = Array.isArray(response.schedules) ? response.schedules : (response.schedules || []);
             
             const filtered = data.filter(item => Number(item.status_id) === appointmentStatus);
             
             filtered.sort((a, b) => new Date(b.start_schedule).getTime() - new Date(a.start_schedule).getTime());
-
             setAppointments(filtered);
         } catch (error) {
             console.error("Erro ao buscar agendamentos:", error);
@@ -87,21 +86,21 @@ const LatestAppointments = ({ appointmentStatus }: LatestAppointmentsProps) => {
                     const timeStr = `${startDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
                     
                     // CORREÇÃO DO ERRO: Conversão explícita para Number
-                    const price = item.price;
+                    const price = Number(item.price);
 
                     return (
                         <div key={item.id} className={style.latestAppointmentsItem}>
                             <div className={style.imageContainer}>
                                 <Image 
-                                    src={item.place_image || '/images/placeholder.jpg'} 
-                                    alt={item.place_name || 'Local'}
+                                    src={item.place.image || '/images/placeholder.jpg'} 
+                                    alt={item.place.name || 'Local'}
                                     fill
                                     className={style.latestAppointmentsItemImage}
                                 />
                             </div>
                             
                             <div className={style.cardContent}>
-                                <h3 className={style.latestAppointmentsItemTitle}>{item.place_name}</h3>
+                                <h3 className={style.latestAppointmentsItemTitle}>{item.place.name}</h3>
                                 
                                 <div className={style.infoRow}>
                                     <FontAwesomeIcon icon={faCalendarAlt} />

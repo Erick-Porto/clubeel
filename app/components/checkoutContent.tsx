@@ -23,9 +23,9 @@ const URIGen = (l: string, i: number, d: string) => {
 
 const CheckoutContent = () => {
     const { data: session } = useSession();
-    const { cart, refreshCart, isLoading } = useCart();
+    const { cart, refreshCart, isLoading, removeCartItem } = useCart();
     const [cancellingId, setCancellingId] = useState<number | null>(null);
-
+    console.log("CheckoutContent - Cart:", cart);
     const handleCancelSchedule = async (scheduleId: number) => {
         if (cancellingId || !session?.accessToken) {
             if (!session?.accessToken) toast.error("Sessão inválida.");
@@ -34,14 +34,7 @@ const CheckoutContent = () => {
         setCancellingId(scheduleId);
 
         try {
-            await API_CONSUME("DELETE", `schedule/delete-pending`, {
-                'Session': session.accessToken
-            },{
-                id: scheduleId
-            });
-            
-            // Feedback imediato e atualização
-            toast.success("Removido.");
+            removeCartItem(scheduleId);
             await refreshCart();
         } catch (error) {
             console.error("Erro:", error);

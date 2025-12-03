@@ -44,7 +44,6 @@ const PlacePage = () => {
             setData({
                 name: response.name || placeName.split("-").slice(0, -1).join(" "),
                 id: response.id || placeID,
-                // CORREÇÃO AQUI: Garante que o preço é um número
                 price: Number(response.price) || 0, 
                 image: response?.image || "",
                 rules: response.schedule_rules || [],
@@ -72,7 +71,6 @@ const PlacePage = () => {
     if (status === 'loading' || !data) {
         return <LoadingScreen />;
     }
-
     return (
         <div className={globalStyle.page}>
             <Header options={null} surgeIn={0} onlyScroll={false} />

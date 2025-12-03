@@ -33,13 +33,11 @@ const ProfilePage = () => {
 
             try {
                 // 1. Busca todos os agendamentos
-                const schedulesResponse = await API_CONSUME("GET", "schedule/", {
-                    'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
+                const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`, {
                     'Session': session.accessToken
                 });
 
-                const schedules = Array.isArray(schedulesResponse) ? schedulesResponse : (schedulesResponse?.data || []);
-
+                const schedules = Array.isArray(schedulesResponse.schedules) ? schedulesResponse.schedules : (schedulesResponse.schedules || []);
                 if (schedules.length > 0) {
                     // 2. Ordena para pegar o mais recente (pela data de início)
                     // Convertemos para Date para garantir a ordenação correta (Decrescente: mais novo primeiro)
@@ -52,7 +50,6 @@ const ProfilePage = () => {
                     if (latestSchedule && latestSchedule.place_id) {
                         // 3. Busca os detalhes da quadra desse agendamento
                         const placeResponse = await API_CONSUME("GET", `place/${latestSchedule.place_id}`, {
-                            'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
                             'Session': session.accessToken
                         }, null);
 

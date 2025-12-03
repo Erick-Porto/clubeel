@@ -40,21 +40,18 @@
     border: 1px solid #ddd;
 }
 
+/* --- Atualização de Legendas --- */
 .legendAvailable { background: white; }
 .legendSelected { background: var(--grena); border-color: var(--grena); }
-.legendOccupied { background: #f4f4f4; opacity: 0.7; }
-
-/* Atualização da bolinha da legenda do carrinho */
-.legendInCart {
-    background: #fff5f5;
-    border: 2px solid var(--grena);
-}
+.legendConfirmed { background: #d1e7dd; border-color: #badbcc; } /* Verde */
+.legendPending { background: #fff3cd; border-color: #ffecb5; }   /* Amarelo */
+.legendOthers { background: #f4f4f4; border-color: #ddd; opacity: 0.7; } /* Cinza Ocupado */
+.legendInCart { background: #fff5f5; border: 2px solid var(--grena); }
 
 /* Grid de Horários */
 .scheduleList {
     list-style-type: none;
     display: grid;
-    /* Responsivo: Cards maiores e mais legíveis */
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 16px;
     padding: 0;
@@ -77,7 +74,7 @@
     overflow: hidden;
 }
 
-.scheduleItem:hover:not(.unavailableHour):not(.nonAdjacent):not(.inCart) {
+.scheduleItem:hover:not(.unavailableHour):not(.nonAdjacent):not(.inCart):not(.myConfirmed):not(.myPending):not(.reservedByOthers) {
     transform: translateY(-3px);
     box-shadow: 0 8px 15px rgba(0,0,0,0.1);
     border-color: var(--grena-light);
@@ -89,12 +86,6 @@
     color: #333;
 }
 
-.timeSeparator {
-    margin: 0 4px;
-    opacity: 0.5;
-    font-weight: 400;
-}
-
 .priceLabel {
     font-size: 13px;
     color: #888;
@@ -102,6 +93,9 @@
     font-weight: 500;
 }
 
+/* --- Estados Específicos --- */
+
+/* Selecionado (Atual) */
 .selected {
     background-color: var(--grena);
     border-color: var(--grena);
@@ -110,60 +104,88 @@
     transform: scale(1.02);
     z-index: 2;
 }
+.selected .timeLabel, .selected .priceLabel { color: white; }
 
-.selected .timeLabel, 
-.selected .priceLabel {
-    color: white;
+/* Meus Confirmados (Status 1) */
+.myConfirmed {
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+    cursor: default;
+}
+.myConfirmed .timeLabel { color: #0f5132; }
+.myConfirmed .priceLabel { color: #0f5132; font-weight: 600; }
+
+/* Meus Pendentes (Status 3) */
+.myPending {
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+    cursor: default;
+}
+.myPending .timeLabel { color: #664d03; }
+.myPending .priceLabel { color: #664d03; font-weight: 600; }
+
+/* Reservado por Outros (Bloqueado) */
+.reservedByOthers {
+    background-color: #f4f4f4;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+.reservedByOthers .timeLabel {
+    color: #999;
+    text-decoration: line-through;
+}
+.reservedByOthers .priceLabel {
+    color: #b02a37; /* Avermelhado discreto */
+    font-size: 11px;
+    font-weight: 600;
 }
 
+/* No Carrinho (Global ou Local) */
 .inCart {
-    background-color: #fafafa; /* Cinza muito claro, quase branco */
+    background-color: #fafafa;
     border: 1px solid #e0e0e0;
     color: #666;
     cursor: default;
 }
-
-.inCart .timeLabel {
-    color: #444; /* Texto escuro suave */
-    font-weight: 600;
-}
-
+.inCart .timeLabel { color: #444; font-weight: 600; }
 .inCart .priceLabel {
-    color: var(--grena); /* Destaca que é um item de valor */
+    color: var(--grena);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.8rem;
-    background: transparent; /* Remove fundo do label */
     padding: 0;
     margin-top: 6px;
 }
 
-.unavailableHour, .reserved {
+/* Indisponíveis Gerais (Passado, Regras, Conflitos) */
+.unavailableHour {
     background-color: #f4f4f4;
     cursor: not-allowed;
     color: #bbb;
     border-color: transparent;
     box-shadow: none;
 }
-
-.unavailableHour .timeLabel,
-.reserved .timeLabel {
+.unavailableHour .timeLabel {
     color: #aaa;
-    text-decoration: line-through; /* Risca o horário para reforçar indisponibilidade */
+    text-decoration: line-through;
     opacity: 0.7;
 }
 
-.inCart {
-    background-color: #e8e8e8;
-    color: #999;
-}
-
+/* Não Adjacente / Bloqueio de Lógica */
 .nonAdjacent {
-    opacity: 0.6;
-    cursor: not-allowed;
+opacity: 0.5;
+    cursor: not-allowed; /* O cursor indica que não vai funcionar */
     background-color: #fafafa;
-    border: 1px dashed #ddd; /* Borda tracejada para indicar "fora do alcance" */
+    border: 1px dashed #ccc;
+    transform: scale(0.98); /* Levemente menor para indicar inatividade */
 }
+.nonAdjacent:hover {
+    /* Remove efeito de hover padrão para reforçar */
+    transform: scale(0.98);
+    box-shadow: none;
+    border-color: #ccc;
+}
+/* --- Layout Responsivo --- */
 
 .rightColumn {
     display: flex;
@@ -171,11 +193,9 @@
     gap: 20px;
     width: 380px;
     flex-shrink: 0;
-    
     position: sticky;
     top: 100px;
     height: fit-content;
-    
     background: white;
     padding: 20px;
     border-radius: 16px;
@@ -229,13 +249,8 @@
     grid-column: 1 / -1;
 }
 
-.mobileBottomBar {
-    display: none; /* Escondido em Desktop */
-}
-
-.mobileSpacer {
-    display: none;
-}
+.mobileBottomBar { display: none; }
+.mobileSpacer { display: none; }
 
 @media (max-width: 1024px) {
     .placeContainer {
@@ -245,13 +260,9 @@
         gap: 20px;
     }
 
-    .rightColumn {
-        display: none;
-    }
+    .rightColumn { display: none; }
     
-    .scheduleContainer {
-        max-width: 100%;
-    }
+    .scheduleContainer { max-width: 100%; }
 
     .scheduleList {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -263,11 +274,8 @@
         padding: 12px 5px;
     }
 
-    .timeLabel {
-        font-size: 15px;
-    }
+    .timeLabel { font-size: 15px; }
     
-    /* Barra Fixa Mobile */
     .mobileBottomBar {
         display: flex;
         position: fixed;
@@ -281,7 +289,6 @@
         align-items: center;
         justify-content: space-between;
         gap: 15px;
-        /* SafeArea para iPhones recentes */
         padding-bottom: calc(15px + env(safe-area-inset-bottom));
     }
 
