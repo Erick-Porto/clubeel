@@ -11,15 +11,22 @@ import { useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { LoadingScreen } from "@/components/loading";
+import TutorialOverlay, { TutorialStep } from "@/app/components/tutorial-overlay";
 
 // --- INTERFACES ---
+
+// CORREÇÃO: Interface auxiliar para tipar o acesso ao accessToken
+interface CustomSession {
+    accessToken?: string;
+}
+
 interface Rule {
     type: 'include' | 'exclude';
     start_date: string | null;
     end_date: string | null;
     start_time: string | null;
     end_time: string | null;
-    weekdays: { name: string }[] | null;
+    weekdays: ({ name: string } | string)[] | null;
     maximum_antecedence: number;
     minimum_antecedence: number;
     status_id: number;
@@ -91,7 +98,8 @@ const isPlaceAvailableOnDate = (place: Place, selectedDate: Date): boolean => {
             if (!rule.weekdays || rule.weekdays.length === 0) {
                 isBlocked = true;
             } else {
-                const ruleDays = rule.weekdays.map((d: any) => (d.name || d).toLowerCase());
+                // CORREÇÃO: Tipagem segura para map
+                const ruleDays = rule.weekdays.map((d) => (typeof d === 'string' ? d : d.name).toLowerCase());
                 if (ruleDays.includes(selectedWeekday)) 
                     isBlocked = true;
             }
@@ -103,7 +111,8 @@ const isPlaceAvailableOnDate = (place: Place, selectedDate: Date): boolean => {
 
             // A. Verifica Dia da Semana
             if (rule.weekdays && rule.weekdays.length > 0) {
-                const ruleDays = rule.weekdays.map((d: any) => (d.name || d).toLowerCase());
+                // CORREÇÃO: Tipagem segura para map
+                const ruleDays = rule.weekdays.map((d) => (typeof d === 'string' ? d : d.name).toLowerCase());
                 if (!ruleDays.includes(selectedWeekday)) 
                     ruleIsValid = false;
             }
@@ -155,8 +164,11 @@ const PlacesPage = () => {
         if (status !== 'authenticated' || !session || !placeId) return;
 
         try {
+            // CORREÇÃO: Cast seguro utilizando interface
+            const token = (session as unknown as CustomSession).accessToken;
+
             const response = await API_CONSUME("GET", `places/${placeId}`, {
-                'Session': (session as any).accessToken
+                'Session': token
             }, null);
 
             const placesArray: Place[] = Object.values(response.places || {});
@@ -271,9 +283,38 @@ const PlacesPage = () => {
     const canGoPrev = daysFromToday >= 7; 
     const canGoNext = (daysFromToday + 7) <= maxAntecedence;
 
+    const TUTORIAL_STEPS: TutorialStep[] = [
+        {
+            targetId: 'date-selection',
+            title: 'Selecione a Data',
+            description: (
+                <>
+                    <p><FontAwesomeIcon icon={faChevronLeft} /> Use as setas para navegar por semanas.</p>
+                    <p>Clique em uma data disponível para ver as quadras.</p>
+                </>
+            ),
+            offset: -100,
+            mOffset: -50
+        },
+        {
+            targetId: 'schedule-button-0',
+            title: 'Escolha uma Quadra',
+            description: (
+                <>
+                    <p>Clique em uma quadra para ver os horários disponíveis.</p>
+                </>
+            ),
+            offset: -90,
+            mOffset: -160,
+            waitForAction: true // O botão "Próximo" some, forçando o usuário a clicar no mapa/link real
+        }
+    ]
+
     return (
         <div className={globalStyle.page}>
+            
             <Header options={null} surgeIn={0} onlyScroll={false} profileOptions={null} />
+            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="v1_places" />
             
             <section className={globalStyle.Section} style={{ paddingBottom: "60px" }}>
                 
@@ -283,7 +324,7 @@ const PlacesPage = () => {
                     </div>
                 </div>
 
-                <div className={style.dateSelectionContainer}>
+                <div className={style.dateSelectionContainer} id="date-selection">
                     <button
                         className={style.dateSelectionArrow}
                         onClick={() => handleDateSelectionArrow("prev")}
@@ -330,8 +371,8 @@ const PlacesPage = () => {
                     </button>
                 </div>
 
-                <div className={style.placeList}>
-                    {places.map((item) => {
+                <div className={style.placeList} id="place-list">
+                    {places.map((item, index) => {
                         const isAvailable = isPlaceAvailableOnDate(item, selectedDate);
 
                         return (
@@ -353,6 +394,7 @@ const PlacesPage = () => {
                                     
                                     {isAvailable ? (
                                         <Link
+                                            id={`schedule-button-${index}`}
                                             className={`${style.placeAction} ${style.btnReserve}`}
                                             href={{
                                                 pathname: `/place/${item.name.replace(/\s+/g, '-').toLowerCase()}-${item.id}`

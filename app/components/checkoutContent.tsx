@@ -5,8 +5,8 @@ import { useSession } from 'next-auth/react'
 import { useCart, CartItem } from '@/context/CartContext'
 import Link from 'next/link';
 import { Loading } from './loading';
-import API_CONSUME from '@/services/api-consume';
 import { toast } from 'react-toastify';
+import Image from 'next/image'
 
 // Ícones SVG (Mantidos)
 const TrashIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>);
@@ -71,7 +71,7 @@ const CheckoutContent = () => {
                         
                         {/* Link cobre apenas a área clicável de navegação */}
                         <Link href={URIGen(item.place.name || '', item.place_id, isoDate)} className={style.cartItemContent}>
-                            <img
+                            <Image
                                 className={style.scheduleImage}
                                 src={item.place.image || '/images/placeholder.jpg'}
                                 alt={item.place.name || 'Local'}

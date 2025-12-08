@@ -17,7 +17,7 @@ const formatDateBR = (isoDate: string) => {
     return `${day}/${month}/${year}`;
 };
 
-const CheckoutView: React.FC<{ total: number, formatPrice: (p: any) => string }> = ({ total, formatPrice }) => {
+const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string }> = ({ total, formatPrice }) => {
     const [preferenceId, setPreferenceId] = useState<string | null>(null)
     const [groupedCart, setGroupedCart] = useState<GroupedCartItem[]>([])
     const { data: session } = useSession()

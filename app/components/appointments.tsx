@@ -29,7 +29,7 @@ const Appointments = () => {
                 <LatestAppointments appointmentStatus={1} />
             </div>
             <div className={style.appointmentsItem}>
-                <h1 className={style.appointmentsTitle}>Últimos Agendamentos</h1>
+                <h1 className={style.appointmentsTitle}>Agendamentos Anteriores</h1>
                 <LatestAppointments appointmentStatus={10} />
             </div>
         </div>

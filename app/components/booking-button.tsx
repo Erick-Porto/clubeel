@@ -47,7 +47,7 @@ const BookingButton = ({ text, onClick, itemsToValidate, redirectPath, disabled 
     }
 
     return (
-        <button 
+        <button
             className={style.bookingButton} 
             onClick={handleActionClick}
             disabled={disabled}

@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
 
-:root {
+:root{
+  --logo-vert: url('../public/images/logo-cfcsn-vert.png');
+  --logo-horiz: url('../public/images/logo-cfcsn-horiz.png');
+  --logo-cfcsn-w-vert: url('../public/images/logo-cfcsn-w-vert.png');
+  --logo-cfcsn-w-horiz: url('../public/images/logo-cfcsn-w-horiz.png');
   --background: #ffffff;
   --foreground: #171717;
   --grena: #7d0400;

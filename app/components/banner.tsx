@@ -1,28 +1,66 @@
 import Image from "next/image";
 import style from "@/styles/banner.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCamera, faIdBadge } from "@fortawesome/free-solid-svg-icons";
-
-// Interfaces
-interface UserProps {
-    name?: string | null;
-    image?: string | null;
-    title?: string | null; // Matrícula
-}
+import { faIdBadge } from "@fortawesome/free-solid-svg-icons";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 interface BannerProps {
-    user: UserProps | null;
     lastScheduleImage?: string;
 }
 
-const Banner = ({ user, lastScheduleImage }: BannerProps) => {
+const Banner = ({ lastScheduleImage }: BannerProps) => {
+    // 1. Hooks movidos para DENTRO do componente
+    const { data: session } = useSession();
+    const [avatarImage, setAvatarImage] = useState('/images/default-avatar.png');
+
+    // Atalho para facilitar o uso no JSX
+    const user = session?.user;
+
+    useEffect(() => {
+        const fetchAvatarImage = async () => {
+            // Verificação de segurança dentro da função async
+            if (!session?.user?.id || !session?.accessToken) return;
+
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_LARA_API}/api/image/${session.user.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Session': session?.accessToken,
+                        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_LARA_API_TOKEN}`,
+                        'Accept': 'image/jpeg'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro ao carregar imagem: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+
+                const base64 = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(blob);
+                });
+
+                setAvatarImage(base64);
+            } 
+            catch (error) {
+                console.error("Erro ao buscar avatar:", error);
+            }
+        };
+
+        if (session?.user?.id) {
+            fetchAvatarImage();
+        }
+    // 2. Dependência adicionada conforme aviso do linter
+    }, [session?.user?.id, session?.accessToken]);
+
+    // Se não tiver usuário, não renderiza nada (proteção)
     if (!user) return null;
 
-    // Imagem de Capa: Prioriza a do último agendamento, senão usa um padrão do clube
     const coverImage = lastScheduleImage || '/images/default-cover.jpg'; 
-    
-    // Avatar: Se não tiver, usa o placeholder
-    const avatarImage = user.image || '/images/admin.jpg';
 
     return(
         <div className={style.bannerContainer}>
@@ -44,10 +82,11 @@ const Banner = ({ user, lastScheduleImage }: BannerProps) => {
                 {/* Avatar + Botão de Edição */}
                 <div className={style.avatarWrapper}>
                     <Image 
-                        src={avatarImage} 
-                        alt={`Foto de ${user.name}`}
+                        src={avatarImage}
+                        alt={`Foto de ${user.name?.split(' ')[0]}`}
                         width={150}
                         height={150}
+                        unoptimized
                         className={style.avatarImage}
                     />
                 </div>
@@ -56,6 +95,8 @@ const Banner = ({ user, lastScheduleImage }: BannerProps) => {
                 <div className={style.userInfo}>
                     <h1 className={style.userName}>{user.name}</h1>
                     
+                    {/* O TypeScript pode reclamar de 'title' se não estiver na tipagem do NextAuth, 
+                        mas mantive conforme seu código original */}
                     {user.title && (
                         <div className={style.userTitle}>
                             <FontAwesomeIcon icon={faIdBadge} />

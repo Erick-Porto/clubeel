@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashAlt, faCartShopping, faCalendarAlt, faClock } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
-import API_CONSUME from '@/services/api-consume';
 import { useCart, CartItem } from '@/context/CartContext';
 import { useSession } from 'next-auth/react';
 import { useMemo } from 'react';

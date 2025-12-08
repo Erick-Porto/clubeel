@@ -1,4 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./auth/[...nextauth]"; // Importa as opções de auth
 import API_CONSUME from "@/services/api-consume";
 
 // Definição da interface básica de um agendamento vindo do seu backend
@@ -6,91 +8,98 @@ interface Schedule {
     id: number;
     start_schedule: string; // Formato: "YYYY-MM-DD HH:mm:ss"
     status_id: number;
+    createdAt?: string; // Adicionado como opcional para evitar erros se a API não retornar
+    [key: string]: unknown;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { payment_id, status, collection_status } = req.query;
+    const { payment_id } = req.query;
+    
+    // CORREÇÃO: Usar getServerSession no servidor em vez de useSession
+    const session = await getServerSession(req, res, authOptions);
 
-    // 1. Validação básica: Se não houver pagamento ou não for aprovado, redireciona para erro
-    if (!payment_id || (status !== 'approved' && collection_status !== 'approved')) {
-        console.error("❌ Pagamento não aprovado ou ID ausente.");
-        return res.redirect("/checkout?status=failure");
+    // Se não houver sessão, não podemos processar com a API que exige token
+    if (!session || !session.accessToken) {
+        console.warn("⚠️ Sessão não encontrada no callback de sucesso.");
+        // Redireciona para login ou erro, já que precisamos do token para atualizar o backend
+        return res.redirect("/login?error=session_expired");
     }
 
     try {
         // =====================================================================
         // PASSO 1: Buscar os agendamentos atrelados a este pagamento no seu Backend
         // =====================================================================
-        // Precisamos saber QUAIS horários foram pagos para verificar a data.
-        // Assumindo que seu backend tenha uma rota que busca pelo ID do pagamento.
         
         const headers = {
-            'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
-            'Content-Type': 'application/json'
+            'Session': session.accessToken as string
         };
 
-        // Exemplo: GET /payment/{id}/schedules
-        const response = await API_CONSUME("GET", `payment/${payment_id}/schedules`, headers);
+        // Busca agendamentos do usuário logado
+        const dataSchedules = await API_CONSUME("GET", `schedule/member/${session.user?.id}`, headers);
         
         // Normaliza a resposta (Array de agendamentos)
-        let schedules: Schedule[] = [];
-        if (Array.isArray(response)) schedules = response;
-        else if (response?.data) schedules = response.data;
-        else if (response?.schedules) schedules = response.schedules;
-
-        if (schedules.length === 0) {
-            console.warn("⚠️ Nenhum agendamento encontrado para este pagamento.");
-            // Redireciona para sucesso para não travar o usuário, mas loga o erro
-            return res.redirect("/checkout?status=success"); 
-        }
-
-        // =====================================================================
-        // PASSO 2: Verificar se algum agendamento já expirou (Data Passada)
-        // =====================================================================
-        const now = new Date();
+        // Garante que estamos trabalhando com um array, mesmo que a API retorne { schedules: [...] }
+        const list: Schedule[] = Array.isArray(dataSchedules) 
+            ? dataSchedules 
+            : (Array.isArray(dataSchedules?.schedules) ? dataSchedules.schedules : []);
         
-        // Verifica se existe ALGUM item cuja data de início seja menor que AGORA
-        const hasExpiredItem = schedules.some((item) => {
-            // Converte "2025-11-24 17:00:00" para Date. 
-            // O replace substitui espaço por T para garantir compatibilidade do Date()
-            const scheduleDate = new Date(item.start_schedule.replace(" ", "T"));
-            return scheduleDate < now;
-        });
+        let schedules: Schedule[] = [];
+        let expired: Schedule[] = [];
 
-        // =====================================================================
-        // PASSO 3: Tomada de Decisão (Confirmar ou Estornar)
-        // =====================================================================
+        // CORREÇÃO: Lógica para agendamentos expirados
+        if (list.length > 0) {
+            // 1. Define o ponto no tempo: 15 minutos atrás a partir de agora.
+            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000); 
 
-        if (hasExpiredItem) {
-            console.log("⏳ Agendamento expirado detectado. Iniciando estorno...");
-
-            // A. Dispara o estorno no seu Backend (que deve chamar o MP)
-            await API_CONSUME("POST", `payment/${payment_id}/refund`, headers, {
-                reason: "Agendamento expirado no momento do pagamento"
+            // 2. Filtra os agendamentos expirados
+            expired = list.filter((s) => {
+                if (!s.createdAt) return false;
+                // Converte a string 'createdAt' para um objeto Date
+                const createdAtDate = new Date(s.createdAt.replace(" ", "T")); 
+                
+                // Compara se o agendamento foi criado ANTES de 15 minutos atrás
+                // e se o status é 'Pendente de Pagamento' (status_id = 4)
+                return s.status_id === 4 && createdAtDate < fifteenMinutesAgo;
             });
-
-            // B. Libera os horários no banco de dados (opcional, se o refund não fizer isso automatico)
-            // await API_CONSUME("POST", "schedule/cancel", headers, { payment_id });
-
-            // C. Redireciona o usuário com status de expirado
-            return res.redirect("/checkout?status=expired");
-
-        } else {
-            console.log("✅ Agendamentos válidos. Confirmando...");
-
-            // A. Dispara a confirmação no banco de dados (Muda status de 'Pendente' para 'Pago')
-            await API_CONSUME("PUT", `payment/${payment_id}/confirm`, headers, {
-                schedules: schedules.map(s => s.id)
-            });
-
-            // B. Redireciona para sucesso
-            return res.redirect("/checkout?status=success");
+            
+            // Filtra agendamentos pendentes que NÃO expiraram para o fluxo normal
+            // (status_id = 3 ou 4 dependendo da sua regra de negócio, mantive 3 conforme seu snippet original)
+            schedules = list.filter((s) => s.status_id === 3); 
         }
+
+        if (schedules.length === 0 && expired.length > 0) {
+            console.warn("⚠️ Pagamento detectado para agendamentos expirados. Tentando reembolso...");
+
+            if (process.env.MP_ACCESS_TOKEN && payment_id) {
+                await fetch("https://api.mercadopago.com/v1/payments/" + payment_id + "/refunds", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Idempotency-Key": `${payment_id}-refund-${Date.now()}`,
+                        Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+                    },
+                }).catch(err => console.error("Erro ao processar reembolso automático:", err));
+            }
+            return res.redirect("/checkout?status=expired");
+        }
+
+        console.log("✅ Agendamentos válidos. Confirmando...");
+
+        // A. Dispara a confirmação no banco de dados (Muda status de 'Pendente' para 'Pago')
+        if (schedules.length > 0) {
+            await API_CONSUME("PUT", `schedule/update-status`, headers, 
+                schedules.map(s => ({
+                    id: s.id,
+                    status_id: 1 // Pago
+                }))
+            );
+        }
+
+        // B. Redireciona para sucesso
+        return res.redirect("/checkout?status=success");
 
     } catch (error) {
         console.error("❌ Erro crítico no processamento do sucesso:", error);
-        // Em caso de erro no servidor, redireciona para uma tela de "verifique seu email" ou erro genérico
-        // Não queremos dar "Sucesso" falso se o banco não atualizou
         return res.redirect("/checkout?status=error_processing");
     }
 }

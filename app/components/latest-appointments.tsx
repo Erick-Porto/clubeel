@@ -4,15 +4,21 @@ import { useEffect, useState, useCallback } from 'react';
 import style from '@/styles/latest-appointments.module.css';
 import API_CONSUME from '@/services/api-consume';
 import { useSession } from 'next-auth/react';
-import { Loading } from '@/components/loading';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarAlt, faClock, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarAlt, faClock } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
+
+interface Place {
+    name: string;
+    image?: string;
+}
 
 // Interfaces
 interface Appointment {
     id: number;
-    place_name: string;
+    place_id?: number;
+    place: Place;
+    place_name?: string;
     place_image?: string;
     start_schedule: string;
     end_schedule: string;
@@ -21,16 +27,31 @@ interface Appointment {
 }
 
 interface LatestAppointmentsProps {
-    appointmentStatus: number; // 1 = Confirmado, 10 = Histórico, etc.
+    appointmentStatus: number;
+}
+
+// 2. Interface local para estender a sessão com as propriedades customizadas
+interface CustomSession {
+    user?: {
+        id?: string | number;
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+    };
+    accessToken?: string;
 }
 
 const LatestAppointments = ({ appointmentStatus }: LatestAppointmentsProps) => {
-    const { data: session, status } = useSession();
+    const { data: sessionData, status } = useSession();
+    // CORREÇÃO: Cast seguro para a interface extendida
+    const session = sessionData as CustomSession | null;
+
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchAppointments = useCallback(async () => {
-        if (status !== 'authenticated' || !session?.accessToken) return;
+        // Agora o TypeScript reconhece .accessToken e .user.id graças à interface CustomSession
+        if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id) return;
 
         try {
             setIsLoading(true);

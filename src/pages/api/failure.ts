@@ -1,6 +1,6 @@
-import type { NextApiRequest, NextApiResponse } from "next"
+import type { NextApiRequest, NextApiResponse } from "next";
 
-export default function handler(req: any, res: any) {
-  console.log("❌ Pagamento falhou:", req.query)
-  res.redirect("/checkout?status=failure")
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log("❌ Pagamento falhou:", req.query);
+  res.redirect("/checkout?status=failure");
 }

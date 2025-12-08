@@ -1,8 +1,3 @@
-:root{
-    --logo-vert: url('../public/images/logo-cfcsn-vert.png');
-    --logo-horiz: url('../public/images/logo-cfcsn-horiz.png');
-}
-
 .sidebar{
     position: relative;
     width: 480px;

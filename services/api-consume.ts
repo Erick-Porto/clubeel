@@ -1,7 +1,7 @@
 import { toast } from "react-toastify";
 import { signOut } from "next-auth/react"; // 1. Importar signOut
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.100.48:8000/api";
+const BASE_URL = `${process.env.NEXT_PUBLIC_LARA_API}/api` || "http://192.168.100.48:8000/api";
 
 async function API_CONSUME(method: string, endpoint: string, headers: any = {}, body: any = null) {
     try {
@@ -9,7 +9,6 @@ async function API_CONSUME(method: string, endpoint: string, headers: any = {}, 
             method,
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
                 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_LARA_API_TOKEN}`,
                 ...headers
             },

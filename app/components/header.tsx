@@ -5,7 +5,7 @@ import styles from '@/styles/header.module.css';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signOut, useSession } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faUserCircle } from '@fortawesome/free-solid-svg-icons';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -143,7 +143,9 @@ export default function Header({
                         className={styles.profileButton} 
                         onClick={() => setUserOptions(!userOptions)}
                     >
+                        {isMobile &&(<span>{session.user.name?.split(' ')[0].toLowerCase()}</span>)}
                         <FontAwesomeIcon icon={faUserCircle} style={{ fontSize: 22, color: '#555' }} />
+                        
                         {!isMobile && (
                             <>
                                 <span>{session.user.name?.split(' ')[0].toLowerCase()}</span>

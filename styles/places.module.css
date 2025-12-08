@@ -275,7 +275,11 @@
 .placeCardDisabled .placeCardImage {
   filter: grayscale(0.8);
 }
-
+@media(min-width: 768px) {
+  .placeBanner{
+    background-position: 0 35%;
+  }
+}
 /* Responsividade */
 @media (max-width: 768px) {
   .placeBanner {

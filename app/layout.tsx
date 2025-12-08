@@ -4,7 +4,6 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 
-import { UserProvider } from '@/context/UserContext';
 import { NextAuthProvider } from '@/components/provider';
 import { ToastContainer } from "react-toastify";
 import { CartProvider } from "@/context/CartContext"; // Importe o CartProvider
@@ -12,7 +11,7 @@ import { CartProvider } from "@/context/CartContext"; // Importe o CartProvider
 
 export const metadata: Metadata = {
   title: "Clube dos Funcionários",
-  description: "O melhor da vida é aqui.",
+  description: "Conectando gerações.",
 };
 
 export default function RootLayout({
@@ -39,7 +38,7 @@ export default function RootLayout({
             newestOnTop={false}
             closeOnClick
             rtl={false}
-            escapeMarkup={true}
+            // escapeMarkup={true} - Removed: Property does not exist in newer versions
             pauseOnFocusLoss={false}
             draggable
             pauseOnHover={false}

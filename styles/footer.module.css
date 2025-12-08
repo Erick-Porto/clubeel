@@ -1,7 +1,4 @@
-:root{
-    --logo-cfcsn-w-vert: url('../public/images/logo-cfcsn-w-vert.png');
-    --logo-cfcsn-w-horiz: url('../public/images/logo-cfcsn-w-horiz.png');
-}
+
 .footer {
   background-color: var(--grena);
   color: white;

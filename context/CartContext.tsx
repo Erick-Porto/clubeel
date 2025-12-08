@@ -8,7 +8,8 @@ import { toast } from 'react-toastify';
 export interface CartItem {
     id: number;
     place_id: number;
-    place_name: string;
+    place:any;
+    place_name?: string;
     place_image?: string;
     start_schedule: string; 
     end_schedule: string;

@@ -22,6 +22,15 @@ interface ModalProps {
     onConfirm: (password: string) => Promise<void>;
 }
 
+interface ApiError {
+    message?: string;
+    response?: {
+        data?: {
+            error?: string;
+        };
+    };
+}
+
 // --- MODAL ---
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm }) => {
     const [password, setPassword] = useState("");
@@ -154,12 +163,14 @@ export const ProfileForm = () => {
             setModalState(false);
             setIsEditable(false);
 
-        } catch (error: any) {
+        } catch (error) {
             console.error("Erro update profile:", error);
-            if (error.message === "Senha incorreta") {
+            const err = error as ApiError;
+            
+            if (err.message === "Senha incorreta") {
                 toast.error("Senha incorreta.");
             } else {
-                const msg = error?.response?.data?.error || "Erro ao atualizar dados.";
+                const msg = err?.response?.data?.error || "Erro ao atualizar dados.";
                 toast.error(msg);
             }
             throw error;
@@ -284,7 +295,7 @@ export const PasswordForm = () => {
         if (!session?.accessToken) throw new Error("Sessão inválida.");
         
         try {
-            const cpfClean = session.user.cpf.replace(/\D/g, '');
+            const cpfClean = (session?.user?.cpf || "").replace(/\D/g, '');
             const encryptedCurrent = CryptoJS.SHA256(currentPassword).toString();
             
             // 1. Validação via Login
@@ -317,12 +328,14 @@ export const PasswordForm = () => {
             });
             setModalState(false);
             setPasswords({ new1: "", new2: "" });
-        } catch (error: any) {
+        } catch (error) {
             console.error("Erro update password:", error);
-            if (error.message === "Senha incorreta") {
+            const err = error as ApiError;
+
+            if (err.message === "Senha incorreta") {
                 toast.error("Senha atual incorreta.");
             } else {
-                const msg = error?.response?.data?.error || "Erro ao alterar senha.";
+                const msg = err?.response?.data?.error || "Erro ao alterar senha.";
                 toast.error(msg);
             }
             throw error;

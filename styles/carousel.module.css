@@ -1,7 +1,3 @@
-:root {
-  --logo-cfcsn-w-vert: url('../public/images/logo-cfcsn-w-vert.png');
-  --logo-cfcsn-w-horiz: url('../public/images/logo-cfcsn-w-horiz.png');
-}
 
 /* O Carousel agora ocupa o espaço restante (flex: 1) */
 .carousel {

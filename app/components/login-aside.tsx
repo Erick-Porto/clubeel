@@ -27,7 +27,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     const searchParams = useSearchParams();
 
     useEffect(() => {
-        const maintenanceMode = searchParams.get('maintenance');
+        const maintenanceMode = searchParams?.get('maintenance');
         if (maintenanceMode === 'true') {
             setIsMaintenance(true);
             window.history.replaceState(null, '', '/');
@@ -144,7 +144,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 router.push('/');
                 router.refresh();
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
             toast.error("Erro inesperado.");
         } finally {
@@ -229,7 +229,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                                     <input type="text" value={matricula} onChange={(e) => verifyCode({ code: e.target.value })} onBlur={finalizeCode} placeholder="Matrícula (Ex: 00000)" required />
                                 </div>
                                 <div className={styles.inputGroup}>
-                                    <input type="date" value={bornAs} onChange={(e) => setBornAs(e.target.value)} placeholder="Data de nascimento" required />
+                                    <input type="date" value={bornAs} placeholder="MM/DD/YYYY" onChange={(e) => setBornAs(e.target.value)} required />
                                 </div>
                                 <div className={styles.inputGroup}>
                                     <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Senha" required />

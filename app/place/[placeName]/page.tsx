@@ -10,14 +10,22 @@ import style from "@/styles/places.module.css";
 import API_CONSUME from '@/services/api-consume';
 import { useSession } from 'next-auth/react';
 import { LoadingScreen } from '@/components/loading';
+import TutorialOverlay, { TutorialStep } from '@/app/components/tutorial-overlay';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 
 interface PlaceData {
     name: string;
     id: string;
     image: string;
-    rules: any[];
-    schedule: any[];
+    rules: unknown[]; 
+    schedule: unknown[]; 
     price: number;
+}
+
+// CORREÇÃO: Interface auxiliar para tipar o acesso ao accessToken
+interface CustomSession {
+    accessToken?: string;
 }
 
 const PlacePage = () => {
@@ -37,8 +45,11 @@ const PlacePage = () => {
         }
 
         try {
+            // CORREÇÃO: Cast seguro utilizando a interface CustomSession
+            const token = (session as unknown as CustomSession).accessToken;
+
             const response = await API_CONSUME("GET", `place/${placeID}`, {
-                'Session': (session as any).accessToken
+                'Session': token
             }, null);
 
             setData({
@@ -62,7 +73,7 @@ const PlacePage = () => {
         return () => clearInterval(interval);
     }, [fetchData]);
 
-    const selectedDateString = searchParams.get('date');
+    const selectedDateString = searchParams?.get('date');
     const dateParts = selectedDateString ? selectedDateString.split('-') : [];
     const selectedDate = dateParts.length === 3 
         ? new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2])) 
@@ -71,9 +82,51 @@ const PlacePage = () => {
     if (status === 'loading' || !data) {
         return <LoadingScreen />;
     }
+
+    const TUTORIAL_STEPS: TutorialStep[] = [
+            {
+                targetId: 'schedule-1',
+                title: 'Selecione pelo menos um horário',
+                description: (
+                    <>
+                        <p><FontAwesomeIcon icon={faChevronLeft} /> Use as setas para navegar por semanas.</p>
+                        <p>Clique em uma data disponível para ver as quadras.</p>
+                    </>
+                ),
+                offset: -150,
+                mOffset: 150,
+                waitForAction: true
+            },
+            {
+                targetId: 'action-buttons-1',
+                title: 'Adicione seus horários',
+                description: (
+                    <>
+                        <p>Clique em adicionar para levar os horários que deseja ao carrinho.</p>
+                    </>
+                ),
+                offset: -150,
+                mOffset: 100,
+                waitForAction: true
+            },
+            {
+                targetId: 'action-buttons-2',
+                title: 'Vá ao checkout',
+                description: (
+                    <>
+                        <p>Clique em finalizar para ir confirmar seus agendamentos.</p>
+                    </>
+                ),
+                offset: -150,
+                mOffset: 150,
+                waitForAction: true
+            }
+        ]
+
     return (
         <div className={globalStyle.page}>
             <Header options={null} surgeIn={0} onlyScroll={false} />
+            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="v1_place" />
             
             <div className={style.placeBanner} style={{ backgroundImage: `url(${data.image})`, height: '30vh', minHeight: '250px' }}>
                 <div className={style.placeBannerCover}>

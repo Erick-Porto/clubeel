@@ -6,6 +6,15 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!, // ⚠️ PRIVATE token
 });
 
+// Define interface for incoming items to avoid 'any'
+interface CartItem {
+  id?: string | number; // Add ID to interface
+  title: string;
+  quantity: number;
+  unit_price: number;
+  [key: string]: unknown;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
@@ -25,7 +34,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const result = await preference.create({
       body: {
-        items: items.map((item: any) => ({
+        items: items.map((item: CartItem) => ({
+          // Fix: 'id' is required by Mercado Pago SDK types
+          id: item.id ? String(item.id) : "item-id", 
           title: String(item.title || "Item"),
           quantity: Number(item.quantity) || 1,
           unit_price: Number(item.unit_price) || 0,
@@ -44,8 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log("✅ Preference criada:", result.id);
 
     return res.status(200).json({ id: result.id });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Erro no create_preference:", err);
-    return res.status(500).json({ error: err.message });
+    const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+    return res.status(500).json({ error: errorMessage });
   }
 }

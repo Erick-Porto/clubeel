@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from '@/styles/map-banner.module.css';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   TransformWrapper,
   TransformComponent,
@@ -61,7 +62,7 @@ const HotspotsOverlay: React.FC<{
       viewBox="0 0 2000 1200"
       preserveAspectRatio="xMidYMid meet"
     >
-      {places.map((spot) => {
+      {places.map((spot,index) => {
         const { centerX, centerY } = getHotspotBounds(spot.vertices);
         const polygonPoints = formatPolygonPoints(getPolygonVertices(spot.vertices));
 
@@ -84,6 +85,7 @@ const HotspotsOverlay: React.FC<{
               style={{ overflow: 'visible' }}
             >
               <div
+                id={`hotspot-${index}`}
                 className={styles.hotspotIconContainer}
                 style={{ transform: `scale(${iconScale})` }}
                 onMouseUp={(e) => onIconClick(spot, e)}
@@ -93,7 +95,7 @@ const HotspotsOverlay: React.FC<{
               >
                 {/* Efeito de onda/pulse atrás do ícone */}
                 <div className={styles.pulseRing} />
-                <img src={spot.icon} alt={spot.name} className={styles.hotspotIcon} draggable={false} />
+                <Image src={spot.icon} alt={spot.name} className={styles.hotspotIcon} draggable={false} />
               </div>
             </foreignObject>
           </React.Fragment>
@@ -177,6 +179,7 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
       {activeHotspot && (
         <div
           className={styles.popup}
+                id='popup-places'
           // No mobile, o CSS ignora esses estilos inline e fixa no bottom
           style={{ left: popupPosition.x, top: popupPosition.y }}
           onMouseDown={(e) => e.stopPropagation()} 
@@ -185,7 +188,7 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
           <div className={styles.popupImageContainer}>
              <button className={styles.closeButton} onClick={closePopup} aria-label="Fechar">✕</button>
              {activeHotspot.image_horizontal ? (
-                <img src={activeHotspot.image_horizontal} alt={activeHotspot.name} className={styles.popupImage} />
+                <Image src={activeHotspot.image_horizontal} alt={activeHotspot.name} className={styles.popupImage} />
              ) : (
                 // Fallback visual caso não tenha imagem
                 <div style={{width:'100%', height:'100%', background: '#ddd', display:'flex', alignItems:'center', justifyContent:'center', color:'#888'}}>

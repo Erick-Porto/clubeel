@@ -194,9 +194,9 @@
     display: none;
   }
   
-  .profileButton span {
+  /* .profileButton span {
     display: none;
-  }
+  } */
   .profileButton {
     padding: 8px;
   }

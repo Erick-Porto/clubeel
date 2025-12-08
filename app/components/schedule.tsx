@@ -13,8 +13,8 @@ import { useIsMobile } from '../hooks/useIsMobile';
 interface ReservationPayload {
     member_id: number;
     place_id: number;
-    start_schedule: string; 
-    end_schedule: string;   
+    start_schedule: string;
+    end_schedule: string;
     price: number;
     status_id: number;
 }
@@ -26,12 +26,12 @@ interface LoadedContent {
     status: number | null;
 }
 
-interface ScheduleProps { 
-    place_id?: number; 
-    src: string; 
-    price: number; 
-    dateProp?: string; 
-    rules?: any[]; 
+interface ScheduleProps {
+    place_id?: number;
+    src: string;
+    price: number;
+    dateProp?: string;
+    rules?: unknown[];
 }
 
 // --- FUNÇÃO AUXILIAR GMT-3 ---
@@ -45,7 +45,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const isMobile = useIsMobile();
 
     const placeId = Number(place_id);
-    const numericPrice = Number(price) || 0; 
+    const numericPrice = Number(price) || 0;
     const userId = Number(session?.user?.id);
 
     const [currentDate, setCurrentDate] = useState<string>(dateProp || new Date().toISOString().split('T')[0]);
@@ -57,8 +57,6 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const [loadedContent, setLoadedContent] = useState<LoadedContent[]>([])
     const [selectedItems, setSelectedItems] = useState<LoadedContent[]>([]);
     const [localQuantity, setLocalQuantity] = useState<number>(0);
-    const [isLoading, setIsLoading] = useState(false);
-
     // 1. FETCH
     const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate) return;
@@ -70,31 +68,29 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
                 place_id: placeId
             });
 
-            let newContent: LoadedContent[] = [];
-            
             if (response) {
                 if (response.quantity !== undefined) setLocalQuantity(response.quantity);
 
                 const listToMap = Array.isArray(response) ? response : (response.data || response.options || []);
-                
-                const mappedContent: LoadedContent[] = listToMap.map((item: any) => ({
+
+                const mappedContent: LoadedContent[] = listToMap.map((item: [string, string, number, number]) => ({
                     start: item[0],
                     end: item[1],
                     owner: item[2],
                     status: item[3]
                 }));
-                
+
                 mappedContent.sort((a, b) => a.start.localeCompare(b.start));
                 setLoadedContent(mappedContent);
             }
         } catch(error) {
             console.error('Error fetching time options:', error);
         }
-    }, [placeId, session?.accessToken, currentDate]);
+    }, [placeId, session, currentDate]);
 
     useEffect(() => {
         fetchData();
-        setSelectedItems([]); 
+        setSelectedItems([]);
     }, [fetchData]);
 
     // 2. CÁLCULOS
@@ -112,7 +108,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
             setSelectedItems(prev => prev.filter(i => i !== item));
             return;
         }
-        if (item.status !== null) return; 
+        if (item.status !== null) return;
 
         if ((userTotalAppointments + selectedItems.length + 1) > localQuantity) {
             toast.error(`Limite de ${localQuantity} agendamentos atingido.`);
@@ -177,7 +173,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
             await refreshCart();
             setSelectedItems([]);
             toast.success('Adicionado ao carrinho!');
-            fetchData(); 
+            fetchData();
         } catch (error) {
             console.error("Erro ao reservar:", error);
             toast.error("Erro ao adicionar ao carrinho.");
@@ -190,27 +186,33 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
         const currentSelectionIndices = selectedItems.map(sel => loadedContent.indexOf(sel));
         return [...userOwnedIndices, ...currentSelectionIndices].sort((a, b) => a - b);
     }, [userOwnedIndices, selectedItems, loadedContent]);
-    
+
     const minActiveIndex = allActiveIndices.length > 0 ? allActiveIndices[0] : -1;
     const maxActiveIndex = allActiveIndices.length > 0 ? allActiveIndices[allActiveIndices.length - 1] : -1;
     const limitReached = (userTotalAppointments + selectedItems.length) >= localQuantity;
 
     const ActionButtons = () => (
-        <div className={styles.actionButtonsWrapper}>
-            <BookingButton
-                text={selectedItems.length === 0 ? 'Selecione um horário' : `Adicionar ${selectedItems.length} Horário(s)`}
-                itemsToValidate={selectedItems}
-                onClick={handleReserve}
-                disabled={selectedItems.length === 0}
-            />
-            {(cart && cart.length > 0) && (
+        <div className={isMobile? styles.mobileButtons : styles.actionButtonsWrapper}>
+            <div style={isMobile ? {minWidth: '140px'}:{}} id='action-buttons-1'>
                 <BookingButton
-                    text="Finalizar (Ir ao Carrinho)"
-                    redirectPath="/checkout"
-                    itemsToValidate={[]}
-                    onClick={() => {}}
-                    disabled={false}
+
+                    text={selectedItems.length === 0 ? isMobile ? 'Adicionar' : 'Selecione um horário' :  isMobile ? `Adicionar (${selectedItems.length})`: `Adicionar ${selectedItems.length} Horário(s)`}
+                    itemsToValidate={selectedItems}
+                    onClick={handleReserve}
+                    disabled={selectedItems.length === 0}
                 />
+
+            </div>
+            {(cart && cart.length > 0) && (
+                <div id ='action-buttons-2'>
+                    <BookingButton
+                        text= {isMobile ? 'Finalizar' : "Finalizar (Ir ao Carrinho)"}
+                        redirectPath="/checkout"
+                        itemsToValidate={[]}
+                        onClick={() => {}}
+                        disabled={false}
+                    />
+                </div>
             )}
         </div>
     );
@@ -227,14 +229,14 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
                 </div>
 
                 {loadedContent.length === 0 ? (
-                    <div className={styles.emptyState}>
-                        {isLoading ? "Carregando horários..." : "Nenhum horário disponível para esta data."}
+                    <div className={styles.emptyState} id="schedule-list">
+                        Nenhum horário disponível para esta data.
                     </div>
                 ) : (
-                    <ul className={styles.scheduleList}>
+                    <ul className={styles.scheduleList} id="schedule-list">
                         {loadedContent.map((item, index) => {
                             const isSelected = selectedItems.includes(item);
-                            
+
                             let itemClass = styles.scheduleItem;
                             let label = `R$ ${numericPrice.toFixed(2)}`;
                             let isClickable = true;
@@ -258,11 +260,10 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 
                             if (isSelected) itemClass += ` ${styles.selected}`;
 
-                            let isNonAdjacent = false;
+                            // CORREÇÃO: Variável 'isNonAdjacent' removida pois não era utilizada
                             if (!isBlocked && !isSelected && allActiveIndices.length > 0) {
                                 const isNeighbor = index === minActiveIndex - 1 || index === maxActiveIndex + 1;
                                 if (!isNeighbor || limitReached) {
-                                    isNonAdjacent = true;
                                     itemClass += ` ${styles.nonAdjacent}`;
                                 }
                             }
@@ -271,6 +272,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 
                             return (
                                 <li
+                                    id={`schedule-${index}`}
                                     key={`${index}-${item.start}`}
                                     className={itemClass}
                                     onClick={() => {
@@ -289,38 +291,34 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
                 <div className={styles.mobileSpacer}></div>
             </div>
 
-            <div className={styles.rightColumn}>
-                <div className={styles.calendarImageContainer}>
-                    {src ? (
-                        <Image src={src} width={400} height={275} alt="Local" unoptimized style={{objectFit: 'cover'}} />
-                    ) : <div className={styles.imagePlaceholder}>Imagem não disponível</div>
-                    }
-                </div>
-                <div className={styles.desktopActions}>
-                    <h3>Resumo</h3>
-                    <p>Selecionado Agora: <strong>R$ {(selectedItems.length * numericPrice).toFixed(2)}</strong></p>
-                    <ActionButtons />
-                </div>
-            </div>
+            <div className={ isMobile? styles.mobileBottomBar : styles.rightColumn}>
+                { isMobile ? (
+                    <>
+                        <div className={styles.mobileSummary}>
+                            <span>Total:</span>
+                            <strong>R$ {(selectedItems.length * numericPrice).toFixed(2)}</strong>
+                        </div>
+                        <ActionButtons />
+                        <div className={styles.mobileButtons}>
+                        </div>
+                    </>
+                ) :(
+                    <>
+                        <div className={styles.calendarImageContainer}>
+                            {src ? (
+                                <Image src={src} width={400} height={275} alt="Local" unoptimized style={{objectFit: 'cover'}} />
+                            ) : <div className={styles.imagePlaceholder}>Imagem não disponível</div>
+                            }
 
-            {isMobile && (
-                <div className={styles.mobileBottomBar}>
-                    <div className={styles.mobileSummary}>
-                        <span>Total:</span>
-                        <strong>R$ {(selectedItems.length * numericPrice).toFixed(2)}</strong>
-                    </div>
-                    <div className={styles.mobileButtons}>
-                       <div style={{minWidth: '140px'}}>
-                            <BookingButton
-                                text={selectedItems.length === 0 ? 'Adicionar' : `Adicionar (${selectedItems.length})`}
-                                itemsToValidate={selectedItems}
-                                onClick={handleReserve}
-                                disabled={selectedItems.length === 0}
-                            />
-                       </div>
-                    </div>
-                </div>
-            )}
+                        </div>
+                        <div className={styles.desktopActions}>
+                            <h3>Resumo</h3>
+                            <p>Selecionado Agora: <strong>R$ {(selectedItems.length * numericPrice).toFixed(2)}</strong></p>
+                            <ActionButtons />
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 }

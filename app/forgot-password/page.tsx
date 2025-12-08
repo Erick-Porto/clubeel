@@ -9,8 +9,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faSpinner, faArrowLeft, faLock, faUserCheck } from '@fortawesome/free-solid-svg-icons';
 import CryptoJs from 'crypto-js';
 
+interface UserData {
+    cpf: string;
+    matricula: string;
+    birthDate: string;
+}
+
 // --- COMPONENTE 1: Identificação do Usuário ---
-const UserCheckStep = ({ onSuccess }: { onSuccess: (data: any) => void }) => {
+const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) => {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -60,8 +66,9 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: any) => void }) => {
                 console.log(response);
                 toast.success("Dados confirmados! Prossiga para a nova senha.");
                 onSuccess({ 
-                    cpf: response.cpf, // Supondo que a API retorne o CPF
-                    ...formData 
+                    cpf: response.cpf || formData.cpf, // Garante que tenha um CPF
+                    matricula: formData.matricula,
+                    birthDate: formData.birthDate
                 }); 
             }
 
@@ -131,7 +138,7 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: any) => void }) => {
 };
 
 // --- COMPONENTE 2: Nova Senha ---
-const PasswordResetStep = ({ userData }: { userData: any }) => {
+const PasswordResetStep = ({ userData }: { userData: UserData }) => {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [passwords, setPasswords] = useState({ new1: "", new2: "" });
@@ -258,9 +265,9 @@ const PasswordResetStep = ({ userData }: { userData: any }) => {
 // --- PÁGINA PRINCIPAL ---
 const ForgotPasswordPage = () => {
     const [step, setStep] = useState<1 | 2>(1);
-    const [userData, setUserData] = useState<any>(null);
+    const [userData, setUserData] = useState<UserData | null>(null);
 
-    const handleUserConfirmed = (data: any) => {
+    const handleUserConfirmed = (data: UserData) => {
         setUserData(data);
         setStep(2);
     };
@@ -270,7 +277,8 @@ const ForgotPasswordPage = () => {
             {step === 1 ? (
                 <UserCheckStep onSuccess={handleUserConfirmed} />
             ) : (
-                <PasswordResetStep userData={userData} />
+                // Garantimos que userData existe se o step é 2
+                userData && <PasswordResetStep userData={userData} />
             )}
         </div>
     );

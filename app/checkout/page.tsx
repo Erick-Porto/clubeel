@@ -12,6 +12,9 @@ import { useCart } from '@/context/CartContext';
 import { LoadingScreen } from '@/components/loading';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
+import TutorialOverlay, { TutorialStep } from '../components/tutorial-overlay';
+import API_CONSUME from '@/services/api-consume';
+import { useSession } from 'next-auth/react';
 
 const formatPrice = (p: number | string): string => {
     const n = parseFloat(String(p));
@@ -50,7 +53,8 @@ const PaymentStatusMessage: React.FC<{ type: 'success' | 'error' | 'expired'; me
 };
 
 const CheckoutComponent = () => {
-    const { cart, refreshCart } = useCart();
+    const { cart, refreshCart} = useCart();
+    const { data: session } = useSession();
     const searchParams = useSearchParams();
     const router = useRouter();
     
@@ -69,7 +73,7 @@ const CheckoutComponent = () => {
     useEffect(() => {
         if (validatingPayment || paymentResult) return;
 
-        const status = searchParams.get('status');
+        const status = searchParams?.get('status');
         if (!status) return;
 
         const isSuccess = status === 'success' || status === 'approved';
@@ -116,9 +120,48 @@ const CheckoutComponent = () => {
         }
     };
 
+    const TUTORIAL_STEPS: TutorialStep[] = [
+            {
+                title: 'Parabéns por chegar até aqui!',
+                description: (
+                    <>
+                        <p>Agora que já entende o funcionamento, você está apto a realizar seus próprios agendamentos!</p>
+                    </>
+                )
+            },
+        ]
+
+    const finishedTutorial = () => {
+        if(cart.length === 0){
+            router.push('/'); // Se o carrinho estiver vazio, volta para a home
+        }
+            else {
+            let i = cart.length;
+            cart.forEach(async item => {
+                try {
+                    await API_CONSUME("DELETE", `schedule/delete-pending`, {
+                        'Session': session?.accessToken
+                    },{
+                        id: item.id
+                    });
+                } catch (error) {
+                    console.error("Erro ao remover item do carrinho após tutorial:", error);
+                }
+                i--;
+                if (i === 0) {
+                    refreshCart();
+                    router.push('/');
+                }
+            });
+            
+            
+        }
+    };
+
     return (
         <div className={globalStyle.page}>
             <Header options={null} surgeIn={-1} onlyScroll={false} />
+            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="v1_checkout" onComplete={finishedTutorial}/>
             
             <section className={style.checkoutPageContainer}>
                 {paymentResult ? (

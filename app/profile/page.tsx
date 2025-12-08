@@ -10,13 +10,25 @@ import Appointments from "@/components/appointments";
 import Header from "../components/header";
 import { useCart } from "@/context/CartContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faUser, faKey, faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
 import API_CONSUME from "@/services/api-consume";
+
+// Define strict types for the view state
+type ViewState = 'profile' | 'password' | 'schedules';
+
+// Define interface for Schedule data
+interface Schedule {
+    id: number;
+    start_schedule: string;
+    place_id: number;
+    [key: string]: unknown; // Allow other properties from API
+}
 
 const ProfilePage = () => {
     const { cart, isLoading: isCartLoading } = useCart();
     const { data: session, status } = useSession();
-    const [view, setView] = useState<'profile' | 'password' | 'schedules'>('profile');
+    const [view, setView] = useState<ViewState>('profile');
     const [lastScheduleImage, setLastScheduleImage] = useState<string | undefined>(undefined);
 
     // Efeito para redirecionar para agendamentos se houver itens no carrinho
@@ -37,11 +49,11 @@ const ProfilePage = () => {
                     'Session': session.accessToken
                 });
 
-                const schedules = Array.isArray(schedulesResponse.schedules) ? schedulesResponse.schedules : (schedulesResponse.schedules || []);
+                const schedules: Schedule[] = Array.isArray(schedulesResponse.schedules) ? schedulesResponse.schedules : (schedulesResponse.schedules || []);
                 if (schedules.length > 0) {
                     // 2. Ordena para pegar o mais recente (pela data de início)
                     // Convertemos para Date para garantir a ordenação correta (Decrescente: mais novo primeiro)
-                    const sortedSchedules = schedules.sort((a: any, b: any) => {
+                    const sortedSchedules = schedules.sort((a: Schedule, b: Schedule) => {
                         return new Date(b.start_schedule).getTime() - new Date(a.start_schedule).getTime();
                     });
 
@@ -69,8 +81,8 @@ const ProfilePage = () => {
         fetchLastPlaceImage();
     }, [session, status]);
 
-    // Opções do Menu Lateral
-    const menuItems = [
+    // Opções do Menu Lateral - typed correctly
+    const menuItems: { id: ViewState; label: string; icon: IconDefinition; badge?: number }[] = [
         { id: 'profile', label: 'Meus Dados', icon: faUser },
         { id: 'password', label: 'Segurança', icon: faKey },
         { id: 'schedules', label: 'Agendamentos', icon: faCalendarAlt, badge: cart?.length },
@@ -81,7 +93,7 @@ const ProfilePage = () => {
             <Header options={null} surgeIn={-1} onlyScroll={true} />
 
             {/* Passamos a imagem recuperada para o Banner */}
-            <Banner user={session?.user || null} lastScheduleImage={lastScheduleImage} />
+            <Banner lastScheduleImage={lastScheduleImage} />
 
             <div className={style.profileContentWrapper}>
                 {/* SIDEBAR DE NAVEGAÇÃO */}
@@ -91,7 +103,7 @@ const ProfilePage = () => {
                             <li 
                                 key={item.id}
                                 className={`${style.menuItem} ${view === item.id ? style.menuItemActive : ''}`}
-                                onClick={() => setView(item.id as any)}
+                                onClick={() => setView(item.id)}
                             >
                                 <FontAwesomeIcon icon={item.icon} width={20} />
                                 {item.label}
