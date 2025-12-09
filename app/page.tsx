@@ -79,8 +79,8 @@ const Home = () => {
         const fetchPlaces = async () => {
             if (status !== 'authenticated' || !session?.accessToken) return;
             try {
-                const response = await API_CONSUME("POST", "places/group/", {
-                    'Session': session?.accessToken || '',
+                const response = await API_CONSUME("GET", "places/group/",{
+                    'Session': session.accessToken
                 });
                 const rawPlacesArray = Object.values(response || {}) as ApiPlaceData[];
                 

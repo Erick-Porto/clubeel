@@ -61,7 +61,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate) return;
         try {
-            const response = await API_CONSUME("POST", "schedule/time-options/", {
+            const response = await API_CONSUME("POST", "schedule/time-options", {
                 'Session': session.accessToken
             }, {
                 date: currentDate,
@@ -166,7 +166,6 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 
         try {
             await API_CONSUME("POST", "schedule/", {
-                'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
                 'Session': session.accessToken
             }, payload);
 

@@ -68,11 +68,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const timestamp = new Date().getTime();
             
-            const response = await API_CONSUME("GET", `schedule/member/${userId}?_t=${timestamp}`, {
-                'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
-                'Session': token,
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
+            const response = await API_CONSUME("GET", `schedule/member/${userId}`,{
+                'Session': token
             });
 
             let rawData: any[] = [];

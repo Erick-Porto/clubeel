@@ -10,6 +10,8 @@ async function API_CONSUME(method: string, endpoint: string, headers: any = {}, 
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_LARA_API_TOKEN}`,
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
                 ...headers
             },
             cache: 'no-store'
