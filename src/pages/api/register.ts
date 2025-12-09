@@ -61,7 +61,6 @@ export default async function RegisterHandler(req: NextApiRequest, res: NextApiR
                 'POST',
                 'register',
                 {
-                    Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
                     Session: null,
                 },
                 {

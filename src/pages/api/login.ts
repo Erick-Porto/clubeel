@@ -8,7 +8,6 @@ export default async function LoginHandler(req: NextApiRequest, res: NextApiResp
         try {
             const data = await API_CONSUME('POST', 'login',
                 {
-                    Authorization: 'Bearer ' + process.env.NEXT_PUBLIC_LARA_API_TOKEN,
                     Session: null,
                 },
                 { 
