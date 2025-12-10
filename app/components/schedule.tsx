@@ -165,7 +165,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
         });
 
         try {
-            await API_CONSUME("POST", "schedule/", {
+            await API_CONSUME("POST", "schedule", {
                 'Session': session.accessToken
             }, payload);
 

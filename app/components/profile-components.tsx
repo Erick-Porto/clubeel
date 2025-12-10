@@ -311,7 +311,7 @@ export const PasswordForm = () => {
             }
 
             // 2. Update
-            await API_CONSUME("PUT", `change-password/`, {
+            await API_CONSUME("PUT", `change-password`, {
                 'Session': session.accessToken
             }, { 
                 cpf: cpfClean, 
