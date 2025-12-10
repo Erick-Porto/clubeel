@@ -122,7 +122,7 @@ const Cart = () => {
                     <span>Total a Pagar</span>
                     <span>R$ {total.toFixed(2)}</span>
                 </div>
-                 <Link referrerPolicy='no-referrer'  rel='noopener noreferrer'  href="/checkout" className={style.checkoutButton}>
+                 <Link  rel='noopener noreferrer' href="/checkout" className={style.checkoutButton}>
                     Finalizar Compra
                 </Link>
             </div>

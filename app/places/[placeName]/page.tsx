@@ -394,7 +394,7 @@ const PlacesPage = () => {
                                     <h3 className={style.placeCardTitle}>{item.name}</h3>
                                     
                                     {isAvailable ? (
-                                         <Link referrerPolicy='no-referrer'  rel='noopener noreferrer' 
+                                         <Link  rel='noopener noreferrer'
                                             id={`schedule-button-${index}`}
                                             className={`${style.placeAction} ${style.btnReserve}`}
                                             href={{

@@ -61,7 +61,7 @@ const SportiveSquare: React.FC<SportiveSquareProps> = ({ places }) => {
                             priority={index < 4}
                         />
                         
-                         <Link referrerPolicy='no-referrer'  rel='noopener noreferrer'  href={`/places/${formatPlaceNameForUrl(place.name)}-${place.id}`} className={Style.squareInfo}>
+                         <Link  rel='noopener noreferrer' href={`/places/${formatPlaceNameForUrl(place.name)}-${place.id}`} className={Style.squareInfo}>
                             <span className={Style.title}>{place.name}</span>
                         </Link>
                     </div>

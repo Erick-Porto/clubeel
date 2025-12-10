@@ -70,7 +70,7 @@ const CheckoutContent = () => {
                     <div key={item.id} className={`${style.cartItem} ${isCancelling ? style.itemCancelling : ''}`}>
                         
                         {/* Link cobre apenas a área clicável de navegação */}
-                         <Link referrerPolicy='no-referrer'  rel='noopener noreferrer'  href={URIGen(item.place.name || '', item.place_id, isoDate)} className={style.cartItemContent}>
+                         <Link  rel='noopener noreferrer' href={URIGen(item.place.name || '', item.place_id, isoDate)} className={style.cartItemContent}>
                             <Image
                                 className={style.scheduleImage}
                                 src={item.place.image || '/images/placeholder.jpg'}
