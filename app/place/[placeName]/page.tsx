@@ -126,7 +126,7 @@ const PlacePage = () => {
     return (
         <div className={globalStyle.page}>
             <Header options={null} surgeIn={0} onlyScroll={false} />
-            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="v1_place" />
+            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Quadra" />
             
             <div className={style.placeBanner} style={{ backgroundImage: `url(${data.image})`, height: '30vh', minHeight: '250px' }}>
                 <div className={style.placeBannerCover}>

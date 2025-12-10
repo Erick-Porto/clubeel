@@ -19,8 +19,9 @@ export default function Footer() {
             />
           </div>
           <div className={styles.contactInfo}>
-            <p>Telefone: <a href="tel:+552421022750">(24) 2102-2750</a></p>
-            <p>Email: <a href="mailto:atendimento@clubedosfuncionarios.com.br">atendimento@clubedosfuncionarios.com.br</a></p>
+            <p>Telefone: <a rel="noopener noreferrer" href="tel:+552421022750">(24) 2102-2750</a></p>
+            <p>Whatsapp: <a rel="noopener noreferrer" href="https://wa.me/5524992510959" target="_blank">(24) 99251-0959</a></p>
+            <p>Email: <a rel="noopener noreferrer" href="mailto:atendimento@clubedosfuncionarios.com.br">atendimento@clubedosfuncionarios.com.br</a></p>
           </div>
         </div>
 
@@ -33,16 +34,16 @@ export default function Footer() {
             <a target="_blank" href="https://www.instagram.com/clubedosfuncionarios/" aria-label="Instagram">
               <FontAwesomeIcon icon={faInstagramSquare} />
             </a>
-            <a target="_blank" href="https://www.linkedin.com/" aria-label="LinkedIn">
+            {/* <a target="_blank" href="https://www.linkedin.com/" aria-label="LinkedIn">
               <FontAwesomeIcon icon={faLinkedin} />
-            </a>
+            </a> */}
           </div>
         </div>
       </div>
 
       <div className={styles.footerBottom}>
         <p>
-          Desenvolvido por <a href="https://linkedin.com/in/erick-porto" target="_blank">Erick Porto</a> e <a href="https://linkedin.com/in/gustavo-alves-81895321a" target="_blank">Gustavo Alves</a> | &copy; {currentYear} Clube dos Funcionários
+          Desenvolvido por <a rel="noopener noreferrer" href="https://linkedin.com/in/erick-porto" target="_blank">Erick Porto</a> e <a rel="noopener noreferrer" href="https://linkedin.com/in/gustavo-alves-81895321a" target="_blank">Gustavo Alves</a> | &copy; {currentYear} Clube dos Funcionários
         </p>
       </div>
     </footer>

@@ -95,7 +95,7 @@ const HotspotsOverlay: React.FC<{
               >
                 {/* Efeito de onda/pulse atrás do ícone */}
                 <div className={styles.pulseRing} />
-                <Image src={spot.icon} alt={spot.name} className={styles.hotspotIcon} draggable={false} />
+                <Image src={spot.icon} alt={spot.name} className={styles.hotspotIcon} draggable={false} height={50} width={50}/>
               </div>
             </foreignObject>
           </React.Fragment>
@@ -179,7 +179,7 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
       {activeHotspot && (
         <div
           className={styles.popup}
-                id='popup-places'
+          id='popup-places'
           // No mobile, o CSS ignora esses estilos inline e fixa no bottom
           style={{ left: popupPosition.x, top: popupPosition.y }}
           onMouseDown={(e) => e.stopPropagation()} 
@@ -188,7 +188,7 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
           <div className={styles.popupImageContainer}>
              <button className={styles.closeButton} onClick={closePopup} aria-label="Fechar">✕</button>
              {activeHotspot.image_horizontal ? (
-                <Image src={activeHotspot.image_horizontal} alt={activeHotspot.name} className={styles.popupImage} width={50}/>
+                <Image src={activeHotspot.image_horizontal} alt={activeHotspot.name} className={styles.popupImage} width={50} height={50}/>
              ) : (
                 // Fallback visual caso não tenha imagem
                 <div style={{width:'100%', height:'100%', background: '#ddd', display:'flex', alignItems:'center', justifyContent:'center', color:'#888'}}>
@@ -200,8 +200,9 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
           <div className={styles.popupContent}>
             <h4>{activeHotspot.name}</h4>
             <button 
-                className={styles.actionButton}
-                onClick={() => router.push(`/places/${activeHotspot.name.replace(/\s+/g, '-').toLowerCase()}-${activeHotspot.id}`)}
+              id="reserve-button"
+              className={styles.actionButton}
+              onClick={() => router.push(`/places/${activeHotspot.name.replace(/\s+/g, '-').toLowerCase()}-${activeHotspot.id}`)}
             >
               Ver Detalhes e Reservar
             </button>

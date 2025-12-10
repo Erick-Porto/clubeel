@@ -25,10 +25,10 @@ Uma plataforma moderna de gestão, agendamento de quadras e pagamentos digitais.
 </p>
 
 <p align="center">
-<a href="#-funcionalidades">Funcionalidades</a> •
-<a href="#-arquitetura-e-paginas">Arquitetura</a> •
-<a href="#-instalação">Instalação</a> •
-<a href="#-segurança">Segurança</a>
+<a rel="noopener noreferrer" href="#-funcionalidades">Funcionalidades</a> •
+<a rel="noopener noreferrer" href="#-arquitetura-e-paginas">Arquitetura</a> •
+<a rel="noopener noreferrer" href="#-instalação">Instalação</a> •
+<a rel="noopener noreferrer" href="#-segurança">Segurança</a>
 </p>
 </div>
 

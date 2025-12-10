@@ -8,6 +8,7 @@ import { faArrowRight, faCheck, faHandPointer } from '@fortawesome/free-solid-sv
 
 export interface TutorialStep {
     targetId?: string;
+    targetClickableItem?: string;
     title: string;
     description: React.ReactNode;
     waitForAction?: boolean; 
@@ -25,8 +26,8 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
     const [currentStep, setCurrentStep] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+    const [targetClickableRect, setTargetClickableRect] = useState<DOMRect | null>(null);
     const [isMounted, setIsMounted] = useState(false);
-    // Fix: Initialize useRef with 0 to satisfy TS argument requirement
     const requestRef = useRef<number>(0);
 
     useEffect(() => {
@@ -41,12 +42,16 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
 
     const updateSpotlight = useCallback(() => {
         const step = steps[currentStep];
+        
+        // FIX: Removemos os retornos antecipados (return) para permitir
+        // que ambos os retângulos sejam calculados se necessário.
+        let foundTarget = false;
+
         if (step?.targetId) {
             const el = document.getElementById(step.targetId);
             if (el) {
                 const rect = el.getBoundingClientRect();
                 if (rect.width > 0 && rect.height > 0) {
-                    // Evita scroll desnecessário se já estiver visível
                     const isVisible = (
                         rect.top >= 0 &&
                         rect.left >= 0 &&
@@ -58,11 +63,29 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
                           el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
                     }
                     setTargetRect(rect);
-                    return;
+                    foundTarget = true;
                 }
             }
         }
-        setTargetRect(null);
+        
+        if (!foundTarget) setTargetRect(null); // Limpa se não achou targetId
+
+        if (step?.targetClickableItem) {
+            const ce = document.getElementById(step.targetClickableItem);
+            if (ce) {
+                const clickableRect = ce.getBoundingClientRect();
+                if (clickableRect.width > 0 && clickableRect.height > 0) {
+                    setTargetClickableRect(clickableRect);
+                } else {
+                    setTargetClickableRect(null);
+                }
+            } else {
+                setTargetClickableRect(null);
+            }
+        } else {
+            setTargetClickableRect(null);
+        }
+
     }, [currentStep, steps]);
 
     const animate = useCallback(() => {
@@ -107,18 +130,11 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
     };
 
     const handleStepAction = (e: React.MouseEvent) => {
-        // 1. Bloqueia a propagação padrão
         e.stopPropagation();
-        
         const overlayDiv = e.currentTarget as HTMLDivElement;
         
         try {
-            // 2. TÉCNICA DO "GHOST CLICK":
-            // Em vez de 'display: none', usamos 'pointerEvents: none'.
-            // Isso faz o document.elementFromPoint ignorar o overlay e pegar o botão real embaixo,
-            // sem causar re-layout ou piscar a tela.
             overlayDiv.style.pointerEvents = 'none';
-            
             const realTarget = document.elementFromPoint(e.clientX, e.clientY);
             
             if (realTarget && realTarget instanceof HTMLElement) {
@@ -130,7 +146,6 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
                     clientY: e.clientY
                 };
                 
-                // Dispara sequência completa de clique no elemento real
                 realTarget.dispatchEvent(new MouseEvent('mousedown', eventOptions));
                 realTarget.dispatchEvent(new MouseEvent('mouseup', eventOptions));
                 realTarget.click();
@@ -138,14 +153,10 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
         } catch (error) {
             console.error("Erro ao simular clique:", error);
         } finally {
-            // 3. RESTAURAÇÃO E AVANÇO:
-            // Restaura o bloqueio imediatamente para evitar cliques acidentais duplos
             overlayDiv.style.pointerEvents = 'auto'; 
-            
-            // Força o avanço do tutorial independente do sucesso do clique
             setTimeout(() => {
                 handleNext();
-            }, 500); // Mantém o delay para dar tempo do modal abrir
+            }, 500);
         }
     };
 
@@ -154,7 +165,7 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
     const stepData = steps[currentStep];
     const isLast = currentStep === steps.length - 1;
     const isWaitingAction = stepData.waitForAction;
-
+    
     let cardStyle: React.CSSProperties = {
         top: '50%', left: '50%', transform: 'translate(-50%, -50%)', position: 'fixed'
     };
@@ -162,7 +173,7 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
 
     if (targetRect) {
         const isTopHalf = targetRect.top < window.innerHeight / 2;
-        const offsetVal = window.innerWidth < 1024 ? stepData.mOffset ? stepData.mOffset : 0 : stepData.offset ? stepData.offset : 0;
+        const offsetVal = window.innerWidth < 1024 ? (stepData.mOffset ?? 0) : (stepData.offset ?? 0);
         
         cardStyle = {
             top: isTopHalf ? targetRect.bottom + offsetVal : 'auto',
@@ -180,6 +191,10 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
             height: targetRect.height + 10
         };
     }
+
+    // Lógica segura para saber onde renderizar a mãozinha
+    // Se tiver targetClickableRect, a mão vai nele. Se não, vai no targetRect.
+    const handRect = targetClickableRect || targetRect;
 
     return createPortal(
         <div className={styles.overlay}>
@@ -205,7 +220,6 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
 
             <div className={styles.pulseRing} style={pulseStyle}></div>
 
-            {/* INTERAÇÃO CORRIGIDA AQUI */}
             {isWaitingAction && targetRect && (
                 <div
                     style={{
@@ -216,7 +230,7 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
                         height: targetRect.height,
                         cursor: 'pointer',
                         zIndex: 1, 
-                        pointerEvents: 'auto' // ESSENCIAL: Sobrescreve o CSS .overlay
+                        pointerEvents: 'auto'
                     }}
                     onClick={handleStepAction} 
                 />
@@ -243,12 +257,13 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
                 </div>
             </div>
 
-            {isWaitingAction && targetRect && (
+            {/* FIX: Renderização Condicional Segura */}
+            {isWaitingAction && handRect && (
                 <div
                     className={styles.gestureIcon}
                     style={{ 
-                        top: targetRect.top + (targetRect.height/2), 
-                        left: targetRect.left + (targetRect.width/2),
+                        top: handRect.top + (handRect.height/2), 
+                        left: handRect.left + (handRect.width/2),
                         pointerEvents: 'none'
                     }}
                 >

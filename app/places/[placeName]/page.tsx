@@ -297,7 +297,7 @@ const PlacesPage = () => {
             mOffset: -50
         },
         {
-            targetId: 'schedule-button-0',
+            targetId: 'place-card-0',
             title: 'Escolha uma Quadra',
             description: (
                 <>
@@ -306,6 +306,7 @@ const PlacesPage = () => {
             ),
             offset: -90,
             mOffset: -160,
+            targetClickableItem: 'schedule-button-0',
             waitForAction: true // O botão "Próximo" some, forçando o usuário a clicar no mapa/link real
         }
     ]
@@ -314,7 +315,7 @@ const PlacesPage = () => {
         <div className={globalStyle.page}>
             
             <Header options={null} surgeIn={0} onlyScroll={false} profileOptions={null} />
-            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="v1_places" />
+            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Modalidade" />
             
             <section className={globalStyle.Section} style={{ paddingBottom: "60px" }}>
                 
@@ -376,7 +377,7 @@ const PlacesPage = () => {
                         const isAvailable = isPlaceAvailableOnDate(item, selectedDate);
 
                         return (
-                            <div key={item.id} className={`${style.placeCard} ${!isAvailable ? style.placeCardDisabled : ''}`}>
+                            <div key={item.id} id={`place-card-${index}`} className={`${style.placeCard} ${!isAvailable ? style.placeCardDisabled : ''}`}>
                                 <div className={style.placeCardImageContainer}>
                                     <div 
                                         className={style.placeCardImage} 
@@ -393,7 +394,7 @@ const PlacesPage = () => {
                                     <h3 className={style.placeCardTitle}>{item.name}</h3>
                                     
                                     {isAvailable ? (
-                                        <Link
+                                         <Link referrerPolicy='no-referrer'  rel='noopener noreferrer' 
                                             id={`schedule-button-${index}`}
                                             className={`${style.placeAction} ${style.btnReserve}`}
                                             href={{

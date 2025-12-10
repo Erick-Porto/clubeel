@@ -25,7 +25,7 @@ const BookingButton = ({ text, onClick, itemsToValidate, redirectPath, disabled 
         }
 
         return (
-            <Link href={redirectPath} className={style.bookingButton}>
+             <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={redirectPath} className={style.bookingButton}>
                 {text}
             </Link>
         );

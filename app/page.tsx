@@ -56,6 +56,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
         description: 'Clique em "Ver Detalhes e Reservar" no popup da quadra para avançar para a próxima etapa.',
         offset: 150,
         mOffset: 5,
+        targetClickableItem: 'reserve-button',
         waitForAction: true // O botão "Próximo" some, forçando o usuário a clicar no mapa/link real
     }
 ];
@@ -179,7 +180,7 @@ const Home = () => {
     return (
         <div className={`${style.page} ${isMobile ? style.homePage : ''}`} ref={pageContainerRef}> 
             
-            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="v1_home_guide" />
+            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Página inicial" />
 
             <Header 
                 options={NAV_OPTIONS} 

@@ -161,7 +161,7 @@ const CheckoutComponent = () => {
     return (
         <div className={globalStyle.page}>
             <Header options={null} surgeIn={-1} onlyScroll={false} />
-            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="v1_checkout" onComplete={finishedTutorial}/>
+            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Pagamento" onComplete={finishedTutorial}/>
             
             <section className={style.checkoutPageContainer}>
                 {paymentResult ? (
