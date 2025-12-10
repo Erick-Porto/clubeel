@@ -60,7 +60,7 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
                     );
 
                     if (!isVisible) {
-                          el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                          el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
                     }
                     setTargetRect(rect);
                     foundTarget = true;

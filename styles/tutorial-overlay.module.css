@@ -51,7 +51,7 @@
   width: 90%;
   max-width: 380px;
   pointer-events: auto; /* Permite interagir com o card */
-  transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Movimento fluido */
+  /* transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); Movimento fluido */
   animation: floatUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
