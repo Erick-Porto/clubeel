@@ -70,7 +70,7 @@ export default function Header({
 
     return (
         <header className={`${styles.header} ${isHeaderActive ? styles.headerActive : ''}`}>
-             <Link  rel='noopener noreferrer' href={'/'} aria-label="Ir para Home" style={{zIndex: 10001}}>
+             <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} aria-label="Ir para Home" style={{zIndex: 10001}}>
                 <div className={styles.headerLogo}>
                     <Image 
                         src="/images/logo-cfcsn-horiz.png" 
@@ -126,7 +126,7 @@ export default function Header({
                             ) : (
                                 options.map((item, index) => (
                                     <li key={index}>
-                                         <Link  rel='noopener noreferrer' href={`/${item.page}`} className={styles.navLink}>
+                                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={`/${item.page}`} className={styles.navLink}>
                                             {item.text}
                                         </Link>
                                     </li>
@@ -158,17 +158,17 @@ export default function Header({
                         )}
                     </button>
                 ) : (
-                     <Link  rel='noopener noreferrer' href="/login" className={styles.profileButton}>
+                     <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href="/login" className={styles.profileButton}>
                         <span>Acessar</span>
                     </Link>
                 )}
 
                 <ul className={`${styles.userOptions} ${userOptions ? styles.userOptionsActive : ''}`}>
                     {pathname !== '/profile' && (
-                        <li> <Link  rel='noopener noreferrer' href={'/profile'} style={{ width: '100%' }}>Meu Perfil</Link></li>
+                        <li> <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/profile'} style={{ width: '100%' }}>Meu Perfil</Link></li>
                     )}
                     {pathname !== '/' && (
-                        <li> <Link  rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}>Início</Link></li>
+                        <li> <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}>Início</Link></li>
                     )}
                     <hr />
                     <li onClick={() => signOut({ callbackUrl: '/login' })} style={{ color: '#d32f2f' }}>

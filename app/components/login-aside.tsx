@@ -184,7 +184,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     <button className={styles.button} onClick={handleRetry}>
                         <FontAwesomeIcon icon={faRotateRight} style={{marginRight: 8}}/> Tentar Novamente
                     </button>
-                     <Link  rel='noopener noreferrer' style={{display:'Flex', justifyContent:'center', alignItems:'center', fontWeight: 'bold'}} href="https://wa.me/5524992510959?text=Olá,%20poderia%20me%20ajudar%20com%20a%20locação%20de%20espaços?." className={styles.button} target="_blank" rel="noopener noreferrer">
+                     <Link style={{display:'Flex', justifyContent:'center', alignItems:'center', fontWeight: 'bold'}} href="https://wa.me/5524992510959?text=Olá,%20poderia%20me%20ajudar%20com%20a%20locação%20de%20espaços?." className={styles.button} target="_blank" referrerPolicy='no-referrer' rel='noopener noreferrer' >
                         <FontAwesomeIcon icon={faWhatsapp} style={{marginRight: 8}} size="2x"/> Contatar Secretaria
                     </Link>
                 </div>
