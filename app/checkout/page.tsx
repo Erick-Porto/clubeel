@@ -23,34 +23,68 @@ const formatPrice = (p: number | string): string => {
 };
 
 // Componente de Mensagem de Status
+// ... (imports permanecem iguais)
+
+// Componente de Mensagem de Status Atualizado
 const PaymentStatusMessage: React.FC<{ type: 'success' | 'error' | 'expired'; message: string; onRetry: () => void; }> = ({ type, message, onRetry }) => {
     const router = useRouter();
+    const [timeLeft, setTimeLeft] = useState(15);
+
+    useEffect(() => {
+        // Só ativa o timer se for Sucesso
+        if (type === 'success') {
+            const timer = setInterval(() => {
+                setTimeLeft((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        router.push('/profile?tab=schedules');
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            // Limpa o intervalo se o componente desmontar
+            return () => clearInterval(timer);
+        }
+    }, [type, router]);
+
     return (
         <div className={style.statusWrapper}>
-            <div className={`${style.statusIcon} ${type === 'success' ? style.statusSuccess : style.statusError}`}>
+            <div className={style.statusCard}>
+                <div className={`${style.statusIcon} ${type === 'success' ? style.statusSuccess : style.statusError}`}>
+                    {type === 'success' ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    ) : type === 'expired' ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    )}
+                </div>
+                
+                <h2>{type === 'success' ? 'Pagamento Aprovado!' : type === 'expired' ? 'Tempo Excedido' : 'Ops! Algo deu errado.'}</h2>
+                <p>{message}</p>
+                
                 {type === 'success' ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                ) : type === 'expired' ? (
-                    /* Ícone de Relógio para Expirado */
-                    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <>
+                        <button className={style.statusButton} onClick={() => router.push('/profile?tab=schedules')}>
+                            Ver meus agendamentos agora
+                        </button>
+                        <div className={style.redirectTimer}>
+                            Você será redirecionado automaticamente em <span>{timeLeft}s</span>
+                        </div>
+                    </>
                 ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    <button className={style.statusButton} onClick={onRetry}>
+                        {type === 'expired' ? 'Voltar ao Início' : 'Tentar Novamente'}
+                    </button>
                 )}
             </div>
-            
-            <h2>{type === 'success' ? 'Sucesso!' : type === 'expired' ? 'Tempo Excedido' : 'Ops!'}</h2>
-            <p>{message}</p>
-            
-            {type === 'success' ? (
-                <button className={style.statusButton} onClick={() => router.push('/profile')}>Meus Agendamentos</button>
-            ) : (
-                <button className={style.statusButton} onClick={onRetry}>
-                    {type === 'expired' ? 'Voltar ao Início' : 'Tentar Novamente'}
-                </button>
-            )}
         </div>
     );
 };
+
+// ... (O restante do arquivo CheckoutComponent e CheckoutPage permanece igual)
 
 const CheckoutComponent = () => {
     const { cart, refreshCart} = useCart();

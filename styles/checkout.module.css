@@ -242,42 +242,98 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 50vh;
+    min-height: 60vh; /* Aumentei um pouco para centralizar melhor na tela */
+    width: 100%;
+}
+
+.statusCard {
+    background: white;
+    padding: 50px 40px;
+    border-radius: 24px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.08); /* Sombra suave e elegante */
     text-align: center;
     max-width: 500px;
-    margin: 0 auto;
-    animation: fadeIn 0.5s ease;
+    width: 90%;
+    border: 1px solid #f0f0f0;
+    animation: slideUpFade 0.6s ease-out;
 }
 
 .statusIcon {
-    width: 100px;
-    height: 100px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 24px;
+    margin: 0 auto 24px auto; /* Centralizado via margin auto */
 }
 
-.statusSuccess { background-color: #e6f4ea; color: #1e8e3e; }
+.statusSuccess { 
+    background-color: #e6f4ea; 
+    color: #1e8e3e; 
+    /* Pequena animação de pulso para sucesso */
+    animation: pulseIcon 2s infinite;
+}
 .statusError { background-color: #fce8e6; color: #d93025; }
 
-.statusWrapper h2 { font-size: 2rem; margin-bottom: 10px; color: #333; }
-.statusWrapper p { font-size: 1.1rem; color: #666; margin-bottom: 30px; line-height: 1.5; }
+.statusCard h2 { 
+    font-size: 1.8rem; 
+    margin-bottom: 15px; 
+    color: #333; 
+    font-weight: 800;
+}
+
+.statusCard p { 
+    font-size: 1.05rem; 
+    color: #666; 
+    margin-bottom: 30px; 
+    line-height: 1.6; 
+}
+
+.redirectTimer {
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #888;
+    background: #f9f9f9;
+    padding: 10px 20px;
+    border-radius: 50px;
+    display: inline-block;
+}
+
+.redirectTimer span {
+    color: var(--grena);
+    font-weight: 700;
+}
 
 .statusButton {
     background-color: var(--grena);
     color: white;
     border: none;
-    padding: 14px 30px;
+    padding: 16px 40px; /* Botão um pouco maior */
     border-radius: 50px;
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(128, 0, 0, 0.2);
 }
 
-.statusButton:hover { background-color: #800000; transform: translateY(-2px); }
+.statusButton:hover { 
+    background-color: #800000; 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 20px rgba(128, 0, 0, 0.3);
+}
+
+@keyframes slideUpFade { 
+    from { opacity: 0; transform: translateY(20px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+@keyframes pulseIcon {
+    0% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(30, 142, 62, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
+}
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
