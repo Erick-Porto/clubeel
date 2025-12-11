@@ -17,7 +17,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Chama a sua API de backend para validar as credenciais
           const data = await API_CONSUME('POST', 'login', {
                 'Session': null
             }, {
@@ -25,12 +24,11 @@ export const authOptions: NextAuthOptions = {
               password: credentials.password,
             }
           );
-          // Se a API de backend retornar um erro, lance-o para o NextAuth.
+
           if (data && data.error) {
             throw new Error(data.message || "Credenciais inválidas.");
           }
 
-          // Se a API retornar dados válidos, retorne o objeto do usuário.
           if (data && data.user && data.token) {
             return {
               ...data.user,
@@ -62,7 +60,6 @@ export const authOptions: NextAuthOptions = {
         if (user.title) token.title = user.title as string;
         if (user.telephone) token.telephone = user.telephone as string;
         if (user.cpf) token.cpf = user.cpf as string;
-        // Adicione outros campos do usuário que você queira no token
       }
       return token;
     },
@@ -79,11 +76,11 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  // Define a página de login personalizada
+
   pages: {
     signIn: '/login',
   },
-  // Adiciona um secret para assinar os JWTs em produção
+
   secret: process.env.NEXTAUTH_SECRET,
 };
 

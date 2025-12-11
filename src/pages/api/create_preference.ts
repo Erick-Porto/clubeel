@@ -27,8 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const baseUrl = process.env.NEXT_PUBLIC_MP_URL;
     
-    // Convertemos o array de IDs em string para salvar no metadata
-    // Ex: "101,102,103"
     const schedulesString = Array.isArray(schedule_ids) ? schedule_ids.join(',') : '';
 
     const preference = new Preference(client);
@@ -37,16 +35,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: {
         items: items.map((item: CartItem) => ({
           id: item.id ? String(item.id) : "item-id", 
-          title: String(item.title).substring(0, 255), // Garante limite seguro
+          title: String(item.title).substring(0, 255), // Limite de segurança
           quantity: Number(item.quantity) || 1,
           unit_price: Number(item.unit_price) || 0,
           currency_id: "BRL",
         })),
-        // O que aparece na fatura do cartão (Max 22 caracteres)
-        statement_descriptor: "CLUBE DOS FUNCIONARIOS",
-        // Metadados para recuperarmos no sucesso/webhook
+        statement_descriptor: "CLUBE DOS FUNCIONARIOS", // Nome na fatura (Max 22 chars)
         metadata: {
-            schedules: schedulesString,
+            schedules: schedulesString, // Guardamos aqui para recuperar no Success
             source: "web_checkout"
         },
         back_urls: {

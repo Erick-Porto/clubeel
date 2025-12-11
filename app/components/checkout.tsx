@@ -30,7 +30,7 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string
             return;
         };
 
-        // Agrupamento visual (mantido igual)
+        // Agrupamento Visual (Recibo na tela)
         const groupedMap: Record<string, GroupedCartItem> = {}
         cart.forEach((it: CartItem) => {
             const placeId = String(it.place_id);
@@ -55,9 +55,10 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string
         })
         setGroupedCart(Object.values(groupedMap).sort((a, b) => a.isoDate.localeCompare(b.isoDate))); 
 
-        // --- PREPARAÇÃO PARA O MERCADO PAGO ---
+        // --- PREPARAÇÃO DO PAGAMENTO ---
         const items = cart.map((it: CartItem) => {
-            // Formatação: "Clube dos Funcionarios - Quadra X: 10/12/2025 14:00 - 15:00"
+            // Cria o título detalhado para o Extrato/Email do cliente
+            // Ex: "Clube dos Funcionarios - Quadra 1: 10/12/2025 14:00 às 15:00"
             const datePart = formatDateBR(String(it.start_schedule).split(' ')[0]);
             const startHour = String(it.start_schedule).split(' ')[1]?.slice(0, 5);
             const endHour = String(it.end_schedule).split(' ')[1]?.slice(0, 5);
@@ -65,14 +66,14 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string
             const detailedTitle = `Clube dos Funcionarios - ${it.place.name}: ${datePart} ${startHour} às ${endHour}`;
 
             return { 
-                id: String(it.id), // Importante: Enviamos o ID do agendamento
+                id: String(it.id), 
                 title: detailedTitle, 
                 quantity: 1, 
                 unit_price: it.price <= 0 ? 0.01 : it.price 
             };
         });
 
-        // Extraímos APENAS os IDs para enviar separadamente nos metadados também
+        // Extraímos os IDs para enviar nos metadados
         const scheduleIds = cart.map((it) => it.id);
         
         (async () => {
@@ -82,7 +83,7 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
                         items,
-                        schedule_ids: scheduleIds // Enviamos a lista de IDs explicitamente
+                        schedule_ids: scheduleIds 
                     }),
                 })
                 const data = await res.json()
@@ -91,13 +92,12 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string
         })()
     }, [cart]) 
 
-    // ... (restante do render permanece igual)
     return (
         <>
             <div className={style.summaryHeader}>
                 <h2>Resumo do Pedido</h2>
             </div>
-            {/* ... Renderização da Lista Agrupada ... */}
+            
             {groupedCart.map((g) => (
                 <div key={g.groupKey} className={style.summaryGroup}>
                     <span className={style.summaryGroupTitle}>{g.place_name} • {g.date}</span>
@@ -113,7 +113,7 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string
                     })}
                 </div>
             ))}
-            
+
             <div className={style.summaryTotal}>
                 <span>Total a pagar</span>
                 <span className={style.summaryTotalValue}>R$ {formatPrice(total)}</span>
