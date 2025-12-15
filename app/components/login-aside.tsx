@@ -114,7 +114,6 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
             const documentValue = cpf.replace(/\D/g, '');
             const encryptedPassword = CryptoJS.SHA256(password).toString();
             
-            // CORREÇÃO: Registro direto sem CSRF
             const response = await API_CONSUME("POST", "register", {}, {
                 title: matricula,
                 cpf: documentValue,
@@ -122,18 +121,20 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 password: encryptedPassword,
             });
 
-            if (response?.error) {
-                if (response.status === 500 || response.status === 503) {
+            // CORREÇÃO AQUI: Usar !response.ok
+            if (!response.ok) {
+                if (response.status >= 500) {
                     setIsMaintenance(true);
                 } else {
+                    // response.message já vem populado pelo API_CONSUME novo
                     toast.error(response.message || "Falha ao registrar.");
                 }
-                return;
+                return; // Impede que o código continue para o login
             }
 
             toast.success("Cadastro realizado! Entrando...");
             
-            // Login automático
+            // Login automático...
             const loginResult = await signIn('credentials', {
                 redirect: false,
                 login: documentValue,
@@ -146,7 +147,8 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
             }
         } catch (error) {
             console.error(error);
-            toast.error("Erro inesperado.");
+            // Erro genérico de execução (não da API)
+            toast.error("Erro inesperado ao processar cadastro.");
         } finally {
             setIsLoading(false);
         }

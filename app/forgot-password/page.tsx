@@ -47,34 +47,37 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) =
         setIsLoading(true);
 
         try {
-            // Envia dados para checar existência
             const response = await API_CONSUME('POST', 'check-member', {
                 Session: null,
             }, {
-                cpf: formData.cpf.replace(/\D/g, ''), // Envia CPF limpo
+                cpf: formData.cpf.replace(/\D/g, ''),
                 title: formData.matricula,
                 birth_date: formData.birthDate
             });
 
-            // Verifica a resposta do backend
-            // Ajuste a lógica conforme o retorno real da sua API (ex: response.exists ou status 200)
-            if (response?.error || response?.status === 404 || response === false) {
-                toast.error("Usuário não encontrado. Verifique os dados.");
-                
-                // setTimeout(() => router.push('/login'), 3000); 
-            } else {
-                console.log(response);
-                toast.success("Dados confirmados! Prossiga para a nova senha.");
-                onSuccess({ 
-                    cpf: response.cpf || formData.cpf, // Garante que tenha um CPF
-                    matricula: formData.matricula,
-                    birthDate: formData.birthDate
-                }); 
+            // 1. Verificação correta com o novo padrão
+            if (!response.ok) {
+                // response.message traz a mensagem da API (ex: "Membro não encontrado")
+                toast.error(response.message || "Dados incorretos ou usuário não encontrado.");
+                return;
             }
+
+            console.log("Member checked:", response.data);
+            toast.success("Dados confirmados! Prossiga para a nova senha.");
+            
+            // 2. Passar os dados para o próximo passo
+            // Dependendo da sua API, os dados podem estar em response.data ou response.data.member
+            const responseData = response.data || {};
+            
+            onSuccess({ 
+                cpf: responseData.cpf || formData.cpf, 
+                matricula: formData.matricula,
+                birthDate: formData.birthDate
+            }); 
 
         } catch (error) {
             console.error(error);
-            toast.error("Erro ao verificar usuário.");
+            toast.error("Erro inesperado ao verificar usuário.");
         } finally {
             setIsLoading(false);
         }
@@ -171,20 +174,29 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
         try {
             const encryptedPassword = CryptoJs.SHA256(passwords.new1).toString();
             
-            // Envia nova senha + dados identificadores
-            await API_CONSUME('PUT', 'change-password', {
+            // 1. Capturar a resposta
+            const response = await API_CONSUME('PUT', 'change-password', {
                 Session: null,
             }, {
-                cpf: userData.cpf, // ID retornado do passo 1
+                // Certifique-se que sua API espera 'cpf' limpo.
+                // Se userData.cpf vier formatado (123.456...), limpe-o aqui.
+                cpf: userData.cpf.replace(/\D/g, ''), 
                 new_password: encryptedPassword
             });
+
+            // 2. Verificar se deu certo ANTES de mostrar sucesso
+            if (!response.ok) {
+                // Lança erro para cair no catch e não executar o toast de sucesso
+                throw new Error(response.message || "Falha ao alterar senha.");
+            }
 
             toast.success("Senha alterada com sucesso! Faça login.");
             router.push('/');
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Erro ao alterar senha. Tente novamente.");
+            // Exibe a mensagem de erro que veio da API ou o fallback
+            toast.error(error.message || "Erro ao alterar senha. Tente novamente.");
         } finally {
             setIsLoading(false);
         }

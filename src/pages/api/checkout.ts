@@ -89,7 +89,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(result.status || 500).json({ error: result.data || 'Erro ao criar preferência' });
     }
 
-    console.log('Preferência criada (REST):', result.data && result.data.id);
     return res.status(200).json({ preferenceId: result.data && result.data.id });
   } catch (error: unknown) {
     // Type narrowing for error

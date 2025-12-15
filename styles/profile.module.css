@@ -61,7 +61,7 @@
 
 .menuItemActive {
     background-color: var(--grena);
-    color: white !important;
+    color: white;
     box-shadow: 0 4px 12px rgba(115, 0, 1, 0.2);
 }
 

@@ -49,26 +49,38 @@ const LatestAppointments = ({ appointmentStatus }: LatestAppointmentsProps) => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchAppointments = useCallback(async () => {
-        // Agora o TypeScript reconhece .accessToken e .user.id graças à interface CustomSession
+const fetchAppointments = useCallback(async () => {
         if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id) return;
 
         try {
             setIsLoading(true);
-            // Assumindo que o endpoint 'schedule/' retorna os agendamentos do usuário
-            // Caso seu backend filtre por status na URL, altere para `schedule/status/${appointmentStatus}`
+            
             const response = await API_CONSUME("GET", `schedule/member/${session.user.id}`, {
                 'Session': session.accessToken
             });
 
-            const data: Appointment[] = Array.isArray(response.schedules) ? response.schedules : (response.schedules || []);
+            // 1. Verificação de Erro (Novo Padrão)
+            if (!response.ok || !response.data) {
+                console.error("Erro ao buscar agendamentos:", response.message);
+                // Se quiser, pode setar um estado de erro aqui para mostrar na UI
+                return;
+            }
+
+            // 2. Acesso correto aos dados (response.data.schedules)
+            // O response.data é o JSON que o Laravel retornou
+            const rawData = response.data;
+            
+            const data: Appointment[] = Array.isArray(rawData.schedules) 
+                ? rawData.schedules 
+                : [];
             
             const filtered = data.filter(item => Number(item.status_id) === appointmentStatus);
             
             filtered.sort((a, b) => new Date(b.start_schedule).getTime() - new Date(a.start_schedule).getTime());
             setAppointments(filtered);
+
         } catch (error) {
-            console.error("Erro ao buscar agendamentos:", error);
+            console.error("Erro crítico na execução:", error);
         } finally {
             setIsLoading(false);
         }

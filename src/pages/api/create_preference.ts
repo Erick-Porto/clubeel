@@ -35,14 +35,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: {
         items: items.map((item: CartItem) => ({
           id: item.id ? String(item.id) : "item-id", 
-          title: String(item.title).substring(0, 255), // Limite de segurança
+          title: String(item.title).substring(0, 255),
           quantity: Number(item.quantity) || 1,
           unit_price: Number(item.unit_price) || 0,
           currency_id: "BRL",
         })),
-        statement_descriptor: "CLUBE DOS FUNCIONARIOS", // Nome na fatura (Max 22 chars)
+        statement_descriptor: "CLUBE DOS FUNCIONARIOS",
         metadata: {
-            schedules: schedulesString, // Guardamos aqui para recuperar no Success
+            schedules: schedulesString,
             source: "web_checkout"
         },
         back_urls: {
@@ -54,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         notification_url: `${baseUrl}/api/webhook`,
       },
     });
-
+    console.log("✅ create_preference:");
     return res.status(200).json({ id: result.id });
   } catch (err: unknown) {
     console.error("❌ Erro no create_preference:", err);

@@ -76,21 +76,30 @@ const Home = () => {
     // const socialRef = useRef<HTMLDivElement>(null);
 
     // Fetch Data (Mantido)
-    useEffect(() => {
+useEffect(() => {
         const fetchPlaces = async () => {
             if (status !== 'authenticated' || !session?.accessToken) return;
+            
+            // O try/catch aqui ainda é útil para erros de transformação de dados (JSON.parse),
+            // mas não é estritamente necessário para o API_CONSUME (que já trata rede).
             try {
-                const response = await API_CONSUME("GET", "places/group",{
+                const response = await API_CONSUME("GET", "places/group", {
                     'Session': session.accessToken
                 });
-                const rawPlacesArray = Object.values(response || {}) as ApiPlaceData[];
+
+                // 1. Verificação de segurança (Novo padrão)
+                if (!response.ok || !response.data) {
+                    console.error("Erro ao buscar locais:", response.message);
+                    return;
+                }
+
+                // 2. Acessamos response.data explicitamente
+                const rawPlacesArray = Object.values(response.data) as ApiPlaceData[];
                 
                 const transformedPlaces = rawPlacesArray.map((apiPlace): Place => {
-                    // CORREÇÃO: Tipagem explícita para array de arrays de números
                     let parsedVertices: number[][] = [];
                     
                     if (typeof apiPlace.vertices === 'string') {
-                        // CORREÇÃO: Removido 'e' não utilizado no catch
                         try { 
                             parsedVertices = JSON.parse(apiPlace.vertices) as number[][]; 
                         } catch {}
@@ -98,15 +107,16 @@ const Home = () => {
                         parsedVertices = apiPlace.vertices as number[][];
                     }
                     
-                    // Asserção de tipo segura para o restante das props, assumindo que apiPlace tem o formato correto
                     return { 
                         ...(apiPlace as unknown as Place), 
-                        id: Number(apiPlace.id), // FIX: Use explicitly defined optional id
+                        id: Number(apiPlace.id), 
                         vertices: parsedVertices.map(v => ({ x: v[0], y: v[1] })) 
                     };
                 });
                 setPlaces(transformedPlaces);
-            } catch (error) { console.error("Error fetching places:", error); }
+            } catch (error) { 
+                console.error("Error processing places:", error); 
+            }
         };
         fetchPlaces();
     }, [session, status]);

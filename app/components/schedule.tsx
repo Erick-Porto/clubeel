@@ -58,7 +58,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const [selectedItems, setSelectedItems] = useState<LoadedContent[]>([]);
     const [localQuantity, setLocalQuantity] = useState<number>(0);
     // 1. FETCH
-    const fetchData = useCallback(async () => {
+const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate) return;
         try {
             const response = await API_CONSUME("POST", "schedule/time-options", {
@@ -68,21 +68,32 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
                 place_id: placeId
             });
 
-            if (response) {
-                if (response.quantity !== undefined) setLocalQuantity(response.quantity);
-
-                const listToMap = Array.isArray(response) ? response : (response.data || response.options || []);
-
-                const mappedContent: LoadedContent[] = listToMap.map((item: [string, string, number, number]) => ({
-                    start: item[0],
-                    end: item[1],
-                    owner: item[2],
-                    status: item[3]
-                }));
-
-                mappedContent.sort((a, b) => a.start.localeCompare(b.start));
-                setLoadedContent(mappedContent);
+            // CORREÇÃO: Usar !response.ok
+            if (!response.ok || !response.data) {
+                console.error('Erro ao buscar horários:', response.message);
+                return;
             }
+
+            // CORREÇÃO: Acessar response.data
+            const rawData = response.data;
+
+            if (rawData.quantity !== undefined) setLocalQuantity(rawData.quantity);
+
+            // Adaptação para pegar o array correto dentro do response.data
+            // Se o Laravel retorna [ ... ] direto, rawData será o array
+            // Se retorna { data: [...] }, rawData.data será o array
+            const listToMap = Array.isArray(rawData) ? rawData : (rawData.data || rawData.options || []);
+
+            const mappedContent: LoadedContent[] = listToMap.map((item: any) => ({
+                start: item[0],
+                end: item[1],
+                owner: item[2],
+                status: item[3]
+            }));
+
+            mappedContent.sort((a, b) => a.start.localeCompare(b.start));
+            setLoadedContent(mappedContent);
+
         } catch(error) {
             console.error('Error fetching time options:', error);
         }
@@ -134,7 +145,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     };
 
     // 4. RESERVAR (CORRIGIDO)
-    const handleReserve = async () => {
+const handleReserve = async () => {
         if (!session?.accessToken) return toast.error("Sessão inválida.");
         if (selectedItems.length === 0) return toast.info("Selecione um horário.");
 
@@ -165,18 +176,25 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
         });
 
         try {
-            await API_CONSUME("POST", "schedule", {
+            const response = await API_CONSUME("POST", "schedule", {
                 'Session': session.accessToken
             }, payload);
+
+            // CORREÇÃO: Validar response.ok
+            if (!response.ok) {
+                // Se o backend enviar mensagem de erro específica (ex: "Horário ocupado"), mostramos ela
+                toast.error(response.message || "Não foi possível reservar este horário.");
+                fetchData(); // Recarrega para mostrar status atualizado
+                return;
+            }
 
             await refreshCart();
             setSelectedItems([]);
             toast.success('Adicionado ao carrinho!');
             fetchData();
         } catch (error) {
-            console.error("Erro ao reservar:", error);
-            toast.error("Erro ao adicionar ao carrinho.");
-            fetchData();
+            console.error("Erro crítico ao reservar:", error);
+            toast.error("Erro inesperado.");
         }
     };
 

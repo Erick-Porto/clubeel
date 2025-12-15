@@ -66,7 +66,6 @@ const Cart = () => {
         <div className={style.cartContainer}>
             <div className={style.cartListContainer}>
                 {cart.map((item: CartItem, index: number) => {
-                    console.log(item)
                     const startSec = hhmmssToSeconds(String(item.start_schedule).split(' ')[1] || '00:00');
                     const endSec =  hhmmssToSeconds(String(item.end_schedule).split(' ')[1] || '00:00');
                     const hourDisplay = `${secondsToHHMM(startSec)} - ${secondsToHHMM(endSec)}`

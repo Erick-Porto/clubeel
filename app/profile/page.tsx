@@ -47,16 +47,27 @@ const ProfileContent = () => {
         }
     }, [cart, isCartLoading]);
 
-    useEffect(() => {
+useEffect(() => {
         const fetchLastPlaceImage = async () => {
             if (status !== 'authenticated' || !session?.accessToken) return;
 
             try {
+                // 1. Busca Agendamentos
                 const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`, {
                     'Session': session.accessToken
                 });
 
-                const schedules: Schedule[] = Array.isArray(schedulesResponse.schedules) ? schedulesResponse.schedules : (schedulesResponse.schedules || []);
+                // VALIDAÇÃO 1
+                if (!schedulesResponse.ok || !schedulesResponse.data) {
+                    return; // Se falhar, apenas não carrega a imagem, sem erro crítico
+                }
+
+                // ACESSO AOS DADOS 1
+                const schedulesData = schedulesResponse.data;
+                const schedules: Schedule[] = Array.isArray(schedulesData.schedules) 
+                    ? schedulesData.schedules 
+                    : (schedulesData.schedules || []);
+
                 if (schedules.length > 0) {
                     const sortedSchedules = schedules.sort((a: Schedule, b: Schedule) => {
                         return new Date(b.start_schedule).getTime() - new Date(a.start_schedule).getTime();
@@ -65,13 +76,20 @@ const ProfileContent = () => {
                     const latestSchedule = sortedSchedules[0];
 
                     if (latestSchedule && latestSchedule.place_id) {
+                        // 2. Busca Detalhes do Local
                         const placeResponse = await API_CONSUME("GET", `place/${latestSchedule.place_id}`, {
                             'Session': session.accessToken
                         }, null);
 
-                        const imageToUse = placeResponse.image || placeResponse.horizontal_image;
-                        if (imageToUse) {
-                            setLastScheduleImage(imageToUse);
+                        // VALIDAÇÃO 2
+                        if (placeResponse.ok && placeResponse.data) {
+                            // ACESSO AOS DADOS 2
+                            const placeData = placeResponse.data;
+                            const imageToUse = placeData.image || placeData.horizontal_image;
+                            
+                            if (imageToUse) {
+                                setLastScheduleImage(imageToUse);
+                            }
                         }
                     }
                 }

@@ -25,7 +25,6 @@ const CheckoutContent = () => {
     const { data: session } = useSession();
     const { cart, refreshCart, isLoading, removeCartItem } = useCart();
     const [cancellingId, setCancellingId] = useState<number | null>(null);
-    console.log("CheckoutContent - Cart:", cart);
     const handleCancelSchedule = async (scheduleId: number) => {
         if (cancellingId || !session?.accessToken) {
             if (!session?.accessToken) toast.error("Sessão inválida.");

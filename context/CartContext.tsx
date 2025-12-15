@@ -64,23 +64,32 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     
     const hasFetchedInitial = useRef(false);
 
-    const fetchCartData = useCallback(async (token: string, userId: string | number) => {
+const fetchCartData = useCallback(async (token: string, userId: string | number) => {
         try {
-            const timestamp = new Date().getTime();
-            
-            const response = await API_CONSUME("GET", `schedule/member/${userId}`,{
+            const response = await API_CONSUME("GET", `schedule/member/${userId}`, {
                 'Session': token
             });
 
+            // 1. Validação de Sucesso
+            if (!response.ok || !response.data) {
+                // Se der erro, não faz nada ou limpa o carrinho dependendo da regra
+                console.warn("Falha ao buscar carrinho:", response.message);
+                return;
+            }
+
+            // 2. O payload real agora está em response.data
+            const apiData = response.data;
             let rawData: any[] = [];
             
-            if (Array.isArray(response)) {
-                rawData = response;
-            } else if (response?.schedules) {
-                if (Array.isArray(response.schedules)) {
-                    rawData = response.schedules;
-                } else if (typeof response.schedules === 'object') {
-                    Object.values(response.schedules).forEach((dateGroup: any) => {
+            // Ajuste da lógica para ler de apiData
+            if (Array.isArray(apiData)) {
+                rawData = apiData;
+            } else if (apiData?.schedules) {
+                if (Array.isArray(apiData.schedules)) {
+                    rawData = apiData.schedules;
+                } else if (typeof apiData.schedules === 'object') {
+                    // Lógica para tratar agrupamento por data, se houver
+                    Object.values(apiData.schedules).forEach((dateGroup: any) => {
                         if (typeof dateGroup === 'object') {
                             Object.values(dateGroup).forEach((itemsArray: any) => {
                                 if (Array.isArray(itemsArray)) rawData.push(...itemsArray);
@@ -88,19 +97,19 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                         }
                     });
                 }
-            } else if (response?.data && Array.isArray(response.data)) {
-                rawData = response.data; 
+            } else if (apiData?.data && Array.isArray(apiData.data)) {
+                // Caso o Laravel retorne paginado ou envolvido em 'data'
+                rawData = apiData.data; 
             }
 
             const cleanCartItems: CartItem[] = rawData
-                .filter((item: any) => String(item.status_id) === '3')
+                .filter((item: any) => String(item.status_id) === '3') // Status 3 = Carrinho/Pendente
                 .map((item: any) => ({
                     ...item,
                     id: Number(item.id),
                     place_id: Number(item.place_id),
                     price: Number(item.price) || 0, 
                     status_id: Number(item.status_id),
-                    // As datas agora estarão limpas, sem vírgulas
                     start_schedule: normalizeToBrasilia(item.start_schedule),
                     end_schedule: normalizeToBrasilia(item.end_schedule)
                 }));
@@ -111,7 +120,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             });
 
         } catch (error) {
-            console.error("Erro crítico ao buscar carrinho:", error);
+            console.error("Erro crítico ao processar carrinho:", error);
         } finally {
             setIsLoading(false);
         }
@@ -140,9 +149,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         setCart([]);
     }, []);
 
-    const removeCartItem = useCallback(async (scheduleId: number) => {
+const removeCartItem = useCallback(async (scheduleId: number) => {
         if (!session?.accessToken) return;
 
+        // Otimismo: Remove da UI antes
         const previousCart = [...cart]; 
         setCart(current => current.filter(item => item.id !== scheduleId));
 
@@ -153,19 +163,24 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                 id: scheduleId
             });
 
-            if (response && (response.error || response.status === 500 || response.status === 404)) {
+            // 1. Verificação correta
+            if (!response.ok) {
+                // Lança erro para cair no catch e reverter o estado
                 throw new Error(response.message || "Erro no backend ao deletar");
             }
 
             toast.success("Item removido.");
             
+            // Opcional: Recarregar dados reais para garantir sincronia
             if (session.user?.id) {
-                await fetchCartData(session.accessToken, session.user.id);
+                // Não precisa de await aqui para não travar a UI
+                fetchCartData(session.accessToken, session.user.id);
             }
 
         } catch (error) {
             console.error("Erro ao excluir no servidor:", error);
             toast.error("Erro ao remover item.");
+            // Reverte o estado em caso de erro
             setCart(previousCart);
         }
     }, [cart, session, fetchCartData]);

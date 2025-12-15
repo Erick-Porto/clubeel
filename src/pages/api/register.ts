@@ -3,44 +3,19 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import API_CONSUME from '@/services/api-consume';
 
+// ... (Função IsValidCPF permanece igual) ...
 function IsValidCPF(cpf: string): boolean {
-    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) {
-        return false;
-    }
-
-    let sum = 0;
-    let remainder;
-
-    for (let i = 1; i <= 9; i++) {
-        sum += parseInt(cpf.substring(i - 1, i)) * (11 - i);
-    }
-
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+    let sum = 0, remainder;
+    for (let i = 1; i <= 9; i++) sum += parseInt(cpf.substring(i - 1, i)) * (11 - i);
     remainder = (sum * 10) % 11;
-
-    if (remainder === 10 || remainder === 11) {
-        remainder = 0;
-    }
-
-    if (remainder !== parseInt(cpf.substring(9, 10))) {
-        return false;
-    }
-
+    if (remainder === 10 || remainder === 11) remainder = 0;
+    if (remainder !== parseInt(cpf.substring(9, 10))) return false;
     sum = 0;
-
-    for (let i = 1; i <= 10; i++) {
-        sum += parseInt(cpf.substring(i - 1, i)) * (12 - i);
-    }
-
+    for (let i = 1; i <= 10; i++) sum += parseInt(cpf.substring(i - 1, i)) * (12 - i);
     remainder = (sum * 10) % 11;
-
-    if (remainder === 10 || remainder === 11) {
-        remainder = 0;
-    }
-
-    if (remainder !== parseInt(cpf.substring(10, 11))) {
-        return false;
-    }
-
+    if (remainder === 10 || remainder === 11) remainder = 0;
+    if (remainder !== parseInt(cpf.substring(10, 11))) return false;
     return true;
 }
 
@@ -48,46 +23,44 @@ export default async function RegisterHandler(req: NextApiRequest, res: NextApiR
     if (req.method === 'POST') {
         const { cpf, title, birthDate, password } = req.body;
 
-        // Verificar campos obrigatórios
-        if (!cpf || !title || !birthDate || !password) return res.status(400).json({ error: "Missing required fields" });
+        if (!cpf || !title || !birthDate || !password) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
 
-        // Validar CPF
-        if (!IsValidCPF(cpf)) return res.status(400).json({ error: 'Invalid CPF' });
-    
+        if (!IsValidCPF(cpf)) {
+            return res.status(400).json({ error: 'Invalid CPF' });
+        }
 
         try {
-            // Chamada ao serviço externo
-            const data = await API_CONSUME(
+            // Renomeado para 'response' para indicar que é o envelope
+            const response = await API_CONSUME(
                 'POST',
                 'register',
-                {
-                    Session: null,
-                },
-                {
-                    title,
-                    cpf,
-                    birthDate,
-                    password,
-                }
+                { Session: null },
+                { title, cpf, birthDate, password }
             );
 
-            // Esta verificação agora só será acionada se a API retornar 'null' intencionalmente
-            // em uma resposta de sucesso, o que é improvável.
-            if (!data) {
-                return res.status(500).json({ error: 'Empty but successful response from external service' });
+            // 1. Verificação de Falha (Novo Padrão)
+            if (!response.ok) {
+                // Repassa o status real da API (ex: 422, 409) e a mensagem de erro
+                return res.status(response.status).json({ 
+                    error: response.message || 'Falha ao registrar usuário.' 
+                });
             }
 
-            return res.status(200).json(data);
+            // 2. Verificação de Dados Vazios (Opcional, mas boa prática)
+            if (!response.data) {
+                return res.status(500).json({ error: 'Servidor retornou sucesso mas sem dados.' });
+            }
+
+            // 3. Sucesso: Retorna apenas os dados (desenvelopado)
+            return res.status(200).json(response.data);
+
         } catch (error) {
-            // Graças às alterações no API_CONSUME, este bloco agora receberá o erro detalhado.
             console.error('Error in RegisterHandler:', error);
-
-            if (error instanceof Error) {
-                // A mensagem de erro da API externa será enviada ao frontend.
-                return res.status(500).json({ error: error.message });
-            } else {
-                return res.status(500).json({ error: 'An unknown error occurred' });
-            }
+            // Este catch agora só captura erros de execução (ex: JSON parse failed),
+            // pois erros de rede/API são tratados no `if (!response.ok)`
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
     } else {
         res.setHeader('Allow', ['POST']);

@@ -4,9 +4,14 @@ import API_CONSUME from '@/services/api-consume';
 export default async function LoginHandler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         const { login, password } = req.body;
-        if (!login || !password) return res.status(400).json({ error: 'Missing login or password' });
+        
+        if (!login || !password) {
+            return res.status(400).json({ error: 'Missing login or password' });
+        }
+
         try {
-            const data = await API_CONSUME('POST', 'login',
+            // Renomeamos para 'response' para ficar claro que é o envelope
+            const response = await API_CONSUME('POST', 'login',
                 {
                     Session: null,
                 },
@@ -16,19 +21,27 @@ export default async function LoginHandler(req: NextApiRequest, res: NextApiResp
                 }
             );
             
-            if (!data || !data.token || !data.user) {
-                return res.status(401).json({ error: 'Invalid login credentials' });
+            // 1. Verificação de Sucesso (Status HTTP)
+            if (!response.ok || !response.data) {
+                // response.message conterá "Credenciais inválidas" se a API retornou 401
+                return res.status(401).json({ error: response.message || 'Invalid login credentials' });
             }
 
-            return res.status(200).json(data);
+            // 2. Extração dos dados reais
+            const payload = response.data;
+
+            // 3. Verificação de Integridade dos dados esperados
+            if (!payload.token || !payload.user) {
+                return res.status(401).json({ error: 'Invalid response from server' });
+            }
+
+            // 4. Retorna APENAS os dados do usuário/token (desenvelopado)
+            return res.status(200).json(payload);
 
         } catch (error) {
             console.error('Login API error:', error);
-            if (error instanceof Error) {
-                return res.status(500).json({ error: error.message });
-            } else {
-                return res.status(500).json({ error: 'An unknown error occurred' });
-            }
+            // Esse catch agora pega apenas erros de código (ex: JSON parse), não erros da API
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
     } else {
         res.setHeader('Allow', ['POST']);

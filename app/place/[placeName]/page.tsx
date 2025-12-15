@@ -39,29 +39,40 @@ const PlacePage = () => {
 
     const [data, setData] = useState<PlaceData | null>(null);
 
-    const fetchData = useCallback(async () => {
+const fetchData = useCallback(async () => {
         if (status !== 'authenticated' || !session || !placeID) {
             return;
         }
 
         try {
-            // CORREÇÃO: Cast seguro utilizando a interface CustomSession
             const token = (session as unknown as CustomSession).accessToken;
 
             const response = await API_CONSUME("GET", `place/${placeID}`, {
                 'Session': token
             }, null);
 
+            // 1. Verificação de Sucesso (Novo Padrão)
+            if (!response.ok || !response.data) {
+                console.warn(`Erro ao carregar local (${placeID}):`, response.message);
+                router.push('/'); // Redireciona se não achar ou der erro
+                return;
+            }
+
+            // 2. Acesso aos dados via response.data
+            const placeData = response.data;
+
             setData({
-                name: response.name || placeName.split("-").slice(0, -1).join(" "),
-                id: response.id || placeID,
-                price: Number(response.price) || 0, 
-                image: response?.image || "",
-                rules: response.schedule_rules || [],
-                schedule: Array.isArray(response?.schedule) ? response.schedule : []
+                name: placeData.name || placeName.split("-").slice(0, -1).join(" "),
+                id: placeData.id || placeID,
+                price: Number(placeData.price) || 0, 
+                image: placeData.image || "",
+                rules: placeData.schedule_rules || [],
+                schedule: Array.isArray(placeData.schedule) ? placeData.schedule : []
             });
+
         } catch (error) {
-            console.error("Erro ao buscar dados do local:", error);
+            // Esse catch agora serve apenas para erros de execução do React/JS (ex: JSON parse)
+            console.error("Erro crítico na página:", error);
             router.push('/'); 
         }
     }, [placeID, placeName, session, status, router]);

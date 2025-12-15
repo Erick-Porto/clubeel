@@ -160,19 +160,30 @@ const PlacesPage = () => {
         if (status === 'loading') return; 
     }, [status, router]);
 
-    const fetchPlaces = useCallback(async () => {
+const fetchPlaces = useCallback(async () => {
         if (status !== 'authenticated' || !session || !placeId) return;
 
         try {
-            // CORREÇÃO: Cast seguro utilizando interface
             const token = (session as unknown as CustomSession).accessToken;
 
             const response = await API_CONSUME("GET", `places/${placeId}`, {
                 'Session': token
             }, null);
 
-            const placesArray: Place[] = Object.values(response.places || {});
-            setGroup(response.group);
+            // 1. Validação de Sucesso (Novo Padrão)
+            if (!response.ok || !response.data) {
+                console.error("Erro ao buscar locais:", response.message);
+                // Opcional: toast.error("Não foi possível carregar as quadras.");
+                return;
+            }
+
+            // 2. Acesso aos dados via response.data
+            const apiData = response.data;
+            
+            // Agora acessamos .places e .group dentro de apiData
+            const placesArray: Place[] = Object.values(apiData.places || {});
+            
+            setGroup(apiData.group);
             setPlaces(placesArray);
 
             const newMaxAntecedence = placesArray.reduce((max, place) => {
@@ -180,27 +191,21 @@ const PlacesPage = () => {
                     if (rule.status_id !== 1) {
                         return ruleMax;
                     }
-                    // Se não tem nenhuma regra de antecedência, mantém o acumulado atual
                     if (rule.maximum_antecedence === null && rule.minimum_antecedence === null) {
                         return ruleMax;
                     }
 
-                        // Sanitiza os valores (null vira 0 para comparação)
                     const maxAnt = rule.maximum_antecedence !== null ? rule.maximum_antecedence : 0;
-                        // Se a lógica for "limite máximo do calendário", o mínimo não deveria limitar o teto,
-                        // mas mantendo sua lógica de fallback:
                     const minAnt = rule.minimum_antecedence !== null ? rule.minimum_antecedence : 0;
 
-                        // Pega o maior valor entre o Max definido, o Min definido ou o acumulado
-                        // Se rule.maximum_antecedence existir, ele é a prioridade para definir o "teto"
                     const currentRuleLimit = maxAnt > minAnt ? maxAnt : minAnt;
 
                     return Math.max(ruleMax, currentRuleLimit);
                 }, 0);
-            return Math.max(max, placeMax);
-        }, 0);
+                return Math.max(max, placeMax);
+            }, 0);
 
-        setMaxAntecedence(newMaxAntecedence);
+            setMaxAntecedence(newMaxAntecedence);
 
         } catch (error) {
             console.error("Error fetching places:", error);

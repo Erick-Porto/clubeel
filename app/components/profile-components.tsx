@@ -126,7 +126,7 @@ export const ProfileForm = () => {
         setModalState(true);
     };
 
-    const handleUpdateProfile = async (currentPassword: string) => {
+const handleUpdateProfile = async (currentPassword: string) => {
         if (!session?.accessToken) throw new Error("Sessão inválida.");
 
         try {
@@ -141,17 +141,24 @@ export const ProfileForm = () => {
                 password: encryptedPassword
             });
 
-            if (!loginResponse || loginResponse.error || (loginResponse.status && loginResponse.status !== 200)) {
+            // NOVA VERIFICAÇÃO
+            if (!loginResponse.ok) {
                 throw new Error("Senha incorreta");
             }
 
             // 2. Atualiza Dados
-            await API_CONSUME("PUT", `member/${session.user.id}`, {
+            const updateResponse = await API_CONSUME("PUT", `member/${session.user.id}`, {
                 'Session': session.accessToken
             }, {
                 email: formData.email,
                 telephone: formData.telephone
             });
+
+            // NOVA VERIFICAÇÃO IMPRESCINDÍVEL
+            if (!updateResponse.ok) {
+                // Usa a mensagem que veio da API ou um fallback
+                throw new Error(updateResponse.message || "Erro ao atualizar dados.");
+            }
 
             toast.success("Perfil atualizado com sucesso!");
             
@@ -163,17 +170,10 @@ export const ProfileForm = () => {
             setModalState(false);
             setIsEditable(false);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro update profile:", error);
-            const err = error as ApiError;
-            
-            if (err.message === "Senha incorreta") {
-                toast.error("Senha incorreta.");
-            } else {
-                const msg = err?.response?.data?.error || "Erro ao atualizar dados.";
-                toast.error(msg);
-            }
-            throw error;
+            // Agora o error.message já contém o texto correto tratado acima
+            toast.error(error.message || "Erro inesperado.");
         }
     };
 
@@ -291,7 +291,7 @@ export const PasswordForm = () => {
         }
     };
 
-    const handleUpdate = async (currentPassword: string) => {
+const handleUpdate = async (currentPassword: string) => {
         if (!session?.accessToken) throw new Error("Sessão inválida.");
         
         try {
@@ -306,39 +306,32 @@ export const PasswordForm = () => {
                 password: encryptedCurrent,
             });
 
-            if (!loginResponse || loginResponse.error || (loginResponse.status && loginResponse.status !== 200)) {
-                throw new Error("Senha incorreta");
+            if (!loginResponse.ok) {
+                throw new Error("Senha atual incorreta.");
             }
 
-            // 2. Update
-            await API_CONSUME("PUT", `change-password`, {
+            // 2. Update da Senha
+            const updateResponse = await API_CONSUME("PUT", `change-password`, {
                 'Session': session.accessToken
             }, { 
                 cpf: cpfClean, 
                 new_password: CryptoJS.SHA256(passwords.new1).toString() 
             });
 
+            if (!updateResponse.ok) {
+                throw new Error(updateResponse.message || "Erro ao alterar senha.");
+            }
+
             toast.success("Senha alterada!");
             setRules({
-                length: false,
-                uppercase: false,
-                lowercase: false,
-                number: false,
-                special: false,
+                length: false, uppercase: false, lowercase: false, number: false, special: false,
             });
             setModalState(false);
             setPasswords({ new1: "", new2: "" });
-        } catch (error) {
-            console.error("Erro update password:", error);
-            const err = error as ApiError;
 
-            if (err.message === "Senha incorreta") {
-                toast.error("Senha atual incorreta.");
-            } else {
-                const msg = err?.response?.data?.error || "Erro ao alterar senha.";
-                toast.error(msg);
-            }
-            throw error;
+        } catch (error: any) {
+            console.error("Erro update password:", error);
+            toast.error(error.message || "Erro inesperado.");
         }
     };
 

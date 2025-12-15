@@ -17,7 +17,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const data = await API_CONSUME('POST', 'login', {
+          // 1. Faz a chamada (agora retorna { data, ok, status, message })
+          const response = await API_CONSUME('POST', 'login', {
                 'Session': null
             }, {
               login: credentials.login,
@@ -25,23 +26,30 @@ export const authOptions: NextAuthOptions = {
             }
           );
 
-          if (data && data.error) {
-            throw new Error(data.message || "Credenciais inválidas.");
+          // 2. Verificação de Erro (Novo Padrão)
+          // Se não for OK (ex: 401 Unauthorized), lançamos erro para o NextAuth
+          if (!response.ok) {
+            throw new Error(response.message || "Credenciais inválidas.");
           }
 
-          if (data && data.user && data.token) {
+          // 3. Acesso aos dados reais
+          const payload = response.data;
+
+          // 4. Validação do Payload
+          if (payload && payload.user && payload.token) {
             return {
-              ...data.user,
-              accessToken: data.token,
+              ...payload.user,
+              accessToken: payload.token,
             };
           }
-          console.log("Login failed: Invalid response", data);
-          throw new Error("Resposta inválida da API de autenticação.");
+
+          // Se deu 200 OK mas não veio user/token, algo está errado na API
+          throw new Error("Resposta inválida da API: Token ou Usuário ausentes.");
 
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido durante a autorização.";
-          
+          const errorMessage = error instanceof Error ? error.message : "Erro desconhecido no login.";
           console.error("Authorize Error:", errorMessage);
+          // Re-lança o erro para o NextAuth redirecionar para ?error=...
           throw new Error(errorMessage);
         }
       },
@@ -51,6 +59,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
+    // ... (Seus callbacks permanecem iguais, pois dependem apenas do retorno acima)
     async jwt({ token, user }) {
       if (user) {
         if (user.id) token.id = user.id as string;
