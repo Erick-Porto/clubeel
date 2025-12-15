@@ -53,7 +53,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm }) => {
             await onConfirm(password);
             setPassword("");
         } catch (error) {
-            console.error("Erro no modal:", error);
+            toast.error("Erro no modal: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsConfirming(false);
         }
@@ -171,9 +171,7 @@ const handleUpdateProfile = async (currentPassword: string) => {
             setIsEditable(false);
 
         } catch (error: any) {
-            console.error("Erro update profile:", error);
-            // Agora o error.message já contém o texto correto tratado acima
-            toast.error(error.message || "Erro inesperado.");
+            toast.error("Erro update profile: " + (error instanceof Error ? error.message : String(error)));
         }
     };
 
@@ -330,8 +328,7 @@ const handleUpdate = async (currentPassword: string) => {
             setPasswords({ new1: "", new2: "" });
 
         } catch (error: any) {
-            console.error("Erro update password:", error);
-            toast.error(error.message || "Erro inesperado.");
+            toast.error("Erro update password: " + (error instanceof Error ? error.message : String(error)));
         }
     };
 

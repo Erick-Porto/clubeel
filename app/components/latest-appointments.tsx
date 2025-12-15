@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faClock } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
+import { toast } from 'react-toastify';
 
 interface Place {
     name: string;
@@ -61,7 +62,7 @@ const fetchAppointments = useCallback(async () => {
 
             // 1. Verificação de Erro (Novo Padrão)
             if (!response.ok || !response.data) {
-                console.error("Erro ao buscar agendamentos:", response.message);
+                toast.error("Erro ao buscar agendamentos: " + (response.message instanceof Error ? response.message.message : String(response.message)));
                 // Se quiser, pode setar um estado de erro aqui para mostrar na UI
                 return;
             }
@@ -80,7 +81,7 @@ const fetchAppointments = useCallback(async () => {
             setAppointments(filtered);
 
         } catch (error) {
-            console.error("Erro crítico na execução:", error);
+            toast.error("Erro crítico na execução: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsLoading(false);
         }

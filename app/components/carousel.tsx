@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import styles from "@/styles/carousel.module.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight, faChevronLeft } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'react-toastify';
 
 interface CarouselProps{
   controllers: boolean;
@@ -25,7 +26,7 @@ export default function Carousel({height, controllers}: CarouselProps) {
         const data = await response.json();
         setFiles(data);
       } catch (error) {
-        console.error(error);
+        toast.error("Erro ao buscar imagens do carrossel: " + (error instanceof Error ? error.message : String(error)));
         setFiles([]); // Garante que a lista esteja vazia em caso de erro
       } finally {
         setIsLoading(false); // Finaliza o carregamento, com sucesso ou erro

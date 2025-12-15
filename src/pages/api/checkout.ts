@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { toast } from 'react-toastify';
 
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN || process.env.NEXT_PUBLIC_MP_ACCESS_TOKEN || '';
 if (!MP_TOKEN) {
-  console.warn('Mercado Pago access token não configurado (env MP_ACCESS_TOKEN ou NEXT_PUBLIC_MP_ACCESS_TOKEN)');
+  toast.warn('Mercado Pago access token não configurado (env MP_ACCESS_TOKEN ou NEXT_PUBLIC_MP_ACCESS_TOKEN)');
 }
 
 interface PreferenceItem {
@@ -76,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const errorStr = result.data.error ? String(result.data.error) : '';
 
       if (msg.toLowerCase().includes('auto_return') || errorStr.toLowerCase().includes('auto_return')) {
-        console.warn('Erro relacionado a auto_return detectado, tentando criar preferência sem auto_return:', result.data);
+        toast.warn('Erro relacionado a auto_return detectado, tentando criar preferência sem auto_return:', result.data);
         // garantir que não exista auto_return e tentar novamente
         const fallbackBody = { ...baseBody };
         delete fallbackBody.auto_return;
@@ -85,14 +86,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (!result.ok) {
-      console.error('Erro ao criar preferência Mercado Pago (final):', result);
+      toast.error('Erro ao criar preferência Mercado Pago (final): ' + (result.data || 'Erro ao criar preferência'));
       return res.status(result.status || 500).json({ error: result.data || 'Erro ao criar preferência' });
     }
 
     return res.status(200).json({ preferenceId: result.data && result.data.id });
   } catch (error: unknown) {
     // Type narrowing for error
-    console.error('Erro no checkout (catch):', error);
+    toast.error('Erro no checkout (catch): ' + (error instanceof Error ? error.message : String(error)));
     const errorMessage = error instanceof Error ? error.message : 'Erro interno';
     return res.status(500).json({ error: errorMessage });
   }

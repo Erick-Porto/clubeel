@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import MercadoPagoConfig, { Preference } from "mercadopago";
+import { toast } from "react-toastify";
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -54,10 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         notification_url: `${baseUrl}/api/webhook`,
       },
     });
-    console.log("✅ create_preference:");
     return res.status(200).json({ id: result.id });
   } catch (err: unknown) {
-    console.error("❌ Erro no create_preference:", err);
+    toast.error("❌ Erro no create_preference: " + (err instanceof Error ? err.message : String(err)));
     return res.status(500).json({ error: "Erro ao criar preferência" });
   }
 }

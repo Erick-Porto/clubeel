@@ -70,7 +70,7 @@ const fetchData = useCallback(async () => {
 
             // CORREÇÃO: Usar !response.ok
             if (!response.ok || !response.data) {
-                console.error('Erro ao buscar horários:', response.message);
+                toast.error('Erro ao buscar horários: ' + (response.message instanceof Error ? response.message.message : String(response.message)));
                 return;
             }
 
@@ -95,7 +95,7 @@ const fetchData = useCallback(async () => {
             setLoadedContent(mappedContent);
 
         } catch(error) {
-            console.error('Error fetching time options:', error);
+            toast.error('Erro ao buscar horários: ' + (error instanceof Error ? error.message : String(error)));
         }
     }, [placeId, session, currentDate]);
 
@@ -155,9 +155,8 @@ const handleReserve = async () => {
             const endObj = createGMT3Date(currentDate, item.end);
 
             if (isNaN(startObj.getTime()) || isNaN(endObj.getTime())) {
-                 console.error("Data inválida gerada para:", item);
-                 toast.error("Erro ao processar data.");
-                 throw new Error("Data inválida");
+                toast.error("Data inválida gerada para: " + JSON.stringify(item));
+                throw new Error("Data inválida");
             }
 
             // 2. Formatação Correta para o Backend ("YYYY-MM-DD HH:mm:ss")
@@ -193,8 +192,7 @@ const handleReserve = async () => {
             toast.success('Adicionado ao carrinho!');
             fetchData();
         } catch (error) {
-            console.error("Erro crítico ao reservar:", error);
-            toast.error("Erro inesperado.");
+            toast.error("Erro crítico ao reservar: " + (error instanceof Error ? error.message : String(error)));
         }
     };
 

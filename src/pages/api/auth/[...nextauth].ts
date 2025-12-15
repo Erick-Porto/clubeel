@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import API_CONSUME from "@/services/api-consume";
+import { toast } from "react-toastify";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -48,7 +49,7 @@ export const authOptions: NextAuthOptions = {
 
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : "Erro desconhecido no login.";
-          console.error("Authorize Error:", errorMessage);
+          toast.error("Authorize Error: " + errorMessage);
           // Re-lança o erro para o NextAuth redirecionar para ?error=...
           throw new Error(errorMessage);
         }

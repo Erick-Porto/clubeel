@@ -15,6 +15,7 @@ import { faChevronDown, faShoppingCart } from '@fortawesome/free-solid-svg-icons
 import TutorialOverlay, { TutorialStep } from '../components/tutorial-overlay';
 import API_CONSUME from '@/services/api-consume';
 import { useSession } from 'next-auth/react';
+import { toast } from 'react-toastify';
 
 const formatPrice = (p: number | string): string => {
     const n = parseFloat(String(p));
@@ -164,7 +165,7 @@ const CheckoutComponent = () => {
                         setPaymentResult('error');
                     }
                 } catch (error) {
-                    console.error("Erro ao processar retorno:", error);
+                    toast.error("Erro ao processar retorno: " + (error instanceof Error ? error.message : String(error)));
                     setPaymentResult('error');
                 } finally {
                     setValidatingPayment(false);
@@ -205,7 +206,7 @@ const CheckoutComponent = () => {
                 }, { id: item.id });
 
                 if (!response.ok) {
-                    console.error(`Erro tutorial (ID ${item.id}):`, response.message);
+                    toast.error(`Erro tutorial (ID ${item.id}): ${response.message}`);
                 }
                 i--;
                 if (i === 0) {

@@ -73,7 +73,7 @@ const fetchCartData = useCallback(async (token: string, userId: string | number)
             // 1. Validação de Sucesso
             if (!response.ok || !response.data) {
                 // Se der erro, não faz nada ou limpa o carrinho dependendo da regra
-                console.warn("Falha ao buscar carrinho:", response.message);
+                toast.warn("Falha ao buscar carrinho: " + (response.message || "Erro desconhecido"));
                 return;
             }
 
@@ -120,7 +120,7 @@ const fetchCartData = useCallback(async (token: string, userId: string | number)
             });
 
         } catch (error) {
-            console.error("Erro crítico ao processar carrinho:", error);
+            toast.error("Erro crítico ao processar carrinho: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsLoading(false);
         }
@@ -178,8 +178,7 @@ const removeCartItem = useCallback(async (scheduleId: number) => {
             }
 
         } catch (error) {
-            console.error("Erro ao excluir no servidor:", error);
-            toast.error("Erro ao remover item.");
+            toast.error("Erro ao remover item: " + (error instanceof Error ? error.message : String(error)));
             // Reverte o estado em caso de erro
             setCart(previousCart);
         }

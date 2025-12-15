@@ -95,7 +95,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 router.refresh();
             }
         } catch (error) {
-            console.error("Login error:", error);
+            toast.error("Login error: " + (error instanceof Error ? error.message : String(error)));
             setIsMaintenance(true);
         } finally {
             setIsLoading(false);
@@ -146,9 +146,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 router.refresh();
             }
         } catch (error) {
-            console.error(error);
-            // Erro genérico de execução (não da API)
-            toast.error("Erro inesperado ao processar cadastro.");
+            toast.error("Erro inesperado ao processar cadastro: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsLoading(false);
         }

@@ -62,7 +62,6 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) =
                 return;
             }
 
-            console.log("Member checked:", response.data);
             toast.success("Dados confirmados! Prossiga para a nova senha.");
             
             // 2. Passar os dados para o próximo passo
@@ -76,8 +75,7 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) =
             }); 
 
         } catch (error) {
-            console.error(error);
-            toast.error("Erro inesperado ao verificar usuário.");
+            toast.error("Erro inesperado ao verificar usuário: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsLoading(false);
         }
@@ -194,9 +192,7 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
             router.push('/');
 
         } catch (error: any) {
-            console.error(error);
-            // Exibe a mensagem de erro que veio da API ou o fallback
-            toast.error(error.message || "Erro ao alterar senha. Tente novamente.");
+            toast.error("Erro ao alterar senha: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsLoading(false);
         }

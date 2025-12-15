@@ -42,8 +42,6 @@ async function API_CONSUME<T = any>(
     try {
         const response = await fetch(url, config);
         
-        console.log(`📡 API_CONSUME [${method}] ${response.status} - ${url}`);
-
         // Tenta ler o corpo como JSON, se falhar (body vazio), retorna null
         const responseData = await response.json().catch(() => null);
 
@@ -51,7 +49,7 @@ async function API_CONSUME<T = any>(
         
         // Se for erro crítico de servidor, logamos mas retornamos o status original
         if (response.status >= 500) {
-            console.error(`🔥 Erro Crítico (${response.status}) em: ${url}`, responseData);
+            toast.error(`🔥 Erro Crítico (${response.status}) em: ${url}`, responseData);
             // Opcional: handleCriticalError() se quiser deslogar em 500, 
             // mas geralmente 500 é temporário e não exige logout.
         }
@@ -75,10 +73,10 @@ async function API_CONSUME<T = any>(
         };
 
     } catch (error: any) {
-        console.error("❌ API_CONSUME Network Error:", error);
+        toast.error("❌ API_CONSUME Network Error: " + (error instanceof Error ? error.message : String(error)));
 
         if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-            console.error("Falha de conexão com a API.");
+            toast.error("Falha de conexão com a API.");
             handleCriticalError(); 
             // Retornamos um status 0 ou 503 para indicar erro de rede
             return { 
@@ -104,7 +102,7 @@ function handleCriticalError() {
         const currentPath = window.location.pathname;
         
         if (currentPath !== '/login' && !window.location.search.includes('maintenance=true')) {
-            console.warn("⚠️ Falha crítica ou sessão inválida. Logout forçado.");
+            toast.warn("⚠️ Falha crítica ou sessão inválida. Logout forçado.");
             
             signOut({ 
                 callbackUrl: '/login?maintenance=true',

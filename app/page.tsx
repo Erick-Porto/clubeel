@@ -13,6 +13,7 @@ import { useIsMobile } from "./hooks/useIsMobile";
 import TutorialOverlay, { TutorialStep } from "@/components/tutorial-overlay";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 
 interface Point { x: number; y: number; }
 interface Place {
@@ -89,7 +90,7 @@ useEffect(() => {
 
                 // 1. Verificação de segurança (Novo padrão)
                 if (!response.ok || !response.data) {
-                    console.error("Erro ao buscar locais:", response.message);
+                    toast.error("Erro ao buscar locais: " + response.message);
                     return;
                 }
 
@@ -115,7 +116,7 @@ useEffect(() => {
                 });
                 setPlaces(transformedPlaces);
             } catch (error) { 
-                console.error("Error processing places:", error); 
+                toast.error("Erro ao processar locais: " + (error instanceof Error ? error.message : String(error)));
             }
         };
         fetchPlaces();

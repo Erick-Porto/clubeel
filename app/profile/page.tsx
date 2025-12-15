@@ -14,6 +14,7 @@ import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faUser, faKey, faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
 import API_CONSUME from "@/services/api-consume";
 import { useSearchParams } from "next/navigation"; 
+import { toast } from "react-toastify";
 
 // Tipos
 type ViewState = 'profile' | 'password' | 'schedules';
@@ -94,7 +95,7 @@ useEffect(() => {
                     }
                 }
             } catch (error) {
-                console.error("Erro ao buscar imagem do último agendamento:", error);
+                toast.error("Erro ao buscar imagem do último agendamento: " + (error instanceof Error ? error.message : String(error)));
             }
         };
 

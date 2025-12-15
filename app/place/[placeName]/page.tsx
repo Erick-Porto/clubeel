@@ -13,6 +13,7 @@ import { LoadingScreen } from '@/components/loading';
 import TutorialOverlay, { TutorialStep } from '@/app/components/tutorial-overlay';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'react-toastify';
 
 interface PlaceData {
     name: string;
@@ -53,7 +54,7 @@ const fetchData = useCallback(async () => {
 
             // 1. Verificação de Sucesso (Novo Padrão)
             if (!response.ok || !response.data) {
-                console.warn(`Erro ao carregar local (${placeID}):`, response.message);
+                toast.warn(`Erro ao carregar local (${placeID}): ` + (response.message || "Erro desconhecido"));
                 router.push('/'); // Redireciona se não achar ou der erro
                 return;
             }
@@ -72,7 +73,7 @@ const fetchData = useCallback(async () => {
 
         } catch (error) {
             // Esse catch agora serve apenas para erros de execução do React/JS (ex: JSON parse)
-            console.error("Erro crítico na página:", error);
+            toast.error("Erro crítico na página: " + (error instanceof Error ? error.message : String(error)));
             router.push('/'); 
         }
     }, [placeID, placeName, session, status, router]);

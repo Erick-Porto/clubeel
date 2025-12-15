@@ -36,8 +36,8 @@ const CheckoutContent = () => {
             removeCartItem(scheduleId);
             await refreshCart();
         } catch (error) {
-            console.error("Erro:", error);
             toast.error("Erro ao remover.");
+            toast.error("Erro: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setCancellingId(null);
         }

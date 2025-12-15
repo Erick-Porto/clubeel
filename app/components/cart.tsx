@@ -23,7 +23,7 @@ const Cart = () => {
             removeCartItem(scheduleId);
             await refreshCart();
         } catch (error) {
-            console.error("Erro ao remover agendamento:", error);
+            toast.error("Erro ao remover agendamento: " + (error instanceof Error ? error.message : String(error)));
             toast.error("Não foi possível remover o agendamento.");
         }
     };

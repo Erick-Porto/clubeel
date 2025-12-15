@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faIdBadge } from "@fortawesome/free-solid-svg-icons";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 interface BannerProps {
     lastScheduleImage?: string;
@@ -47,7 +48,7 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
                 setAvatarImage(base64);
             } 
             catch (error) {
-                console.error("Erro ao buscar avatar:", error);
+                toast.error("Erro ao buscar avatar: " + (error instanceof Error ? error.message : String(error)));
             }
         };
 

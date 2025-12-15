@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import API_CONSUME from '@/services/api-consume';
+import { toast } from 'react-toastify';
 
 export default async function LoginHandler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
@@ -39,7 +40,7 @@ export default async function LoginHandler(req: NextApiRequest, res: NextApiResp
             return res.status(200).json(payload);
 
         } catch (error) {
-            console.error('Login API error:', error);
+            toast.error('Login API error: ' + (error instanceof Error ? error.message : String(error)));
             // Esse catch agora pega apenas erros de código (ex: JSON parse), não erros da API
             return res.status(500).json({ error: 'Internal Server Error' });
         }

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import styles from '@/styles/tutorial-overlay.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight, faCheck, faHandPointer } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'react-toastify';
 
 export interface TutorialStep {
     targetId?: string;
@@ -151,7 +152,7 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
                 realTarget.click();
             }
         } catch (error) {
-            console.error("Erro ao simular clique:", error);
+            toast.error("Erro ao simular clique: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             overlayDiv.style.pointerEvents = 'auto'; 
             setTimeout(() => {

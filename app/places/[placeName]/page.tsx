@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { LoadingScreen } from "@/components/loading";
 import TutorialOverlay, { TutorialStep } from "@/app/components/tutorial-overlay";
+import { toast } from "react-toastify";
 
 // --- INTERFACES ---
 
@@ -172,7 +173,7 @@ const fetchPlaces = useCallback(async () => {
 
             // 1. Validação de Sucesso (Novo Padrão)
             if (!response.ok || !response.data) {
-                console.error("Erro ao buscar locais:", response.message);
+                toast.error("Erro ao buscar locais: " + (response.message || "Erro desconhecido"));
                 // Opcional: toast.error("Não foi possível carregar as quadras.");
                 return;
             }
@@ -208,7 +209,7 @@ const fetchPlaces = useCallback(async () => {
             setMaxAntecedence(newMaxAntecedence);
 
         } catch (error) {
-            console.error("Error fetching places:", error);
+            toast.error("Erro ao buscar locais: " + (error instanceof Error ? error.message : String(error)));
         }
     }, [placeId, session, status]);
 

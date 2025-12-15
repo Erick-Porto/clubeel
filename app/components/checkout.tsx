@@ -5,6 +5,7 @@ import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 import style from '@/styles/checkout.module.css'
 import { Loading } from '@/components/loading';
 import { useCart, CartItem } from '@/context/CartContext'
+import { toast } from 'react-toastify'
 
 initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_TOKEN!, { locale: 'pt-BR' })
 
@@ -88,7 +89,7 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string
                 })
                 const data = await res.json()
                 if (res.ok && data?.id) setPreferenceId(data.id)
-            } catch (err) { console.error("Erro MP:", err) }
+            } catch (err) { toast.error("Erro MP: " + (err instanceof Error ? err.message : String(err))) }
         })()
     }, [cart]) 
 
