@@ -165,10 +165,10 @@ export default function Header({
 
                 <ul className={`${styles.userOptions} ${userOptions ? styles.userOptionsActive : ''}`}>
                     {pathname !== '/profile' && (
-                        <li> <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/profile'} style={{ width: '100%' }}>Meu Perfil</Link></li>
+                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/profile'} style={{ width: '100%' }}><li> Meu Perfil</li></Link>
                     )}
                     {pathname !== '/' && (
-                        <li> <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}>Início</Link></li>
+                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}><li>Início</li></Link>
                     )}
                     <hr />
                     <li onClick={() => signOut({ callbackUrl: '/login' })} style={{ color: '#d32f2f' }}>
