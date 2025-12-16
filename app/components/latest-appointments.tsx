@@ -62,11 +62,14 @@ const fetchAppointments = useCallback(async () => {
 
             // 1. Verificação de Erro (Novo Padrão)
             if (!response.ok || !response.data) {
-                toast.error("Erro ao buscar agendamentos: " + (response.message instanceof Error ? response.message.message : String(response.message)));
-                // Se quiser, pode setar um estado de erro aqui para mostrar na UI
+    // Cast para 'unknown' satisfaz o linter e permite o instanceof
+                const msg = response.message as unknown;
+                
+                const errorMessage = msg instanceof Error ? msg.message : String(msg);
+
+                toast.error("Erro ao buscar agendamentos: " + errorMessage);
                 return;
             }
-
             // 2. Acesso correto aos dados (response.data.schedules)
             // O response.data é o JSON que o Laravel retornou
             const rawData = response.data;

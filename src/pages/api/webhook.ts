@@ -12,10 +12,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (id) {
     try {
       const payment = new Payment(client);
-      const detail = await payment.get({ id: String(id) });
+      
+      // CORREÇÃO 1: Removemos "const detail =" pois não é usada
+      // Mantemos o await para garantir que a chamada à API ocorra
+      await payment.get({ id: String(id) });
+      
       // console.log("✅ PAYMENT DETAILS:", detail);
       console.log("✅ PAYMENT");
-    } catch (err) {
+    } catch { 
+      // CORREÇÃO 2: Removemos "(err)" do catch (Optional Catch Binding)
       // console.error("❌ Erro consultando pagamento:", err);
       console.error("❌ Erro consultando pagamento");
     }

@@ -22,15 +22,6 @@ interface ModalProps {
     onConfirm: (password: string) => Promise<void>;
 }
 
-interface ApiError {
-    message?: string;
-    response?: {
-        data?: {
-            error?: string;
-        };
-    };
-}
-
 // --- MODAL ---
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm }) => {
     const [password, setPassword] = useState("");
@@ -170,7 +161,7 @@ const handleUpdateProfile = async (currentPassword: string) => {
             setModalState(false);
             setIsEditable(false);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Erro update profile: " + (error instanceof Error ? error.message : String(error)));
         }
     };
@@ -327,7 +318,7 @@ const handleUpdate = async (currentPassword: string) => {
             setModalState(false);
             setPasswords({ new1: "", new2: "" });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Erro update password: " + (error instanceof Error ? error.message : String(error)));
         }
     };

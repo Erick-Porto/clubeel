@@ -191,7 +191,7 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
             toast.success("Senha alterada com sucesso! Faça login.");
             router.push('/');
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Erro ao alterar senha: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsLoading(false);

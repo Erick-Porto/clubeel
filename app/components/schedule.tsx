@@ -70,7 +70,10 @@ const fetchData = useCallback(async () => {
 
             // CORREÇÃO: Usar !response.ok
             if (!response.ok || !response.data) {
-                toast.error('Erro ao buscar horários: ' + (response.message instanceof Error ? response.message.message : String(response.message)));
+                const msg = response.message as unknown;
+                const errorText = msg instanceof Error ? msg.message : String(msg);
+                
+                toast.error('Erro ao buscar horários: ' + errorText);
                 return;
             }
 
@@ -84,7 +87,7 @@ const fetchData = useCallback(async () => {
             // Se retorna { data: [...] }, rawData.data será o array
             const listToMap = Array.isArray(rawData) ? rawData : (rawData.data || rawData.options || []);
 
-            const mappedContent: LoadedContent[] = listToMap.map((item: any) => ({
+            const mappedContent: LoadedContent[] = listToMap.map((item: [string, string, number | null, number | null]) => ({
                 start: item[0],
                 end: item[1],
                 owner: item[2],
