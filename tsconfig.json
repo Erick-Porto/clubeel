@@ -28,7 +28,8 @@
       "@/api/*": ["./src/pages/api/*"],
       "@/images/*": ["./public/images/*"],
       "@/services/*": ["./services/*"],
-      "@/context/*": ["./context/*"]
+      "@/context/*": ["./context/*"],
+      "@/utils/*": ["./src/utils/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

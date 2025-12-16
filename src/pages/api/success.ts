@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
 import API_CONSUME from "@/services/api-consume";
 import MercadoPagoConfig, { Payment } from "mercadopago";
+import { toast } from "react-toastify";
 
 const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -17,17 +18,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (status && status !== 'approved') {
-        return res.redirect("/checkout?status=PIRU");
+        return res.redirect("/checkout?status=success");
     }
 
     try {
         const paymentClient = new Payment(client);
         const paymentData = await paymentClient.get({ id: String(payment_id) });
 
-        if (paymentData.status !== 'approved') return res.redirect("/checkout?status=PIRU");
+        if (paymentData.status !== 'approved') return res.redirect("/checkout?status=failure");
         
         const metadataSchedules = paymentData.metadata?.schedules;
-        if (!metadataSchedules) return res.redirect("/checkout?status=PIRU");
+        if (!metadataSchedules) return res.redirect("/checkout?status=failure");
 
         const scheduleIdsToUpdate: number[] = String(metadataSchedules)
             .split(',')
@@ -50,8 +51,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const response = await API_CONSUME("POST", `schedule/payment`, headers, updatePayload);
         
         if (response.status === 409) {
-            console.warn("⚠️ Conflito de agenda detectado (409). Iniciando estorno...");
-
             await fetch(`https://api.mercadopago.com/v1/payments/${String(payment_id)}/refunds`, {
                 method: "POST",
                 headers: {
@@ -61,19 +60,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 }
             });
 
-            console.log("💸 Estorno solicitado com sucesso.");
             return res.redirect("/checkout?status=expired");
         }
 
         if (!response.ok) {
-            console.error("❌ Erro ao salvar confirmação no banco:", response.message || response.data);
+            toast.error("❌ Erro ao salvar confirmação no banco: " + (response.message || response.data));
             return res.redirect("/checkout?status=failure");
         }
 
         return res.redirect("/checkout?status=success");
 
     } catch (error) {
-        console.error("❌ Erro não tratado no processamento do sucesso:", error);
-        return res.redirect("/checkout?status=PIRU");
+        toast.error("❌ Erro não tratado no processamento do sucesso: " + (error instanceof Error ? error.message : String(error)));
+        return res.redirect("/checkout?status=failure");
     }
 }

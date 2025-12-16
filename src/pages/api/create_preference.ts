@@ -21,7 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { items, schedule_ids } = req.body;
-
+    console.log("Received items:", items);
+    console.log("Received schedule_ids:", schedule_ids);
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Itens inválidos." });
     }

@@ -79,7 +79,7 @@ const CheckoutView: React.FC<{ total: number, formatPrice: (p: number) => string
         
         (async () => {
             try {
-                const res = await fetch("/api/create_preference", {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_MP_URL}/api/create_preference`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 

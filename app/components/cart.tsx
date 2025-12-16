@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useCart, CartItem } from '@/context/CartContext';
 import { useSession } from 'next-auth/react';
 import { useMemo } from 'react';
+import URIGen from '@/utils/uriGen';
 
 const Cart = () => {
     const { data: session } = useSession();
@@ -77,7 +78,7 @@ const Cart = () => {
                     const numericPrice = item.price || 0;
 
                     return(
-                        <div className={style.cartItem} key={item.id || index}>
+                        <Link href={URIGen(item.place.name, item.place.id, isoDate)} className={style.cartItem} key={item.id || index}>
                             <div className={style.cartItemImageContainer}>
                                 <Image 
                                     alt={item.place.name || 'Local'} 
@@ -112,7 +113,7 @@ const Cart = () => {
                             >
                                 <FontAwesomeIcon icon={faTrashAlt} />
                             </button>
-                        </div>
+                        </Link>
                     )})}
             </div>
             
