@@ -125,9 +125,7 @@ const handleUpdateProfile = async (currentPassword: string) => {
             const encryptedPassword = CryptoJS.SHA256(currentPassword).toString();
 
             // 1. Valida senha via Login
-            const loginResponse = await API_CONSUME("POST", "login", {
-                'Content-Type': 'application/json'
-            }, {
+            const loginResponse = await API_CONSUME("POST", "login", {}, {
                 login: cpfClean,
                 password: encryptedPassword
             });
