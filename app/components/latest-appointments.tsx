@@ -5,7 +5,7 @@ import style from '@/styles/latest-appointments.module.css';
 import API_CONSUME from '@/services/api-consume';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarAlt, faClock } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarAlt, faClock, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'; // Adicionei ícones de seta
 import Image from 'next/image';
 import { toast } from 'react-toastify';
 
@@ -14,7 +14,6 @@ interface Place {
     image?: string;
 }
 
-// Interfaces
 interface Appointment {
     id: number;
     place_id?: number;
@@ -29,9 +28,9 @@ interface Appointment {
 
 interface LatestAppointmentsProps {
     appointmentStatus: number;
+    initialLimit?: number; // Nova prop opcional
 }
 
-// 2. Interface local para estender a sessão com as propriedades customizadas
 interface CustomSession {
     user?: {
         id?: string | number;
@@ -42,15 +41,17 @@ interface CustomSession {
     accessToken?: string;
 }
 
-const LatestAppointments = ({ appointmentStatus }: LatestAppointmentsProps) => {
+const LatestAppointments = ({ appointmentStatus, initialLimit = 4 }: LatestAppointmentsProps) => {
     const { data: sessionData, status } = useSession();
-    // CORREÇÃO: Cast seguro para a interface extendida
     const session = sessionData as CustomSession | null;
 
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Novo estado para controlar a visualização
+    const [isExpanded, setIsExpanded] = useState(false);
 
-const fetchAppointments = useCallback(async () => {
+    const fetchAppointments = useCallback(async () => {
         if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id) return;
 
         try {
@@ -60,27 +61,21 @@ const fetchAppointments = useCallback(async () => {
                 'Session': session.accessToken
             });
 
-            // 1. Verificação de Erro (Novo Padrão)
             if (!response.ok || !response.data) {
-    // Cast para 'unknown' satisfaz o linter e permite o instanceof
                 const msg = response.message as unknown;
-                
                 const errorMessage = msg instanceof Error ? msg.message : String(msg);
-
                 toast.error("Erro ao buscar agendamentos: " + errorMessage);
                 return;
             }
-            // 2. Acesso correto aos dados (response.data.schedules)
-            // O response.data é o JSON que o Laravel retornou
+
             const rawData = response.data;
-            
-            const data: Appointment[] = Array.isArray(rawData.schedules) 
-                ? rawData.schedules 
-                : [];
+            const data: Appointment[] = Array.isArray(rawData.schedules) ? rawData.schedules : [];
             
             const filtered = data.filter(item => Number(item.status_id) === appointmentStatus);
             
+            // Ordenação do mais recente para o mais antigo
             filtered.sort((a, b) => new Date(b.start_schedule).getTime() - new Date(a.start_schedule).getTime());
+            
             setAppointments(filtered);
 
         } catch (error) {
@@ -112,17 +107,20 @@ const fetchAppointments = useCallback(async () => {
         );
     }
 
+    // Lógica de corte dos itens
+    const visibleAppointments = isExpanded ? appointments : appointments.slice(0, initialLimit);
+    const hasMore = appointments.length > initialLimit;
+
     return (
         <div className={style.latestAppointmentsContainer}>
             <div className={style.latestAppointmentsList}>
-                {appointments.map((item) => {
+                {visibleAppointments.map((item) => {
                     const startDate = new Date(item.start_schedule);
                     const endDate = new Date(item.end_schedule);
                     
                     const dateStr = startDate.toLocaleDateString('pt-BR');
                     const timeStr = `${startDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
                     
-                    // CORREÇÃO DO ERRO: Conversão explícita para Number
                     const price = Number(item.price);
 
                     return (
@@ -157,6 +155,22 @@ const fetchAppointments = useCallback(async () => {
                     );
                 })}
             </div>
+
+            {/* Botão Ver Mais / Ver Menos */}
+            {hasMore && (
+                <div className={style.showMoreContainer}>
+                    <button 
+                        className={style.showMoreButton} 
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                        {isExpanded ? (
+                            <>Ver menos <FontAwesomeIcon icon={faChevronUp} /></>
+                        ) : (
+                            <>Ver mais agendamentos ({appointments.length - initialLimit} restantes) <FontAwesomeIcon icon={faChevronDown} /></>
+                        )}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

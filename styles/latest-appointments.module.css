@@ -114,6 +114,50 @@
     border-radius: 16px;
     animation: pulse 1.5s infinite;
 }
+/* ... (Mantenha todo o CSS anterior) ... */
+
+/* --- Botão Ver Mais --- */
+.showMoreContainer {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #eee; /* Uma linha sutil separando */
+}
+
+.showMoreButton {
+    background-color: transparent;
+    border: 2px solid var(--grena);
+    color: var(--grena);
+    padding: 10px 24px;
+    border-radius: 30px; /* Borda bem arredondada (pill shape) */
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.showMoreButton:hover {
+    background-color: var(--grena);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(115, 0, 1, 0.2);
+}
+
+.showMoreButton svg {
+    font-size: 0.8em;
+}
+
+/* Responsividade do botão (opcional) */
+@media (max-width: 480px) {
+    .showMoreButton {
+        width: 100%;
+        justify-content: center;
+    }
+}
 
 @keyframes pulse {
     0% { opacity: 0.6; }

@@ -26,11 +26,11 @@ const Appointments = () => {
             </div>
             <div className={style.appointmentsItem}>
                 <h1 className={style.appointmentsTitle}>Locais Agendados</h1>
-                <LatestAppointments appointmentStatus={1} />
+                <LatestAppointments appointmentStatus={1} initialLimit={4} />
             </div>
             <div className={style.appointmentsItem}>
                 <h1 className={style.appointmentsTitle}>Agendamentos Anteriores</h1>
-                <LatestAppointments appointmentStatus={10} />
+                <LatestAppointments appointmentStatus={10} initialLimit={4} />
             </div>
         </div>
     );

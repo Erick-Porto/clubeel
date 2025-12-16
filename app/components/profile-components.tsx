@@ -89,12 +89,19 @@ export const ProfileForm = () => {
     const { data: session, update: updateSession } = useSession();
     const [isEditable, setIsEditable] = useState(false);
     const [modalState, setModalState] = useState(false);
+    
+    // Estado local controla o que é exibido
     const [formData, setFormData] = useState<FormData>({
         name: "", email: "", telephone: "", cpf: "", title: ""
     });
 
+    // CORREÇÃO CRÍTICA:
+    // Removemos 'session' das dependências e deixamos apenas 'session?.user?.id'.
+    // Isso faz com que ele carregue os dados APENAS ao abrir a página.
+    // Atualizações subsequentes (Salvar) não vão disparar esse efeito, evitando
+    // que os dados antigos da sessão sobrescrevam o que você acabou de editar.
     useEffect(() => {
-        if (session?.user && !isEditable) {
+        if (session?.user) {
             setFormData({
                 name: session.user.name || "",
                 email: session.user.email || "",
@@ -103,59 +110,60 @@ export const ProfileForm = () => {
                 title: session.user.title || "",
             });
         }
-    }, [session, isEditable]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [session?.user?.id]); 
 
-    // Ativa modo de edição sem submeter
     const enableEdit = (e: React.MouseEvent) => {
-        e.preventDefault(); // Impede submit acidental
+        e.preventDefault();
         setIsEditable(true);
     };
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Só abre o modal se estiver no modo edição e clicou em Salvar
         setModalState(true);
     };
 
-const handleUpdateProfile = async (currentPassword: string) => {
+    const handleUpdateProfile = async (currentPassword: string) => {
         if (!session?.accessToken) throw new Error("Sessão inválida.");
 
         try {
             const cpfClean = formData.cpf.replace(/\D/g, ''); 
             const encryptedPassword = CryptoJS.SHA256(currentPassword).toString();
 
-            // 1. Valida senha via Login
+            // 1. Valida senha
             const loginResponse = await API_CONSUME("POST", "login", {}, {
                 login: cpfClean,
                 password: encryptedPassword
             });
 
-            // NOVA VERIFICAÇÃO
             if (!loginResponse.ok) {
                 throw new Error("Senha incorreta");
             }
 
-            // 2. Atualiza Dados
-            const updateResponse = await API_CONSUME("PUT", `member/${session.user.id}`, {
+            // 2. Atualiza Dados na API
+            const updateResponse = await API_CONSUME("PUT", `member/update`, {
                 'Session': session.accessToken
             }, {
+                cpf: cpfClean,
                 email: formData.email,
                 telephone: formData.telephone
             });
 
-            // NOVA VERIFICAÇÃO IMPRESCINDÍVEL
             if (!updateResponse.ok) {
-                // Usa a mensagem que veio da API ou um fallback
                 throw new Error(updateResponse.message || "Erro ao atualizar dados.");
             }
 
             toast.success("Perfil atualizado com sucesso!");
             
+            // 3. Atualiza a sessão em background (sem esperar que ela atualize a tela)
             await updateSession({
                 ...session,
                 user: { ...session.user, email: formData.email, telephone: formData.telephone }
             });
 
+            // 4. Fechamos o modal e o modo de edição.
+            // Como o useEffect não está mais "ouvindo" qualquer mudança na sessão,
+            // o 'formData' atual (que já tem os dados novos) permanecerá na tela.
             setModalState(false);
             setIsEditable(false);
 
@@ -164,9 +172,12 @@ const handleUpdateProfile = async (currentPassword: string) => {
         }
     };
 
+    // Função de Cancelar:
+    // Como o useEffect não roda o tempo todo, precisamos resetar manualmente aqui.
     const handleCancelEdit = () => {
         setIsEditable(false);
         if (session?.user) {
+            // Reverte para o que está na sessão (dados originais/salvos anteriormente)
             setFormData({
                 name: session.user.name || "",
                 email: session.user.email || "",
@@ -184,8 +195,6 @@ const handleUpdateProfile = async (currentPassword: string) => {
     return (
         <div className={style.formContainer}>
             <h2 className={style.sectionTitle}>Dados Pessoais</h2>
-            
-            {/* O onSubmit aqui só é chamado pelo botão type="submit" (Salvar) */}
             <form onSubmit={handleFormSubmit}>
                 <div className={style.formGrid}>
                     <div className={`${style.formGroup} ${style.fullWidth}`}>
@@ -230,7 +239,6 @@ const handleUpdateProfile = async (currentPassword: string) => {
 
                     <div className={style.actionButtons}>
                         {!isEditable ? (
-                            // CORREÇÃO: onClick chama enableEdit que tem preventDefault
                             <button 
                                 type="button" 
                                 className={style.primaryButton} 
@@ -240,7 +248,6 @@ const handleUpdateProfile = async (currentPassword: string) => {
                             </button>
                         ) : (
                             <>
-                                {/* Apenas este botão dispara o onSubmit */}
                                 <button type="submit" className={style.primaryButton}>Salvar</button>
                                 <button type="button" className={style.secondaryButton} onClick={handleCancelEdit}>Cancelar</button>
                             </>
