@@ -188,7 +188,7 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
           <div className={styles.popupImageContainer}>
              <button className={styles.closeButton} onClick={closePopup} aria-label="Fechar">✕</button>
              {activeHotspot.image_horizontal ? (
-                <Image src={activeHotspot.image_horizontal} alt={activeHotspot.name} className={styles.popupImage} width={50} height={50}/>
+                <Image src={activeHotspot.image_horizontal} alt={activeHotspot.name} className={styles.popupImage} width={1920} height={1080}/>
              ) : (
                 // Fallback visual caso não tenha imagem
                 <div style={{width:'100%', height:'100%', background: '#ddd', display:'flex', alignItems:'center', justifyContent:'center', color:'#888'}}>

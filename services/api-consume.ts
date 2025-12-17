@@ -33,28 +33,17 @@ async function API_CONSUME<T = any>(
         cache: 'no-store'
     };
 
-    if (body) {
-        config.body = JSON.stringify(body);
-    }
+    if (body) config.body = JSON.stringify(body);
 
     const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}/${endpoint}`;
 
     try {
         const response = await fetch(url, config);
         
-        // Tenta ler o corpo como JSON, se falhar (body vazio), retorna null
         const responseData = await response.json().catch(() => null);
 
-        // --- Tratamentos Especiais (Side Effects) ---
+        if (response.status >= 500) toast.error(`🔥 Erro Crítico (${response.status}) em: ${url}`, responseData);
         
-        // Se for erro crítico de servidor, logamos mas retornamos o status original
-        if (response.status >= 500) {
-            toast.error(`🔥 Erro Crítico (${response.status}) em: ${url}`, responseData);
-            // Opcional: handleCriticalError() se quiser deslogar em 500, 
-            // mas geralmente 500 é temporário e não exige logout.
-        }
-
-        // Se a sessão expirou no Laravel (419 ou 401 dependendo da config)
         if (response.status === 419) {
              handleCriticalError();
              return { 
@@ -68,7 +57,7 @@ async function API_CONSUME<T = any>(
         return {
             data: responseData,
             status: response.status,
-            ok: response.ok, // Fetch define ok como true se status for 200-299
+            ok: response.ok,
             message: responseData?.message || responseData?.error || null
         };
 
