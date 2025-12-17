@@ -24,4 +24,7 @@ npm run build
 echo "🔄  Reiniciando PM2..."
 pm2 restart nextjs-espacos
 
+echo "🚦  Definindo permissões do diretório local (Linux)..."
+chmod -R 777 .
+
 echo "✅  Atualização concluída!"
