@@ -5,7 +5,8 @@ import style from '@/styles/latest-appointments.module.css';
 import API_CONSUME from '@/services/api-consume';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarAlt, faClock, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'; // Adicionei ícones de seta
+// Adicionei faInfoCircle aos imports
+import { faCalendarAlt, faClock, faChevronDown, faChevronUp, faInfoCircle } from '@fortawesome/free-solid-svg-icons'; 
 import Image from 'next/image';
 import { toast } from 'react-toastify';
 
@@ -28,7 +29,8 @@ interface Appointment {
 
 interface LatestAppointmentsProps {
     appointmentStatus: number;
-    initialLimit?: number; // Nova prop opcional
+    initialLimit?: number;
+    tooltip?: React.ReactNode | null; // Nova prop adicionada
 }
 
 interface CustomSession {
@@ -41,14 +43,13 @@ interface CustomSession {
     accessToken?: string;
 }
 
-const LatestAppointments = ({ appointmentStatus, initialLimit = 4 }: LatestAppointmentsProps) => {
+const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: LatestAppointmentsProps) => {
     const { data: sessionData, status } = useSession();
     const session = sessionData as CustomSession | null;
 
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
-    // Novo estado para controlar a visualização
     const [isExpanded, setIsExpanded] = useState(false);
 
     const fetchAppointments = useCallback(async () => {
@@ -73,7 +74,6 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4 }: LatestAppoi
             
             const filtered = data.filter(item => Number(item.status_id) === appointmentStatus);
             
-            // Ordenação do mais recente para o mais antigo
             filtered.sort((a, b) => new Date(b.start_schedule).getTime() - new Date(a.start_schedule).getTime());
             
             setAppointments(filtered);
@@ -101,18 +101,37 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4 }: LatestAppoi
 
     if (appointments.length === 0) {
         return (
-            <div className={style.latestAppointmentsEmpty}>
-                Nenhum agendamento encontrado nesta categoria.
+            <div className={style.latestAppointmentsContainer}>
+                {/* Renderiza o tooltip mesmo se estiver vazio, caso queira avisar algo */}
+                {tooltip && (
+                    <div className={style.tooltipAlert}>
+                        <FontAwesomeIcon icon={faInfoCircle} />
+                        <span>{tooltip}</span>
+                    </div>
+                )}
+                <div className={style.latestAppointmentsEmpty}>
+                    Nenhum agendamento encontrado nesta categoria.
+                </div>
             </div>
         );
     }
 
-    // Lógica de corte dos itens
     const visibleAppointments = isExpanded ? appointments : appointments.slice(0, initialLimit);
     const hasMore = appointments.length > initialLimit;
 
     return (
         <div className={style.latestAppointmentsContainer}>
+            
+            {/* Renderização do Tooltip/Aviso */}
+            {tooltip && (
+                <div className={style.tooltipAlert}>
+                    <div className={style.tooltipIconWrapper}>
+                        <FontAwesomeIcon icon={faInfoCircle} />
+                    </div>
+                    <span className={style.tooltipText}>{tooltip}</span>
+                </div>
+            )}
+
             <div className={style.latestAppointmentsList}>
                 {visibleAppointments.map((item) => {
                     const startDate = new Date(item.start_schedule);
@@ -158,7 +177,6 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4 }: LatestAppoi
                 })}
             </div>
 
-            {/* Botão Ver Mais / Ver Menos */}
             {hasMore && (
                 <div className={style.showMoreContainer}>
                     <button 

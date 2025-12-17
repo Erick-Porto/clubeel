@@ -4,7 +4,70 @@
     width: 100%;
     gap: 20px;
 }
+.tooltipAlert {
+    display: flex;
+    align-items: flex-start; /* Alinha no topo caso o texto seja longo */
+    gap: 14px;
+    background-color: #fcfcfc; /* Fundo bem suave */
+    border: 1px solid #eaeaea;
+    border-left: 4px solid var(--grena); /* Sotaque da marca na esquerda */
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 5px; /* Espaço extra antes dos cards */
+    animation: slideDown 0.4s ease-out;
+}
 
+.tooltipText a {
+    color: var(--grena); /* Usa a cor da marca */
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.tooltipText a:hover {
+    border-bottom-color: var(--grena); /* Sublinhado sutil ao passar o mouse */
+    opacity: 0.8;
+}
+
+/* Opcional: Se quiser que o link tenha um fundo sutil ao passar o mouse */
+.tooltipText a:active {
+    background-color: rgba(160, 0, 1, 0.05);
+    border-radius: 4px;
+}
+
+.tooltipIconWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px; /* Altura fixa para alinhar com a primeira linha de texto */
+}
+
+.tooltipIconWrapper svg {
+    color: var(--grena);
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.tooltipText {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 /* Grid Responsivo Moderno */
 .latestAppointmentsList {
     display: grid;
