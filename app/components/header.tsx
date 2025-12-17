@@ -76,8 +76,9 @@ export default function Header({
                         src="/images/logo-cfcsn-horiz.png" 
                         alt="Logo CFCSN" 
                         fill
+                        priority={true}
+                        quality={100}
                         style={{ objectFit: 'contain', objectPosition: 'left' }}
-                        priority
                     />
                 </div>
             </Link>

@@ -166,6 +166,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     alt="Logo CFCSN" 
                     width={200} 
                     height={80} 
+                    quality={100}
                     className={styles.logoImage}
                     priority
                 />

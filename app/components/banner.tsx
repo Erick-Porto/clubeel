@@ -71,7 +71,8 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
                     src={coverImage} 
                     alt="Capa do perfil"
                     fill
-                    priority
+                    priority={true}
+                    quality={100}
                     className={style.bannerImage}
                 />
                 <div className={style.bannerOverlay}></div>

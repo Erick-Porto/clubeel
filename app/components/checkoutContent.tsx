@@ -67,6 +67,8 @@ const CheckoutContent = () => {
                                 alt={item.place.name || 'Local'}
                                 width={100}
                                 height={100}
+                                priority={true}
+                                quality={100}
                             />
                             <div className={style.scheduleInfo}>
                                 <h2>{item.place.name}</h2>

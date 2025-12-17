@@ -324,7 +324,15 @@ const handleReserve = async () => {
                     <>
                         <div className={styles.calendarImageContainer}>
                             {src ? (
-                                <Image src={src} width={400} height={275} alt="Local" unoptimized style={{objectFit: 'cover'}} />
+                                <Image
+                                    src={src}
+                                    width={400}
+                                    height={275}
+                                    alt="Local" 
+                                    priority={true}
+                                    quality={100} 
+                                    style={{objectFit: 'cover'}}
+                                />
                             ) : <div className={styles.imagePlaceholder}>Imagem não disponível</div>
                             }
 

@@ -18,6 +18,7 @@ export const LoadingScreen = () => {
                     priority={true}
                     width={250} 
                     height={100}
+                    quality={100}
                     style={{ objectFit: 'contain' }}
                 />
             </div>

@@ -15,6 +15,8 @@ export default function Footer() {
               src="/images/logo-cfcsn-w-horiz.png" 
               alt="Clube dos Funcionários" 
               fill
+              priority={true}
+              quality={100}
               style={{ objectFit: 'contain' }}
             />
           </div>

@@ -83,6 +83,8 @@ const Cart = () => {
                                 <Image 
                                     alt={item.place.name || 'Local'} 
                                     fill
+                                    priority={true}
+                                    quality={100}
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                     className={style.cartItemImage} 
                                     src={item.place.image || '/images/placeholder.jpg'}

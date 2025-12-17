@@ -130,6 +130,8 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4 }: LatestAppoi
                                     src={item.place.image || '/images/placeholder.jpg'} 
                                     alt={item.place.name || 'Local'}
                                     fill
+                                    priority={true}
+                                    quality={100}
                                     className={style.latestAppointmentsItemImage}
                                 />
                             </div>
