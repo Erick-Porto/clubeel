@@ -56,9 +56,10 @@ const SportiveSquare: React.FC<SportiveSquareProps> = ({ places }) => {
                             src={place.image_vertical}
                             alt={`Imagem de ${place.name}`}
                             fill
-                            sizes="(max-width: 768px) 300px, 500px"
+                            sizes="(max-width: 768px) 600px, 1000px"
                             className={Style.squareImage}
                             priority={index < 4}
+                            quality={100}
                         />
                         
                          <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={`/places/${formatPlaceNameForUrl(place.name)}-${place.id}`} className={Style.squareInfo}>
