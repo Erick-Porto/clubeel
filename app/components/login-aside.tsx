@@ -88,7 +88,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
 
             if (result?.error) {
                 // Se der erro 419 aqui, é configuração do NextAuth, mas deve sumir com a mudança do api-consume
-                toast.error("CPF ou Senha incorretos.");
+                toast.error("Falha ao entrar: " + result.error);
             } else if (result?.ok) {
                 toast.success("Bem-vindo de volta!");
                 router.push('/');

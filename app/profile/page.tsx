@@ -16,7 +16,6 @@ import API_CONSUME from "@/services/api-consume";
 import { useSearchParams } from "next/navigation"; 
 import { toast } from "react-toastify";
 
-// Tipos
 type ViewState = 'profile' | 'password' | 'schedules';
 
 interface Schedule {
@@ -26,7 +25,6 @@ interface Schedule {
     [key: string]: unknown;
 }
 
-// 2. Renomeamos o componente original para ProfileContent
 const ProfileContent = () => {
     const { cart, isLoading: isCartLoading } = useCart();
     const { data: session, status } = useSession();
@@ -53,17 +51,14 @@ useEffect(() => {
             if (status !== 'authenticated' || !session?.accessToken) return;
 
             try {
-                // 1. Busca Agendamentos
                 const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`, {
                     'Session': session.accessToken
                 });
 
-                // VALIDAÇÃO 1
                 if (!schedulesResponse.ok || !schedulesResponse.data) {
-                    return; // Se falhar, apenas não carrega a imagem, sem erro crítico
+                    return;
                 }
 
-                // ACESSO AOS DADOS 1
                 const schedulesData = schedulesResponse.data;
                 const schedules: Schedule[] = Array.isArray(schedulesData.schedules) 
                     ? schedulesData.schedules 
@@ -77,14 +72,11 @@ useEffect(() => {
                     const latestSchedule = sortedSchedules[0];
 
                     if (latestSchedule && latestSchedule.place_id) {
-                        // 2. Busca Detalhes do Local
                         const placeResponse = await API_CONSUME("GET", `place/${latestSchedule.place_id}`, {
                             'Session': session.accessToken
                         }, null);
 
-                        // VALIDAÇÃO 2
                         if (placeResponse.ok && placeResponse.data) {
-                            // ACESSO AOS DADOS 2
                             const placeData = placeResponse.data;
                             const imageToUse = placeData.image || placeData.horizontal_image;
                             
@@ -153,10 +145,8 @@ useEffect(() => {
     );
 }
 
-// 3. Criamos o componente wrapper que é exportado como a página
 const ProfilePage = () => {
     return (
-        // O fallback é o que aparece enquanto o Next.js carrega os params da URL
         <Suspense fallback={<div className={style.profilePageContainer}>Carregando...</div>}>
             <ProfileContent />
         </Suspense>

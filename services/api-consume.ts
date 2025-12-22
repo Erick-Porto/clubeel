@@ -42,7 +42,7 @@ async function API_CONSUME<T = any>(
         
         const responseData = await response.json().catch(() => null);
 
-        if (response.status >= 500) toast.error(`🔥 Erro Crítico (${response.status}) em: ${url}`, responseData);
+        if (response.status >= 500) toast.error(`Erro Crítico (${response.status}) em: ${url}`, responseData);
         
         if (response.status === 419) {
              handleCriticalError();
@@ -91,7 +91,7 @@ function handleCriticalError() {
         const currentPath = window.location.pathname;
         
         if (currentPath !== '/login' && !window.location.search.includes('maintenance=true')) {
-            toast.warn("⚠️ Falha crítica ou sessão inválida. Logout forçado.");
+            toast.warn("Falha crítica ou sessão inválida. Logout forçado.");
             
             signOut({ 
                 callbackUrl: '/login?maintenance=true',
