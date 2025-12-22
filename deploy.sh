@@ -22,7 +22,7 @@ echo "🏗️  Gerando Build..."
 npm run build
 
 echo "🔄  Reiniciando PM2..."
-pm2 restart nextjs-espacos
+pm2 restart espacos
 
 echo "🚦  Definindo permissões do diretório local (Linux)..."
 chmod -R 777 .
