@@ -7,14 +7,39 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: false,
   images: {
-    domains: [
-      'plus.unsplash.com',
-      'i.imgur.com',
-      'www.folhadointerior.com.br',
-      '192.168.100.48:8000',
-      '192.168.100.48',
-      'clubedosfuncionarios.com.br'
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.imgur.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.folhadointerior.com.br',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lara.clubedosfuncionarios.com.br',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'clubedosfuncionarios.com.br',
+        port: '',
+        pathname: '/**',
+      },
     ],
+    qualities: [75, 100],
   },
 };
 
