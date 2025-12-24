@@ -59,16 +59,6 @@ async function API_CONSUME<T = any>(
             }
         }
         
-        if (response.status === 419) {
-             handleCriticalError();
-             return { 
-                 data: responseData, 
-                 status: 419, 
-                 ok: false, 
-                 message: "Sessão expirada." 
-             };
-        }
-
         return {
             data: responseData,
             status: response.status,
