@@ -1,16 +1,21 @@
 import { toast } from "react-toastify";
 import { signOut } from "next-auth/react";
 
-const BASE_URL = process.env.NEXT_PUBLIC_LARA_API 
-    ? `${process.env.NEXT_PUBLIC_LARA_API}/api` 
-    : "https://lara.clubedosfuncionarios.com.br/api";
+// DETECTA O AMBIENTE
+const IS_SERVER = typeof window === 'undefined';
 
-// Interface para padronizar o retorno
+// Lógica de URL Híbrida:
+// 1. Se estiver no SERVIDOR (SSR), usa o IP interno direto (definido no .env).
+// 2. Se estiver no NAVEGADOR, usa a rota relativa '/api/backend' que o Next.js vai redirecionar.
+const BASE_URL = IS_SERVER
+    ? (process.env.INTERNAL_API_URL || "http://192.168.10.10") // Fallback para IP interno
+    : "/api/backend"; // Rota mágica do Rewrite
+
 export interface IApiResponse<T = any> {
-    data: T | null;      // O corpo da resposta (seja sucesso ou erro da API)
-    status: number;      // O código HTTP (200, 409, 500, etc.)
-    ok: boolean;         // true se for 2xx, false caso contrário
-    message?: string;    // Mensagem de erro amigável (se houver)
+    data: T | null;
+    status: number;
+    ok: boolean;
+    message?: string;
 }
 
 async function API_CONSUME<T = any>(
@@ -20,29 +25,39 @@ async function API_CONSUME<T = any>(
     body: any = null
 ): Promise<IApiResponse<T>> {
     
-    // Configuração inicial
     const config: RequestInit = {
         method,
         headers: {
             'Content-Type': 'application/json',
+            // Mantém o token. Nota: Em arquiteturas BFF avançadas, esse token poderia ser injetado no lado do servidor.
             'Authorization': `Bearer ${process.env.NEXT_PUBLIC_LARA_API_TOKEN}`,
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache',
             ...headers
         },
-        cache: 'no-store'
+        // 'no-store' é importante para evitar cache de dados dinâmicos do Laravel
+        cache: 'no-store' 
     };
 
     if (body) config.body = JSON.stringify(body);
 
-    const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}/${endpoint}`;
+    // Constrói a URL final
+    // Se o endpoint já vier completo (http...), usa ele. Se não, usa a BASE_URL calculada.
+    const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}/${endpoint.replace(/^\//, '')}`;
 
     try {
         const response = await fetch(url, config);
         
         const responseData = await response.json().catch(() => null);
 
-        if (response.status >= 500) toast.error(`Erro Crítico (${response.status}) em: ${url}`, responseData);
+        // Tratamento de erros no lado do Servidor (logs no terminal) vs Cliente (Toast)
+        if (response.status >= 500) {
+            if (!IS_SERVER) {
+                toast.error(`Erro Crítico (${response.status})`);
+            } else {
+                console.error(`[SSR ERROR] ${url} returned ${response.status}`, responseData);
+            }
+        }
         
         if (response.status === 419) {
              handleCriticalError();
@@ -62,12 +77,17 @@ async function API_CONSUME<T = any>(
         };
 
     } catch (error: any) {
-        toast.error("❌ API_CONSUME Network Error: " + (error instanceof Error ? error.message : String(error)));
+        const errorMessage = error instanceof Error ? error.message : String(error);
 
-        if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-            toast.error("Falha de conexão com a API.");
-            handleCriticalError(); 
-            // Retornamos um status 0 ou 503 para indicar erro de rede
+        // Só exibe Toast se estiver no navegador
+        if (!IS_SERVER) {
+            toast.error("Conexão instável. Tentando reconectar...");
+        } else {
+            console.error(`[SSR NETWORK ERROR] ${url}: ${errorMessage}`);
+        }
+
+        if (error.name === 'TypeError' && errorMessage === 'Failed to fetch') {
+            if (!IS_SERVER) handleCriticalError();
             return { 
                 data: null, 
                 status: 0, 
@@ -76,7 +96,6 @@ async function API_CONSUME<T = any>(
             };
         }
         
-        // Erro desconhecido de execução
         return { 
             data: null, 
             status: 500, 
@@ -87,12 +106,12 @@ async function API_CONSUME<T = any>(
 }
 
 function handleCriticalError() {
+    // Só executa redirecionamento se estiver no navegador
     if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname;
         
         if (currentPath !== '/login' && !window.location.search.includes('maintenance=true')) {
-            toast.warn("Falha crítica ou sessão inválida. Logout forçado.");
-            
+            // Removido toast.warn para evitar flood, ou usar um controle de estado
             signOut({ 
                 callbackUrl: '/login?maintenance=true',
                 redirect: true 
