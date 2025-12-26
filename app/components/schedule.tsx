@@ -61,9 +61,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate) return;
         try {
-            const response = await API_CONSUME("POST", "schedule/time-options", {
-                'Session': session.accessToken
-            }, {
+            const response = await API_CONSUME("POST", "schedule/time-options", {}, {
                 date: currentDate,
                 place_id: placeId
             });
@@ -178,9 +176,7 @@ const handleReserve = async () => {
         });
 
         try {
-            const response = await API_CONSUME("POST", "schedule", {
-                'Session': session.accessToken
-            }, payload);
+            const response = await API_CONSUME("POST", "schedule", {}, payload);
 
             // CORREÇÃO: Validar response.ok
             if (!response.ok) {

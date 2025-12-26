@@ -13,9 +13,7 @@ export default async function LoginHandler(req: NextApiRequest, res: NextApiResp
         try {
             // Renomeamos para 'response' para ficar claro que é o envelope
             const response = await API_CONSUME('POST', 'login',
-                {
-                    Session: null,
-                },
+                {},
                 { 
                     login,
                     password

@@ -58,9 +58,7 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
         try {
             setIsLoading(true);
             
-            const response = await API_CONSUME("GET", `schedule/member/${session.user.id}`, {
-                'Session': session.accessToken
-            });
+            const response = await API_CONSUME("GET", `schedule/member/${session.user.id}`);
 
             if (!response.ok || !response.data) {
                 const msg = response.message as unknown;

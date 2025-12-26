@@ -46,11 +46,7 @@ const fetchData = useCallback(async () => {
         }
 
         try {
-            const token = (session as unknown as CustomSession).accessToken;
-
-            const response = await API_CONSUME("GET", `place/${placeID}`, {
-                'Session': token
-            }, null);
+            const response = await API_CONSUME("GET", `place/${placeID}`, {}, null);
 
             // 1. Verificação de Sucesso (Novo Padrão)
             if (!response.ok || !response.data) {

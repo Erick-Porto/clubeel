@@ -36,7 +36,7 @@ export default async function RegisterHandler(req: NextApiRequest, res: NextApiR
             const response = await API_CONSUME(
                 'POST',
                 'register',
-                { Session: null },
+                {},
                 { title, cpf, birthDate, password }
             );
 

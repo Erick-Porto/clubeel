@@ -141,9 +141,7 @@ export const ProfileForm = () => {
             }
 
             // 2. Atualiza Dados na API
-            const updateResponse = await API_CONSUME("PUT", `member/update`, {
-                'Session': session.accessToken
-            }, {
+            const updateResponse = await API_CONSUME("PUT", `member/update`, {}, {
                 cpf: cpfClean,
                 email: formData.email,
                 telephone: formData.telephone
@@ -293,9 +291,7 @@ const handleUpdate = async (currentPassword: string) => {
             const encryptedCurrent = CryptoJS.SHA256(currentPassword).toString();
             
             // 1. Validação via Login
-            const loginResponse = await API_CONSUME("POST", "login", {
-                Session: null
-            }, {
+            const loginResponse = await API_CONSUME("POST", "login", {}, {
                 login: cpfClean,
                 password: encryptedCurrent,
             });
@@ -305,10 +301,8 @@ const handleUpdate = async (currentPassword: string) => {
             }
 
             // 2. Update da Senha
-            const updateResponse = await API_CONSUME("PUT", `change-password`, {
-                'Session': session.accessToken
-            }, { 
-                cpf: cpfClean, 
+            const updateResponse = await API_CONSUME("PUT", `change-password`, {}, { 
+                cpf: cpfClean,
                 new_password: CryptoJS.SHA256(passwords.new1).toString() 
             });
 

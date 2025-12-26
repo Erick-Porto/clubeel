@@ -35,10 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .map(id => Number(id.trim()))
             .filter(id => !isNaN(id));
 
-        const headers = {
-            'Session': session.accessToken as string
-        };
-
         const updatePayload = {
             schedule_ids: scheduleIdsToUpdate,
             status_id: 1,
@@ -48,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             paid_at: paymentData.date_approved
         };
 
-        const response = await API_CONSUME("POST", `schedule/payment`, headers, updatePayload);
+        const response = await API_CONSUME("POST", `schedule/payment`, {}, updatePayload);
         
         if (response.status === 409) {
             await fetch(`https://api.mercadopago.com/v1/payments/${String(payment_id)}/refunds`, {

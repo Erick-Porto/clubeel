@@ -51,9 +51,7 @@ useEffect(() => {
             if (status !== 'authenticated' || !session?.accessToken) return;
 
             try {
-                const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`, {
-                    'Session': session.accessToken
-                });
+                const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`);
 
                 if (!schedulesResponse.ok || !schedulesResponse.data) {
                     return;
@@ -72,9 +70,7 @@ useEffect(() => {
                     const latestSchedule = sortedSchedules[0];
 
                     if (latestSchedule && latestSchedule.place_id) {
-                        const placeResponse = await API_CONSUME("GET", `place/${latestSchedule.place_id}`, {
-                            'Session': session.accessToken
-                        }, null);
+                        const placeResponse = await API_CONSUME("GET", `place/${latestSchedule.place_id}`);
 
                         if (placeResponse.ok && placeResponse.data) {
                             const placeData = placeResponse.data;

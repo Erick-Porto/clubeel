@@ -66,9 +66,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
 const fetchCartData = useCallback(async (token: string, userId: string | number) => {
         try {
-            const response = await API_CONSUME("GET", `schedule/member/${userId}`, {
-                'Session': token
-            });
+            const response = await API_CONSUME("GET", `schedule/member/${userId}`);
 
             // 1. Validação de Sucesso
             if (!response.ok || !response.data) {
@@ -157,9 +155,7 @@ const removeCartItem = useCallback(async (scheduleId: number) => {
         setCart(current => current.filter(item => item.id !== scheduleId));
 
         try {
-            const response = await API_CONSUME("DELETE", `schedule/delete-pending`, {
-                'Session': session.accessToken
-            },{
+            const response = await API_CONSUME("DELETE", `schedule/delete-pending`, {},{
                 id: scheduleId
             });
 

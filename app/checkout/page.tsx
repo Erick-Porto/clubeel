@@ -201,9 +201,7 @@ const CheckoutComponent = () => {
         else {
             let i = cart.length;
             cart.forEach(async item => {
-                const response = await API_CONSUME("DELETE", `schedule/delete-pending`, {
-                    'Session': session?.accessToken
-                }, { id: item.id });
+                const response = await API_CONSUME("DELETE", `schedule/delete-pending`, {}, { id: item.id });
 
                 if (!response.ok) {
                     toast.error(`Erro tutorial (ID ${item.id}): ${response.message}`);

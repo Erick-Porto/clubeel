@@ -19,9 +19,7 @@ export const authOptions: NextAuthOptions = {
 
         try {
           // 1. Faz a chamada (agora retorna { data, ok, status, message })
-          const response = await API_CONSUME('POST', 'login', {
-                'Session': null
-            }, {
+          const response = await API_CONSUME('POST', 'login', {}, {
               login: credentials.login,
               password: credentials.password,
             }

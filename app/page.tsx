@@ -84,9 +84,7 @@ useEffect(() => {
             // O try/catch aqui ainda é útil para erros de transformação de dados (JSON.parse),
             // mas não é estritamente necessário para o API_CONSUME (que já trata rede).
             try {
-                const response = await API_CONSUME("GET", "places/group", {
-                    'Session': session.accessToken
-                });
+                const response = await API_CONSUME("GET", "places/group");
 
                 // 1. Verificação de segurança (Novo padrão)
                 if (!response.ok || !response.data) {

@@ -47,9 +47,7 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) =
         setIsLoading(true);
 
         try {
-            const response = await API_CONSUME('POST', 'check-member', {
-                Session: null,
-            }, {
+            const response = await API_CONSUME('POST', 'check-member', {}, {
                 cpf: formData.cpf.replace(/\D/g, ''),
                 title: formData.matricula,
                 birth_date: formData.birthDate
@@ -173,9 +171,7 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
             const encryptedPassword = CryptoJs.SHA256(passwords.new1).toString();
             
             // 1. Capturar a resposta
-            const response = await API_CONSUME('PUT', 'change-password', {
-                Session: null,
-            }, {
+            const response = await API_CONSUME('PUT', 'change-password', {}, {
                 // Certifique-se que sua API espera 'cpf' limpo.
                 // Se userData.cpf vier formatado (123.456...), limpe-o aqui.
                 cpf: userData.cpf.replace(/\D/g, ''), 
