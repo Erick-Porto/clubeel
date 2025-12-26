@@ -24,16 +24,11 @@ interface PlaceData {
     price: number;
 }
 
-// CORREÇÃO: Interface auxiliar para tipar o acesso ao accessToken
-interface CustomSession {
-    accessToken?: string;
-}
-
 const PlacePage = () => {
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     
     const placeName = params?.placeName as string || "";
     const placeID = placeName.split("-").pop() || "";
@@ -41,7 +36,7 @@ const PlacePage = () => {
     const [data, setData] = useState<PlaceData | null>(null);
 
 const fetchData = useCallback(async () => {
-        if (status !== 'authenticated' || !session || !placeID) {
+        if (status !== 'authenticated' || !placeID) {
             return;
         }
 
@@ -72,7 +67,7 @@ const fetchData = useCallback(async () => {
             toast.error("Erro crítico na página: " + (error instanceof Error ? error.message : String(error)));
             router.push('/'); 
         }
-    }, [placeID, placeName, session, status, router]);
+    }, [placeID, placeName, status, router]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 

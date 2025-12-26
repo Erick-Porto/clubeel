@@ -16,11 +16,6 @@ import { toast } from "react-toastify";
 
 // --- INTERFACES ---
 
-// CORREÇÃO: Interface auxiliar para tipar o acesso ao accessToken
-interface CustomSession {
-    accessToken?: string;
-}
-
 interface Rule {
     type: 'include' | 'exclude';
     start_date: string | null;
@@ -165,7 +160,6 @@ const fetchPlaces = useCallback(async () => {
         if (status !== 'authenticated' || !session || !placeId) return;
 
         try {
-            const token = (session as unknown as CustomSession).accessToken;
 
             const response = await API_CONSUME("GET", `places/${placeId}`, {}, null);
 

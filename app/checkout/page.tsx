@@ -14,7 +14,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import TutorialOverlay, { TutorialStep } from '../components/tutorial-overlay';
 import API_CONSUME from '@/services/api-consume';
-import { useSession } from 'next-auth/react';
 import { toast } from 'react-toastify';
 
 const formatPrice = (p: number | string): string => {
@@ -122,7 +121,6 @@ const config = {
 
 const CheckoutComponent = () => {
     const { cart, refreshCart} = useCart();
-    const { data: session } = useSession();
     const searchParams = useSearchParams();
     const router = useRouter();
     

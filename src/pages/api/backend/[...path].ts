@@ -50,7 +50,7 @@ async function handler(req: NextRequest, { params }: { params: { path: string[] 
         return NextResponse.json(data, { status: response.status });
 
     } catch (error) {
-        return NextResponse.json({ message: "Proxy Error" }, { status: 502 });
+        return NextResponse.json({ message: "Proxy Error: " + (error instanceof Error ? error.message : String(error)) }, { status: 502 });
     }
 }
 
