@@ -1,15 +1,13 @@
 import { toast } from "react-toastify";
 import { signOut } from "next-auth/react";
 
-// DETECTA O AMBIENTE
 const IS_SERVER = typeof window === 'undefined';
 
-// Lógica de URL Híbrida:
-// 1. Se estiver no SERVIDOR (SSR), usa o IP interno direto (definido no .env).
-// 2. Se estiver no NAVEGADOR, usa a rota relativa '/api/backend' que o Next.js vai redirecionar.
-const BASE_URL = IS_SERVER
-    ? (process.env.INTERNAL_API_URL || "http://192.168.10.10") // Fallback para IP interno
-    : "/api/backend"; // Rota mágica do Rewrite
+// CONFIGURAÇÃO DAS BASES DE URL
+// SSR: Bate direto no IP interno (para performance)
+// Client: Bate na rota do Next.js (/api/backend), que fará o proxy
+const INTERNAL_API = process.env.INTERNAL_LARA_API_URL;
+const PROXY_API = "/api/backend"; 
 
 export interface IApiResponse<T = any> {
     data: T | null;
@@ -25,37 +23,44 @@ async function API_CONSUME<T = any>(
     body: any = null
 ): Promise<IApiResponse<T>> {
     
+    // Define qual URL base usar
+    const baseURL = IS_SERVER ? `${INTERNAL_API}/api` : PROXY_API;
+
+    // Remove barra inicial do endpoint para evitar duplicação (//ping)
+    const cleanEndpoint = endpoint.replace(/^\//, '');
+    
+    // Constrói a URL final
+    // Se for SSR: http://192.168.10.10:80/api/ping
+    // Se for Client: /api/backend/ping
+    const url = `${baseURL}/${cleanEndpoint}`;
+
     const config: RequestInit = {
         method,
         headers: {
             'Content-Type': 'application/json',
-            // Mantém o token. Nota: Em arquiteturas BFF avançadas, esse token poderia ser injetado no lado do servidor.
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_LARA_API_TOKEN}`,
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
+            // NOTA: Se for CLIENT-SIDE, não precisamos mandar o token aqui, 
+            // pois o Route Handler (Passo 2) vai injetar.
+            // Se for SERVER-SIDE, precisamos mandar.
+            ...(IS_SERVER && {
+                'Authorization': `Bearer ${process.env.INTERNAL_LARA_API_TOKEN}`
+            }),
             ...headers
         },
-        // 'no-store' é importante para evitar cache de dados dinâmicos do Laravel
         cache: 'no-store' 
     };
 
     if (body) config.body = JSON.stringify(body);
-
-    // Constrói a URL final
-    // Se o endpoint já vier completo (http...), usa ele. Se não, usa a BASE_URL calculada.
-    const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}/${endpoint.replace(/^\//, '')}`;
 
     try {
         const response = await fetch(url, config);
         
         const responseData = await response.json().catch(() => null);
 
-        // Tratamento de erros no lado do Servidor (logs no terminal) vs Cliente (Toast)
         if (response.status >= 500) {
             if (!IS_SERVER) {
-                toast.error(`Erro Crítico (${response.status})`);
+                toast.error(`Erro no Servidor (${response.status})`);
             } else {
-                console.error(`[SSR ERROR] ${url} returned ${response.status}`, responseData);
+                console.error(`[SSR FETCH ERROR] ${url} | Status: ${response.status}`, responseData);
             }
         }
         
@@ -69,46 +74,21 @@ async function API_CONSUME<T = any>(
     } catch (error: any) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 
-        // Só exibe Toast se estiver no navegador
         if (!IS_SERVER) {
-            toast.error("Conexão instável. Tentando reconectar...");
+            console.error(`[CLIENT FETCH ERROR]`, error);
+            // Evita flood de toast se a rede cair completamente
+            if(method === 'GET') toast.error("Falha na comunicação.");
         } else {
-            console.error(`[SSR NETWORK ERROR] ${url}: ${errorMessage}`);
-        }
-
-        if (error.name === 'TypeError' && errorMessage === 'Failed to fetch') {
-            if (!IS_SERVER) handleCriticalError();
-            return { 
-                data: null, 
-                status: 0, 
-                ok: false, 
-                message: "Erro de conexão com o servidor." 
-            };
+            console.error(`[SSR NETWORK FAILURE] ${url}: ${errorMessage}`);
         }
         
+        // Se falhar a conexão com o Proxy ou com a API
         return { 
             data: null, 
-            status: 500, 
+            status: 503, 
             ok: false, 
-            message: "Erro interno no cliente HTTP." 
+            message: "Serviço indisponível no momento." 
         };
-    }
-}
-
-function handleCriticalError() {
-    // Só executa redirecionamento se estiver no navegador
-    if (typeof window !== 'undefined') {
-        const currentPath = window.location.pathname;
-        
-        if (currentPath !== '/login' && !window.location.search.includes('maintenance=true')) {
-            // Removido toast.warn para evitar flood, ou usar um controle de estado
-            signOut({ 
-                callbackUrl: '/login?maintenance=true',
-                redirect: true 
-            }).catch(() => {
-                window.location.href = '/login?maintenance=true';
-            });
-        }
     }
 }
 
