@@ -1,7 +1,7 @@
 import { toast } from "react-toastify";
 
 const IS_SERVER = typeof window === 'undefined';
-const INTERNAL_API = process.env.INTERNAL_API_URL;
+const INTERNAL_API = process.env.INTERNAL_LARA_API_URL;
 const PROXY_API = "/api/backend"; 
 
 export interface IApiResponse<T = any> {
