@@ -41,21 +41,16 @@ const nextConfig: NextConfig = {
     ],
     qualities: [100],
   },
-  async rewrites() {
-    return [
-      {
-        // Tudo que o navegador mandar para /api/backend/...
-        source: '/api/backend/:path*',
-        // O Next.js manda internamente para o Laravel
-        destination: 'http://192.168.10.10/api/:path*', 
-      },
-      // (Opcional) Se precisar de imagens do Storage
-      {
-        source: '/storage/:path*',
-        destination: 'http://192.168.10.10/storage/:path*',
-      },
-    ];
-  },
+  // async rewrites() {
+  //   return [
+  //     {
+  //       // Tudo que o navegador mandar para /api/backend/...
+  //       source: '/api/backend/:path*',
+  //       // O Next.js manda internamente para o Laravel
+  //       destination: 'http://192.168.100.48:8000/api/:path*', 
+  //     }
+  //   ];
+  // },
 };
 
 export default nextConfig;

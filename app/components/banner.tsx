@@ -24,11 +24,11 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
             if (!session?.user?.id || !session?.accessToken) return;
 
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_LARA_API}/api/image/${session.user.id}`, {
+                const response = await fetch(`${process.env.INTERNAL_LARA_API_URL}/api/image/${session.user.id}`, {
                     method: 'GET',
                     headers: {
                         'Session': session?.accessToken,
-                        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_LARA_API_TOKEN}`,
+                        'Authorization': `Bearer ${process.env.INTERNAL_LARA_API_TOKEN}`,
                         'Accept': 'image/jpeg'
                     }
                 });

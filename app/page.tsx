@@ -88,6 +88,7 @@ useEffect(() => {
 
                 // 1. Verificação de segurança (Novo padrão)
                 if (!response.ok || !response.data) {
+                    console.log(response)
                     toast.error("Erro ao buscar locais: " + response.message);
                     return;
                 }

@@ -1,12 +1,7 @@
 import { toast } from "react-toastify";
-import { signOut } from "next-auth/react";
 
 const IS_SERVER = typeof window === 'undefined';
-
-// CONFIGURAÇÃO DAS BASES DE URL
-// SSR: Bate direto no IP interno (para performance)
-// Client: Bate na rota do Next.js (/api/backend), que fará o proxy
-const INTERNAL_API = process.env.INTERNAL_LARA_API_URL;
+const INTERNAL_API = process.env.INTERNAL_API_URL;
 const PROXY_API = "/api/backend"; 
 
 export interface IApiResponse<T = any> {
@@ -19,33 +14,37 @@ export interface IApiResponse<T = any> {
 async function API_CONSUME<T = any>(
     method: string, 
     endpoint: string, 
-    headers: any = {}, 
+    headers: Record<string, string> = {}, // Tipagem explícita aqui ajuda
     body: any = null
 ): Promise<IApiResponse<T>> {
-    
-    // Define qual URL base usar
     const baseURL = IS_SERVER ? `${INTERNAL_API}/api` : PROXY_API;
-
-    // Remove barra inicial do endpoint para evitar duplicação (//ping)
     const cleanEndpoint = endpoint.replace(/^\//, '');
-    
-    // Constrói a URL final
-    // Se for SSR: http://192.168.10.10:80/api/ping
-    // Se for Client: /api/backend/ping
     const url = `${baseURL}/${cleanEndpoint}`;
+
+    const appToken = process.env.INTERNAL_LARA_API_TOKEN;
+                     
+    let requestHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...headers
+    };
+
+    if (IS_SERVER) {
+        const hasAuth = Object.keys(requestHeaders).some(k => k.toLowerCase() === 'authorization');
+        if (!hasAuth) {
+            if (appToken) {
+                requestHeaders['Authorization'] = `Bearer ${appToken}`;
+            } else {
+                console.error("[API_CONSUME] ERRO CRÍTICO: Tentando chamada Server-Side sem TOKEN definido.");
+            }
+        }
+    }
+    else {
+        requestHeaders = {};
+    }
 
     const config: RequestInit = {
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            // NOTA: Se for CLIENT-SIDE, não precisamos mandar o token aqui, 
-            // pois o Route Handler (Passo 2) vai injetar.
-            // Se for SERVER-SIDE, precisamos mandar.
-            ...(IS_SERVER && {
-                'Authorization': `Bearer ${process.env.INTERNAL_LARA_API_TOKEN}`
-            }),
-            ...headers
-        },
+        headers: requestHeaders,
         cache: 'no-store' 
     };
 
@@ -54,14 +53,16 @@ async function API_CONSUME<T = any>(
     try {
         const response = await fetch(url, config);
         
-        const responseData = await response.json().catch(() => null);
+        const responseText = await response.text();
+        let responseData = null;
+        try { responseData = JSON.parse(responseText); } catch {}
 
-        if (response.status >= 500) {
-            if (!IS_SERVER) {
-                toast.error(`Erro no Servidor (${response.status})`);
-            } else {
-                console.error(`[SSR FETCH ERROR] ${url} | Status: ${response.status}`, responseData);
-            }
+        if (IS_SERVER && !response.ok) {
+            console.error(`[API_CONSUME ERROR] Status: ${response.status} | Body: ${responseText.substring(0, 200)}`);
+        }
+        
+        if (!IS_SERVER && response.status >= 500) {
+            toast.error(`Erro no Servidor (${response.status})`);
         }
         
         return {
@@ -72,22 +73,15 @@ async function API_CONSUME<T = any>(
         };
 
     } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-
-        if (!IS_SERVER) {
-            console.error(`[CLIENT FETCH ERROR]`, error);
-            // Evita flood de toast se a rede cair completamente
-            if(method === 'GET') toast.error("Falha na comunicação.");
-        } else {
-            console.error(`[SSR NETWORK FAILURE] ${url}: ${errorMessage}`);
+        if (IS_SERVER) {
+            console.error(`[API_CONSUME NETWORK ERROR] Falha ao conectar em ${url}:`, error.message);
         }
         
-        // Se falhar a conexão com o Proxy ou com a API
         return { 
             data: null, 
             status: 503, 
             ok: false, 
-            message: "Serviço indisponível no momento." 
+            message: "Falha na comunicação com a API." 
         };
     }
 }
