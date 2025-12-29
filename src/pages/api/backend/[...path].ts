@@ -2,7 +2,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/api/auth/[...nextauth]"; 
 
-// Configuração para permitir payloads grandes se necessário
+interface SessionWithToken {
+    accessToken?: string;
+}
+
 export const config = {
   api: {
     bodyParser: {
@@ -20,31 +23,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const queryParams = { ...req.query };
     delete queryParams.path;
     
-    const queryString = new URLSearchParams(queryParams as any).toString();
-    const pathString = Array.isArray(path) ? path.join('/') : path;
+    const searchParams = new URLSearchParams();
+    Object.entries(queryParams).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+            value.forEach((v) => searchParams.append(key, v));
+        } else if (typeof value === 'string') {
+            searchParams.append(key, value);
+        }
+    });
+    
+    const queryString = searchParams.toString();
+    const pathString = Array.isArray(path) ? path.join('/') : (path || '');
     
     const destUrl = `${API_URL}/api/${pathString}${queryString ? `?${queryString}` : ''}`;
 
-    // 3. Preparar Headers Limpos
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
-    headers.set("Accept", "application/json"); // Essencial para o Laravel
+    headers.set("Accept", "application/json"); 
     headers.set("Authorization", `Bearer ${appToken}`);
 
-    // Injetar Sessão do Usuário
     try {
         const session = await getServerSession(req, res, authOptions);
-        if (session && (session as any).accessToken) {
-            headers.set("Session", (session as any).accessToken);
+        const sessionWithToken = session as unknown as SessionWithToken;
+
+        if (sessionWithToken && sessionWithToken.accessToken) {
+            headers.set("Session", sessionWithToken.accessToken);
         }
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Erro ao obter sessão:", error);
     }
 
-    // 4. Preparar o Body
-    let body = null;
+    let body: BodyInit | null = null;
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-        // No Pages Router, req.body já vem parseado se for JSON
         body = typeof req.body === 'object' ? JSON.stringify(req.body) : req.body;
     }
 
@@ -66,7 +76,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const textData = await response.text();
         
         if (!response.ok) {
-            console.error("❌ [PROXY ERROR RESPONSE]", textData.substring(0, 200));
             return res.status(response.status).json({
                 message: "Erro na API Backend (Retorno não-JSON)",
                 raw_response: textData.substring(0, 100)
@@ -75,11 +84,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         return res.status(response.status).send(textData);
 
-    } catch (error: any) {
-        console.error("🔥 [PROXY FATAL]", error);
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";        
         return res.status(502).json({ 
             message: "Proxy Connection Failed", 
-            error: error.message 
+            error: errorMessage 
         });
     }
 }
