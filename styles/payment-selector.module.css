@@ -1,0 +1,263 @@
+/* payment-selector.module.css */
+
+/* --- TABS --- */
+.tabsContainer {
+  display: flex;
+  background-color: #f5f5f5;
+  padding: 5px;
+  border-radius: 12px;
+  gap: 5px;
+  margin-bottom: 30px;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tabActive {
+  background-color: white;
+  color: var(--grena);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* --- CARTÃO 3D --- */
+.cardWrapper {
+  perspective: 1000px;
+  width: 100%;
+  max-width: 370px;
+  height: 215px;
+  margin: 0 auto 30px auto;
+}
+
+.cardBody {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.cardFlipped {
+  transform: rotateY(180deg);
+}
+
+.cardFront, .cardBack {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 16px;
+  padding: 25px;
+  color: white;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  
+  /* Padrão (Grená) */
+  /* background: linear-gradient(135deg, var(--grena), var(--grena-dark)); */
+  background-image: url('/images/default-card.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: background 0.5s ease;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.cardBack {
+  transform: rotateY(180deg);
+  padding: 0;
+}
+
+/* --- TEMAS DE BANCOS (Cores Oficiais) --- */
+.nubank .cardFront, .nubank .cardBack { background: linear-gradient(135deg, #820ad1, #48037a); } /* Roxo */
+.inter .cardFront, .inter .cardBack { background: linear-gradient(135deg, #FF7A00, #FF5000); } /* Laranja */
+.itau .cardFront, .itau .cardBack { background: linear-gradient(135deg, #ec7000, #104da1); } /* Azul/Laranja */
+.bradesco .cardFront, .bradesco .cardBack { background: linear-gradient(135deg, #cc092f, #980320); } /* Vermelho */
+.santander .cardFront, .santander .cardBack { background: linear-gradient(135deg, #ec0000, #a30000); } /* Vermelho Vivo */
+.bb .cardFront, .bb .cardBack { background: linear-gradient(135deg, #f9dd16, #003399); color: #003399; } /* Amarelo/Azul */
+.original .cardFront, .original .cardBack { background: linear-gradient(135deg, #23C55E, #15803d); } /* Verde */
+.neon .cardFront, .neon .cardBack { background: linear-gradient(135deg, #00A3BF, #005F7F); } /* Azul Neon */
+.black .cardFront, .black .cardBack { background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #444; } /* Black Card */
+
+/* Elementos Visuais */
+.chip {
+  width: 50px;
+  height: 35px;
+  background: linear-gradient(135deg, #d4af37, #a8892d);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+.chip::after {
+    content: ''; position: absolute; top: 0; left: 50%; width: 1px; height: 100%; background: rgba(0,0,0,0.1);
+}
+
+.contactlessIcon {
+    opacity: 0.7;
+    transform: rotate(90deg);
+    font-size: 1.5rem;
+}
+
+.bankLogo {
+    position: absolute;
+    top: 25px;
+    right: 80px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    font-style: italic;
+    opacity: 0.9;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.cardNumber {
+  font-size: 1.45rem;
+  letter-spacing: 3px;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 2px 3px rgba(0,0,0,0.4);
+  margin-top: 10px;
+  white-space: nowrap;
+}
+
+.cardLabels {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 2px;
+  letter-spacing: 1px;
+}
+
+.cardInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.holderName {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  font-family: 'Courier New', monospace;
+}
+
+.expiry {
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+}
+
+/* Verso */
+.magneticStrip {
+  background: #222;
+  width: 100%;
+  height: 45px;
+  margin-top: 25px;
+}
+
+.cvvContainer {
+  padding: 20px;
+  text-align: right;
+  position: relative;
+}
+
+.cvvStrip {
+  background: repeating-linear-gradient(45deg, #fff, #fff 5px, #f0f0f0 5px, #f0f0f0 10px);
+  color: #333;
+  height: 35px;
+  width: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 15px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Form */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  animation: fadeIn 0.4s ease;
+}
+
+.fullWidth { grid-column: 1 / -1; }
+
+.inputLabel {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #444;
+}
+
+.input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: #fff;
+}
+.input:focus {
+    border-color: var(--grena);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(115, 0, 1, 0.1);
+}
+
+.pixContainer {
+    text-align: center;
+    padding: 40px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px dashed #e0e0e0;
+    animation: fadeIn 0.4s ease;
+}
+
+.confirmButton{
+    width: 100%;
+    padding: 15px;
+    background-color: var(--grena);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media(max-width: 480px){
+    .cardWrapper { max-width: 300px; height: 190px; }
+    .cardNumber { font-size: 1.1rem; }
+    .formGrid { grid-template-columns: 1fr; }
+}

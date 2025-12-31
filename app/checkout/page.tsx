@@ -237,8 +237,7 @@ const CheckoutComponent = () => {
                     />
                 ) : (
                     <>
-                        <h1 className={style.checkoutTitle}>Finalizar Pedido</h1>
-                        
+                       
                         <div className={style.checkoutLayout}>
                             <div 
                                 className={style.mobileSummaryToggle} 
@@ -257,11 +256,11 @@ const CheckoutComponent = () => {
                             </div>
 
                             <div className={`${style.cartSection} ${isSummaryExpanded ? style.cartSectionExpanded : ''}`}>
-                                <CheckoutContent />
+                                <CheckoutContent total={total} formatPrice={formatPrice} />
                             </div>
 
                             <div className={style.paymentSection}>
-                                <CheckoutView total={total} formatPrice={formatPrice} />
+                                <CheckoutView total={total}/>
                             </div>
                         </div>
                     </>
