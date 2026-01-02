@@ -2,11 +2,10 @@ import LatestAppointments from "@/components/latest-appointments";
 import Cart from "@/components/cart";
 import { useCart } from "@/context/CartContext";
 import style from '@/styles/appointments.module.css'
-import { Loading } from "./loading"; // Supondo que você tenha um componente de loading
+import { Loading } from "./loading";
 import Link from "next/link";
 
 const Appointments = () => {
-    // 1. Obter também o estado de isLoading do contexto do carrinho
     const { cart, isLoading } = useCart();
     const warning: React.ReactNode = (
         <span>
@@ -23,7 +22,6 @@ const Appointments = () => {
         <div className={style.appointmentsContainer}>
             <div className={style.appointmentsItem}>
                 <h1 className={style.appointmentsTitle}>Agendamentos a finalizar</h1>
-                {/* 2. Adicionar lógica para os estados de carregamento e carrinho vazio */}
                 {isLoading ? (
                     <div className={style.loadingContainer}>
                         <Loading /> 

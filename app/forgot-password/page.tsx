@@ -15,7 +15,6 @@ interface UserData {
     birthDate: string;
 }
 
-// --- COMPONENTE 1: Identificação do Usuário ---
 const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) => {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -53,17 +52,13 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) =
                 birth_date: formData.birthDate
             });
 
-            // 1. Verificação correta com o novo padrão
             if (!response.ok) {
-                // response.message traz a mensagem da API (ex: "Membro não encontrado")
                 toast.error(response.message || "Dados incorretos ou usuário não encontrado.");
                 return;
             }
 
             toast.success("Dados confirmados! Prossiga para a nova senha.");
             
-            // 2. Passar os dados para o próximo passo
-            // Dependendo da sua API, os dados podem estar em response.data ou response.data.member
             const responseData = response.data || {};
             
             onSuccess({ 
@@ -136,7 +131,6 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) =
     );
 };
 
-// --- COMPONENTE 2: Nova Senha ---
 const PasswordResetStep = ({ userData }: { userData: UserData }) => {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -170,17 +164,12 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
         try {
             const encryptedPassword = CryptoJs.SHA256(passwords.new1).toString();
             
-            // 1. Capturar a resposta
             const response = await API_CONSUME('PUT', 'change-password', {}, {
-                // Certifique-se que sua API espera 'cpf' limpo.
-                // Se userData.cpf vier formatado (123.456...), limpe-o aqui.
                 cpf: userData.cpf.replace(/\D/g, ''), 
                 new_password: encryptedPassword
             });
 
-            // 2. Verificar se deu certo ANTES de mostrar sucesso
             if (!response.ok) {
-                // Lança erro para cair no catch e não executar o toast de sucesso
                 throw new Error(response.message || "Falha ao alterar senha.");
             }
 
@@ -266,7 +255,6 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
     );
 };
 
-// --- PÁGINA PRINCIPAL ---
 const ForgotPasswordPage = () => {
     const [step, setStep] = useState<1 | 2>(1);
     const [userData, setUserData] = useState<UserData | null>(null);
@@ -281,7 +269,6 @@ const ForgotPasswordPage = () => {
             {step === 1 ? (
                 <UserCheckStep onSuccess={handleUserConfirmed} />
             ) : (
-                // Garantimos que userData existe se o step é 2
                 userData && <PasswordResetStep userData={userData} />
             )}
         </div>

@@ -28,7 +28,6 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// --- FUNÇÃO CORRIGIDA ---
 const normalizeToBrasilia = (dateStr: string): string => {
     if (!dateStr) return "";
 
@@ -50,8 +49,6 @@ const normalizeToBrasilia = (dateStr: string): string => {
         hour12: false
     }).format(date);
 
-    // CORREÇÃO: Remove a vírgula que pode aparecer após a data (ex: "03/12/2025, 19:00")
-    // E converte de "dd/mm/yyyy" para "yyyy-mm-dd"
     return brasiliaDate
         .replace(',', '') 
         .replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1');
@@ -68,25 +65,20 @@ const fetchCartData = useCallback(async (token: string, userId: string | number)
         try {
             const response = await API_CONSUME("GET", `schedule/member/${userId}`);
 
-            // 1. Validação de Sucesso
             if (!response.ok || !response.data) {
-                // Se der erro, não faz nada ou limpa o carrinho dependendo da regra
                 toast.warn("Falha ao buscar carrinho: " + (response.message || "Erro desconhecido"));
                 return;
             }
 
-            // 2. O payload real agora está em response.data
             const apiData = response.data;
             let rawData: any[] = [];
             
-            // Ajuste da lógica para ler de apiData
             if (Array.isArray(apiData)) {
                 rawData = apiData;
             } else if (apiData?.schedules) {
                 if (Array.isArray(apiData.schedules)) {
                     rawData = apiData.schedules;
                 } else if (typeof apiData.schedules === 'object') {
-                    // Lógica para tratar agrupamento por data, se houver
                     Object.values(apiData.schedules).forEach((dateGroup: any) => {
                         if (typeof dateGroup === 'object') {
                             Object.values(dateGroup).forEach((itemsArray: any) => {
@@ -96,12 +88,11 @@ const fetchCartData = useCallback(async (token: string, userId: string | number)
                     });
                 }
             } else if (apiData?.data && Array.isArray(apiData.data)) {
-                // Caso o Laravel retorne paginado ou envolvido em 'data'
                 rawData = apiData.data; 
             }
 
             const cleanCartItems: CartItem[] = rawData
-                .filter((item: any) => String(item.status_id) === '3') // Status 3 = Carrinho/Pendente
+                .filter((item: any) => String(item.status_id) === '3')
                 .map((item: any) => ({
                     ...item,
                     id: Number(item.id),
@@ -150,7 +141,6 @@ const fetchCartData = useCallback(async (token: string, userId: string | number)
 const removeCartItem = useCallback(async (scheduleId: number) => {
         if (!session?.accessToken) return;
 
-        // Otimismo: Remove da UI antes
         const previousCart = [...cart]; 
         setCart(current => current.filter(item => item.id !== scheduleId));
 
@@ -159,23 +149,18 @@ const removeCartItem = useCallback(async (scheduleId: number) => {
                 id: scheduleId
             });
 
-            // 1. Verificação correta
             if (!response.ok) {
-                // Lança erro para cair no catch e reverter o estado
                 throw new Error(response.message || "Erro no backend ao deletar");
             }
 
             toast.success("Item removido.");
             
-            // Opcional: Recarregar dados reais para garantir sincronia
             if (session.user?.id) {
-                // Não precisa de await aqui para não travar a UI
                 fetchCartData(session.accessToken, session.user.id);
             }
 
         } catch (error) {
             toast.error("Erro ao remover item: " + (error instanceof Error ? error.message : String(error)));
-            // Reverte o estado em caso de erro
             setCart(previousCart);
         }
     }, [cart, session, fetchCartData]);

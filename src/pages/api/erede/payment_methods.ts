@@ -5,12 +5,11 @@ const REDE_CLIENT_SECRET = process.env.INTERNAL_EREDE_SECRET_ID;
 const BASE_URL = process.env.INTERNAL_EREDE_API_URL;
 const AUTH_URL = process.env.INTERNAL_EREDE_AUTH_URL;
 
-// 1. Definimos a interface para substituir o 'any' do payload
 interface ERedePayload {
     capture: boolean;
     reference: string;
     amount: number;
-    kind?: string; // "Pix", "debit" ou "credit"
+    kind?: string;
     qrCode?: {
         dateTimeExpiration: string;
     };
@@ -36,7 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: "Credenciais não configuradas." });
         }
 
-        // 1. Auth
         const credentials = Buffer.from(`${REDE_CLIENT_ID}:${REDE_CLIENT_SECRET}`).toString('base64');
         const params = new URLSearchParams();
         params.append('grant_type', 'client_credentials');
@@ -56,10 +54,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const { access_token } = await authResponse.json();
 
-        // 2. Payload
         const reference = `ORD-${Date.now()}`;
         
-        // CORREÇÃO: Substituído 'any' pela interface ERedePayload
         const payload: ERedePayload = {
             capture: true,
             reference: reference,
@@ -92,7 +88,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             payload.softDescriptor = "Espacos CFCSN"; 
         }
 
-        // 3. Transação
         const transactionResponse = await fetch(`${BASE_URL}/transactions`, {
             method: 'POST',
             headers: {
@@ -110,7 +105,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         return res.status(200).json(transactionData);
 
-    // CORREÇÃO: Substituído 'error: any' por 'error: unknown' e tratamento seguro
     } catch (error: unknown) {
         console.error(error);
         const message = error instanceof Error ? error.message : 'Erro desconhecido';

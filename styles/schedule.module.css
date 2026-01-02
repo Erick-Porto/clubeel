@@ -40,15 +40,13 @@
     border: 1px solid #ddd;
 }
 
-/* --- Atualização de Legendas --- */
 .legendAvailable { background: white; }
 .legendSelected { background: var(--grena); border-color: var(--grena); }
-.legendConfirmed { background: #d1e7dd; border-color: #badbcc; } /* Verde */
-.legendPending { background: #fff3cd; border-color: #ffecb5; }   /* Amarelo */
-.legendOthers { background: #f4f4f4; border-color: #ddd; opacity: 0.7; } /* Cinza Ocupado */
+.legendConfirmed { background: #d1e7dd; border-color: #badbcc; }
+.legendPending { background: #fff3cd; border-color: #ffecb5; }
+.legendOthers { background: #f4f4f4; border-color: #ddd; opacity: 0.7; }
 .legendInCart { background: #fff5f5; border: 2px solid var(--grena); }
 
-/* Grid de Horários */
 .scheduleList {
     list-style-type: none;
     display: grid;
@@ -93,9 +91,6 @@
     font-weight: 500;
 }
 
-/* --- Estados Específicos --- */
-
-/* Selecionado (Atual) */
 .selected {
     background-color: var(--grena);
     border-color: var(--grena);
@@ -106,7 +101,6 @@
 }
 .selected .timeLabel, .selected .priceLabel { color: white; }
 
-/* Meus Confirmados (Status 1) */
 .myConfirmed {
     background-color: #d1e7dd;
     border-color: #badbcc;
@@ -115,7 +109,6 @@
 .myConfirmed .timeLabel { color: #0f5132; }
 .myConfirmed .priceLabel { color: #0f5132; font-weight: 600; }
 
-/* Meus Pendentes (Status 3) */
 .myPending {
     background-color: #fff3cd;
     border-color: #ffecb5;
@@ -124,7 +117,6 @@
 .myPending .timeLabel { color: #664d03; }
 .myPending .priceLabel { color: #664d03; font-weight: 600; }
 
-/* Reservado por Outros (Bloqueado) */
 .reservedByOthers {
     background-color: #f4f4f4;
     cursor: not-allowed;
@@ -135,12 +127,11 @@
     text-decoration: line-through;
 }
 .reservedByOthers .priceLabel {
-    color: #b02a37; /* Avermelhado discreto */
+    color: #b02a37;
     font-size: 11px;
     font-weight: 600;
 }
 
-/* No Carrinho (Global ou Local) */
 .inCart {
     background-color: #fafafa;
     border: 1px solid #e0e0e0;
@@ -157,7 +148,6 @@
     margin-top: 6px;
 }
 
-/* Indisponíveis Gerais (Passado, Regras, Conflitos) */
 .unavailableHour {
     background-color: #f4f4f4;
     cursor: not-allowed;
@@ -171,21 +161,18 @@
     opacity: 0.7;
 }
 
-/* Não Adjacente / Bloqueio de Lógica */
 .nonAdjacent {
 opacity: 0.5;
-    cursor: not-allowed; /* O cursor indica que não vai funcionar */
+    cursor: not-allowed;
     background-color: #fafafa;
     border: 1px dashed #ccc;
-    transform: scale(0.98); /* Levemente menor para indicar inatividade */
+    transform: scale(0.98);
 }
 .nonAdjacent:hover {
-    /* Remove efeito de hover padrão para reforçar */
     transform: scale(0.98);
     box-shadow: none;
     border-color: #ccc;
 }
-/* --- Layout Responsivo --- */
 
 .rightColumn {
     display: flex;

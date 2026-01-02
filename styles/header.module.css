@@ -6,17 +6,12 @@
   height: 80px;
   padding: 0 40px;
   box-sizing: border-box;
-  
   display: flex;
   align-items: center;
   justify-content: space-between;
-  
-  /* Z-Index altíssimo para garantir prioridade */
   z-index: 10000;
-  
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: transparent;
-  /* Pointer events auto garante que cliques passem, mas em transparent bg as vezes precisa forçar nos filhos */
 }
 
 .headerActive {
@@ -35,7 +30,6 @@
   transition: transform 0.3s ease;
 }
 
-/* Navegação Desktop */
 .desktopNav {
     height: 100%;
     display: flex;
@@ -50,12 +44,11 @@
   padding: 0;
 }
 
-/* Estilo base para os itens de navegação (Botões e Links) */
 .navButton, 
 .navLink {
   background: none;
   border: none;
-  padding: 8px 0; /* Padding vertical para aumentar área de clique */
+  padding: 8px 0;
   font-size: 15px;
   font-weight: 600;
   color: #4a4a4a;
@@ -63,7 +56,7 @@
   cursor: pointer;
   transition: color 0.3s ease;
   position: relative;
-  font-family: inherit; /* Herda fonte do site */
+  font-family: inherit;
 }
 
 .navButton:hover,
@@ -71,7 +64,6 @@
   color: var(--grena);
 }
 
-/* Indicador de Ativo (Ponto) */
 .activePage .navButton::after,
 .navButton:hover::after,
 .navLink:hover::after {
@@ -83,11 +75,10 @@
   border-radius: 50%;
   bottom: 0;
   left: 50%;
-  transform: translateX(-50%) scale(1); /* Scale 1 para mostrar */
+  transform: translateX(-50%) scale(1);
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Estado inativo (esconde o ponto) */
 .navButton::after,
 .navLink::after {
     content: '';
@@ -102,10 +93,9 @@
     transition: transform 0.3s;
 }
 
-/* --- Perfil e Dropdown --- */
 .profileOptions {
   position: relative;
-  z-index: 10002; /* Acima do logo e nav */
+  z-index: 10002;
 }
 
 .profileButton {
@@ -137,7 +127,6 @@
   transition: transform 0.3s ease;
 }
 
-/* Dropdown Menu */
 .userOptions {
   position: absolute;
   top: calc(100% + 10px);
@@ -189,14 +178,10 @@
     height: 70px;
   }
   
-  /* Esconde navegação desktop em tablets/mobile */
   .desktopNav {
     display: none;
   }
   
-  /* .profileButton span {
-    display: none;
-  } */
   .profileButton {
     padding: 8px;
   }

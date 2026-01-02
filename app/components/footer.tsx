@@ -36,9 +36,6 @@ export default function Footer() {
             <a target="_blank" href="https://www.instagram.com/clubedosfuncionarios/" aria-label="Instagram">
               <FontAwesomeIcon icon={faInstagramSquare} />
             </a>
-            {/* <a target="_blank" href="https://www.linkedin.com/" aria-label="LinkedIn">
-              <FontAwesomeIcon icon={faLinkedin} />
-            </a> */}
           </div>
         </div>
       </div>

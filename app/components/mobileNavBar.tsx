@@ -14,7 +14,6 @@ const MobileNavBar: React.FC<MobileNavOptions> = ({ onNavigate, activeSection })
 
     return (
         <nav className={styles.mobileNavBar}>
-            {/* 1. Áreas Sociais */}
             {/* <button className={getClassName("sociais")} onClick={() => onNavigate('sociais')} aria-label="Social">
                 <div className={styles.mobileNavIcon}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
@@ -27,7 +26,6 @@ const MobileNavBar: React.FC<MobileNavOptions> = ({ onNavigate, activeSection })
                 <span className={styles.mobileNavLabel}>Social</span>
             </button> */}
 
-            {/* 2. Mapa (Centro) */}
             <button className={getClassName("mapa")} onClick={() => onNavigate('mapa')} aria-label="Mapa">
                 <div className={styles.mobileNavIcon}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
@@ -38,7 +36,6 @@ const MobileNavBar: React.FC<MobileNavOptions> = ({ onNavigate, activeSection })
                 <span className={styles.mobileNavLabel}>Mapa</span>
             </button>
 
-            {/* 3. Áreas Esportivas */}
             <button className={getClassName("esportivas")} onClick={() => onNavigate('esportivas')} aria-label="Esportes">
                 <div className={styles.mobileNavIcon}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">

@@ -1,19 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "@/styles/payment-selector.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCreditCard, faBarcode, faQrcode, faWifi, faCheckCircle, faTimesCircle, faArrowLeft, faCopy } from "@fortawesome/free-solid-svg-icons";
+import { faCreditCard, faBarcode, faQrcode, faWifi, faCheckCircle, faTimesCircle, faArrowLeft, faCopy, faClock } from "@fortawesome/free-solid-svg-icons";
 import { identifyBank } from "@/utils/bank-identifier";
 import { CreditCardBrand } from "./CreditCardBrand";
-// 1. Alterado: Importar useRouter ao invés de redirect
 import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 import { toast } from "react-toastify";
 import Image from "next/image";
+import API_CONSUME from "@/services/api-consume";
+import { useSession } from 'next-auth/react';
 
-// Tipos
 type PaymentMethod = "credit" | "debit" | "pix";
-
+type TimeOption = [string, string, number | null, number | null];
 interface CPParams {
   amount: number;
 }
@@ -24,17 +25,29 @@ interface PixResponse {
   expirationDate?: string;
 }
 
-export default function CheckoutPayment({ amount }: CPParams) {
-  // 2. Instanciar o router
-  const router = useRouter();
+interface CustomSession {
+    user?: {
+        id?: string | number;
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+    };
+    accessToken?: string;
+}
 
+export default function CheckoutPayment({ amount }: CPParams) {
+    const { data: sessionData } = useSession();
+    const session = sessionData as CustomSession | null;
+  // 2. Instanciar o router  
+  const router = useRouter();
+  const { cart } = useCart(); 
   const [method, setMethod] = useState<PaymentMethod>("credit");
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
   const [pixResult, setPixResult] = useState<PixResponse | null>(null);
-
+  const [timeLeft, setTimeLeft] = useState(0);
   const [cardData, setCardData] = useState({
     number: "",
     holder: "",
@@ -50,6 +63,23 @@ export default function CheckoutPayment({ amount }: CPParams) {
     scheme: ""
   });
 
+useEffect(() => {
+    if (timeLeft > 0 && pixResult) {
+      const timerId = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timerId);
+    } else if (timeLeft === 0 && pixResult) {
+      setStatus({ type: 'error', msg: 'O tempo sugerido para pagamento expirou.' });
+    }
+  }, [timeLeft, pixResult]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
   const copyPixCode = () => {
     if (pixResult?.qrcode) {
       navigator.clipboard.writeText(pixResult.qrcode);
@@ -57,7 +87,6 @@ export default function CheckoutPayment({ amount }: CPParams) {
     }
   };
     
-  // Manipulador de Input com Formatação
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let formattedValue = value;
@@ -85,59 +114,151 @@ export default function CheckoutPayment({ amount }: CPParams) {
     setCardData(prev => ({ ...prev, [name]: formattedValue }));
   };
 
-  const handlePayment = async () => {
+const handlePayment = async () => {
     setLoading(true);
     setStatus(null);
 
+try {
+        await Promise.all(cart.map(
+            async (item) => {
+                if (!item.start_schedule || !item.place) return;
+
+                const parts = item.start_schedule.split(/[\sT]+/);
+                const datePart = parts[0];
+                const timePart = parts[1]; 
+
+                const response = await API_CONSUME("POST", `schedule/time-options`, {
+                    Session: `${session?.accessToken}`
+                }, {
+                    date: datePart,
+                    place_id: item.place_id
+                });
+                
+                const optionsArray = response.data.options;
+                
+                const availableTimes = optionsArray.filter((option: TimeOption) => {
+                    const resourceOwner = Number(option[2]); 
+                    const currentUserId = Number(session?.user?.id);
+
+                    return resourceOwner === 0 || resourceOwner === currentUserId;
+                });
+                const availableTimeStrings = availableTimes.map((t: TimeOption) => String(t[0]).substring(0, 5));
+                const timeToCheck = String(timePart).substring(0, 5);
+                if (availableTimeStrings.includes(timeToCheck)) {
+                    return true;
+                }
+                
+                throw new Error(`O horário ${timeToCheck} em ${item.place.name} não está mais disponível.`);
+            }
+        ));
+    } catch (updateError: unknown) {
+        const message = updateError instanceof Error ? updateError.message : "Erro ao verificar disponibilidade.";
+        setStatus({ type: 'error', msg: message });
+        router.push('/checkout?status=expired');
+        setLoading(false);
+        return; 
+    }
+
     try {
       const amountInCents = Math.round(amount * 100);
-
       const response = await fetch('/api/erede/payment_methods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           method,
           cardData: {
-            ...cardData,
-            number: cardData.number.replace(/\s/g, ''),
+             ...cardData,
+             number: cardData.number.replace(/\s/g, ''),
           },
           amount: amountInCents
         })
       });
 
-      const data = await response.json();
+      const transactionData = await response.json();
 
       if (response.ok) {
-        if (method === 'pix' && data.qrCodeResponse) { // Atenção: Verifique se a Rede retorna qrCodeResponse ou pix.qrcode
-           // Ajuste conforme o retorno exato da sua API. Na versão anterior corrigida, era data.pix ou data.qrCode
-            const qrData = data.pix || data; // Fallback de segurança
-            setPixResult({
-                qrcode: qrData.qrcode || data.qrCodeResponse?.qrCodeData,
-                qrcodeBase64: qrData.qrcodeBase64 || data.qrCodeResponse?.qrCodeImage
+        if (method === 'pix') {
+             const qrData = transactionData.pix || transactionData; 
+             setPixResult({ 
+                qrcode: qrData.qrcode || qrData.qrCodeData,
+                qrcodeBase64: qrData.qrcodeBase64 || qrData.qrCodeImage
+              });
+             setTimeLeft(180);
+             setStatus({ type: 'success', msg: 'QR Code gerado!' });
+             setLoading(false);
+             return;
+        } 
+        
+        try {
+            const scheduleIds = cart.map(item => item.id); 
+            const saveOrderRes = await fetch('/api/success', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    transactionData: transactionData,
+                    scheduleIds: scheduleIds,
+                    method: method
+                })
             });
-            setStatus({ type: 'success', msg: 'QR Code gerado com sucesso! Realize o pagamento.' });
-        } else {
-            setStatus({ type: 'success', msg: 'Pagamento aprovado com sucesso!' });
-            
-            // 3. Alterado: Usar router.push para navegar sem lançar exceção no try/catch
-            router.push('/api/success');
+
+            const saveResult = await saveOrderRes.json();
+
+            if (saveOrderRes.ok) {
+                setStatus({ type: 'success', msg: 'Pagamento confirmado!' });
+                router.push('/checkout?status=success');
+            } 
+            else if (saveOrderRes.status === 409 || saveResult.error === 'expired') {
+                setStatus({ type: 'error', msg: 'Reserva expirada. O valor foi estornado.' });
+                router.push('/checkout?status=expired');
+            } 
+            else {
+                throw new Error(saveResult.message || "Erro ao salvar pedido.");
+            }
+
+        } catch (saveError: unknown) {
+            console.error(saveError);
+            const message = saveError instanceof Error ? saveError.message : "Erro desconhecido";
+            setStatus({ type: 'error', msg: `Atenção: ${message}. Contate o suporte.` });
+            router.push('/checkout?status=error');
         }
+
       } else {
-        setStatus({ type: 'error', msg: data.error || data.returnMessage || 'Erro ao processar pagamento.' });
+        setStatus({ type: 'error', msg: transactionData.error || transactionData.returnMessage || 'Erro na transação.' });
       }
     } catch (error) {
       console.error("Erro no checkout:", error);
-      setStatus({ type: 'error', msg: 'Erro de comunicação com o servidor.' });
+      setStatus({ type: 'error', msg: 'Erro de comunicação.' });
     } finally {
-      setLoading(false);
+      if (method !== 'pix') setLoading(false);
     }
   };
 
   if (pixResult && method === 'pix') {
+    const percentage = (timeLeft / 180) * 100;
+    const barColor = timeLeft < 30 ? '#dc3545' : '#1e8e3e';
+
     return (
         <div className={styles.container} style={{textAlign: 'center'}}>
-            <h3 style={{color: '#444', marginBottom: 20}}>Pagamento via Pix</h3>
+            <h3 style={{color: '#444', marginBottom: 15}}>Pagamento via Pix</h3>
             
+            <div style={{marginBottom: 20, padding: '0 10px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: 5, color: '#666'}}>
+                    <span>Tempo restante</span>
+                    <span style={{fontWeight: 'bold', color: barColor}}>
+                        <FontAwesomeIcon icon={faClock} style={{marginRight: 5}}/>
+                        {formatTime(timeLeft)}
+                    </span>
+                </div>
+                <div style={{width: '100%', backgroundColor: '#eee', height: 8, borderRadius: 4, overflow: 'hidden'}}>
+                    <div style={{
+                        width: `${percentage}%`,
+                        backgroundColor: barColor,
+                        height: '100%',
+                        transition: 'width 1s linear, background-color 0.5s ease'
+                    }} />
+                </div>
+            </div>
+
             <div style={{
                 border: '2px solid #eee', 
                 borderRadius: 12, 
@@ -162,7 +283,7 @@ export default function CheckoutPayment({ amount }: CPParams) {
                         readOnly 
                         value={pixResult.qrcode} 
                         className={styles.input}
-                        style={{background: '#f9f9f9', color: '#666'}}
+                        style={{background: '#f9f9f9', color: '#666', fontSize: '0.8rem'}}
                     />
                     <button 
                         onClick={copyPixCode}
@@ -192,7 +313,6 @@ export default function CheckoutPayment({ amount }: CPParams) {
 
   return (
     <div>
-      {/* --- SELETOR DE MÉTODO --- */}
       <div className={styles.tabsContainer}>
         <button 
             className={`${styles.tab} ${method === 'credit' ? styles.tabActive : ''}`}
@@ -214,7 +334,6 @@ export default function CheckoutPayment({ amount }: CPParams) {
         </button> */}
       </div>
 
-      {/* --- CONTEÚDO PIX --- */}
       {method === 'pix' ? (
           <div className={styles.pixContainer} style={{textAlign:'center', padding: 20}}>
               <FontAwesomeIcon icon={faQrcode} style={{fontSize: 60, color: '#1e8e3e', marginBottom: 20}} />
@@ -225,9 +344,7 @@ export default function CheckoutPayment({ amount }: CPParams) {
               </p>
           </div>
       ) : (
-        /* --- CONTEÚDO CARTÃO --- */
         <>
-            {/* O Cartão Interativo 3D */}
             <div className={styles.cardWrapper}>
                 <div className={`${styles.cardBody} ${isFlipped ? styles.cardFlipped : ''} ${cardTheme.styleClass}`}>
                     
@@ -270,7 +387,6 @@ export default function CheckoutPayment({ amount }: CPParams) {
                         )}
                     </div>
 
-                    {/* VERSO */}
                     <div className={styles.cardBack}>
                         <div className={styles.magneticStrip}></div>
                         <div className={styles.cvvContainer}>
@@ -290,7 +406,6 @@ export default function CheckoutPayment({ amount }: CPParams) {
                 </div>
             </div>
 
-            {/* Formulário de Dados */}
             <div className={styles.formGrid}>
                 <div className={styles.fullWidth}>
                     <label className={styles.inputLabel}>Número do Cartão</label>

@@ -13,11 +13,10 @@
     width: 100%;
     box-shadow: 0 4px 15px rgba(115, 0, 1, 0.2);
     
-    /* Garante alinhamento igual para <button> e <a> */
     display: flex;
     align-items: center;
     justify-content: center;
-    text-decoration: none; /* Remove sublinhado do Link */
+    text-decoration: none;
     line-height: 1;
 }
 

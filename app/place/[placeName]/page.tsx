@@ -43,14 +43,12 @@ const fetchData = useCallback(async () => {
         try {
             const response = await API_CONSUME("GET", `place/${placeID}`, {}, null);
 
-            // 1. Verificação de Sucesso (Novo Padrão)
             if (!response.ok || !response.data) {
                 toast.warn(`Erro ao carregar local (${placeID}): ` + (response.message || "Erro desconhecido"));
-                router.push('/'); // Redireciona se não achar ou der erro
+                router.push('/');
                 return;
             }
 
-            // 2. Acesso aos dados via response.data
             const placeData = response.data;
 
             setData({
@@ -63,7 +61,6 @@ const fetchData = useCallback(async () => {
             });
 
         } catch (error) {
-            // Esse catch agora serve apenas para erros de execução do React/JS (ex: JSON parse)
             toast.error("Erro crítico na página: " + (error instanceof Error ? error.message : String(error)));
             router.push('/'); 
         }
@@ -149,7 +146,7 @@ const fetchData = useCallback(async () => {
                 {data.id && (
                     <Schedule
                         src={data.image || ""}
-                        price={data.price} // Agora já é um número seguro
+                        price={data.price}
                         place_id={parseInt(data.id)}
                         rules={data.rules}
                     />

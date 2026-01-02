@@ -1,73 +1,144 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
-import { authOptions } from "./auth/[...nextauth]";
+import { authOptions } from "@/api/auth/[...nextauth]";
 import API_CONSUME from "@/services/api-consume";
-import MercadoPagoConfig, { Payment } from "mercadopago";
-import { toast } from "react-toastify";
 
-const client = new MercadoPagoConfig({
-    accessToken: process.env.MP_ACCESS_TOKEN!,
-});
+const REDE_CLIENT_ID = process.env.INTERNAL_EREDE_CLIENT_ID as string;
+const REDE_CLIENT_SECRET = process.env.INTERNAL_EREDE_SECRET_ID as string;
+const BASE_URL = process.env.INTERNAL_EREDE_API_URL as string;
+const AUTH_URL = process.env.INTERNAL_EREDE_AUTH_URL as string;
+
+// 1. Criamos uma interface local para tipar a resposta sem usar 'any'
+interface ApiErrorResponse {
+    status?: number;
+    message?: string;
+    error?: string;
+}
+
+async function refundTransaction(tid: string, amount: number) {
+    console.log(`Iniciando estorno para TID: ${tid}`);
+    
+    const credentials = Buffer.from(`${REDE_CLIENT_ID}:${REDE_CLIENT_SECRET}`).toString('base64');
+    const authRes = await fetch( AUTH_URL, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'grant_type=client_credentials'
+    });
+    
+    if (!authRes.ok) throw new Error("Falha ao autenticar para reembolso");
+    const { access_token } = await authRes.json();
+
+    const refundRes = await fetch(`${BASE_URL}/transactions/${tid}/refunds`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${access_token}`
+        },
+        body: JSON.stringify({ amount: amount })
+    });
+
+    if (!refundRes.ok) {
+        const err = await refundRes.json();
+        console.error("ERRO FATAL: Falha ao estornar:", err);
+        throw new Error("Falha no estorno automático");
+    }
+
+    console.log("Estorno realizado com sucesso.");
+    return await refundRes.json();
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { payment_id, status } = req.query;
-    
     const session = await getServerSession(req, res, authOptions);
     if (!session || !session.accessToken) {
-        return res.redirect("/login?error=session_expired");
+        return res.status(401).json({ error: "Sessão expirada." });
     }
 
-    if (status && status !== 'approved') {
-        return res.redirect("/checkout?status=success");
+    if (req.method !== 'POST') {
+        res.setHeader('Allow', 'POST');
+        return res.status(405).json({ error: 'Método não permitido' });
     }
+
+    let currentTid = "";
+    let currentAmount = 0;
 
     try {
-        const paymentClient = new Payment(client);
-        const paymentData = await paymentClient.get({ id: String(payment_id) });
+        const { transactionData, scheduleIds, method } = req.body;
 
-        if (paymentData.status !== 'approved') return res.redirect("/checkout?status=failure");
-        
-        const metadataSchedules = paymentData.metadata?.schedules;
-        if (!metadataSchedules) return res.redirect("/checkout?status=failure");
+        if (!transactionData || !scheduleIds) {
+            return res.status(400).json({ error: "Dados incompletos." });
+        }
 
-        const scheduleIdsToUpdate: number[] = String(metadataSchedules)
-            .split(',')
-            .map(id => Number(id.trim()))
-            .filter(id => !isNaN(id));
+        currentTid = transactionData.tid;
+        currentAmount = transactionData.amount;
+
+        const isApproved = transactionData.returnCode === "00" || transactionData.capture === true;
+        if (!isApproved) {
+            return res.status(400).json({ error: "Pagamento não autorizado." });
+        }
 
         const updatePayload = {
-            schedule_ids: scheduleIdsToUpdate,
+            schedule_ids: scheduleIds,
             status_id: 1,
-            payment_integration_id: String(payment_id), 
-            payment_method: paymentData.payment_method_id,
-            paid_amount: paymentData.transaction_amount,
-            paid_at: paymentData.date_approved
+            payment_integration_id: transactionData.tid,
+            payment_method: method,
+            paid_amount: transactionData.amount / 100, 
+            paid_at: transactionData.dateTime,
+            metadata: {
+                last4: transactionData.last4,
+                authorization_code: transactionData.authorizationCode,
+                nsu: transactionData.nsu,
+                card_brand: transactionData.brandTid,
+                reference: transactionData.reference
+            }
         };
 
-        const response = await API_CONSUME("POST", `schedule/payment`, {}, updatePayload);
+        console.log("Enviando confirmação para API Core:", JSON.stringify(updatePayload));
+
+        const response = await API_CONSUME("POST", `schedule/payment`, {
+            Session: `${session.accessToken}` 
+        }, updatePayload);
+
+        console.log("Resposta da API Core:", response);
+
+        // 2. Usamos a interface criada (Type Casting Seguro) ao invés de 'any'
+        // 'unknown' é necessário como passo intermediário seguro
+        const apiRes = response as unknown as ApiErrorResponse;
+
+        const hasConflict = apiRes?.status === 409 || 
+                            apiRes?.message?.includes("conflito") || 
+                            apiRes?.error === "expired";
         
-        if (response.status === 409) {
-            await fetch(`https://api.mercadopago.com/v1/payments/${String(payment_id)}/refunds`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Idempotency-Key": `refund-${payment_id}-${new Date().getTime()}`,
-                    "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`
-                }
+        const hasHttpError = apiRes?.status !== undefined && apiRes.status !== 200 && apiRes.status !== 201;
+        const hasGenericError = !!apiRes?.error;
+
+        if (hasConflict || hasHttpError || hasGenericError) {
+            console.warn("Erro ao salvar agendamento. Iniciando estorno...");
+            await refundTransaction(currentTid, currentAmount);
+
+            return res.status(409).json({ 
+                error: "expired", 
+                message: apiRes?.message || "Erro ao confirmar agendamento. Valor estornado." 
             });
+        }
+        
+        return res.status(200).json({ success: true });
 
-            return res.redirect("/checkout?status=expired");
+    } catch (error: unknown) {
+        console.error("Erro crítico em success.ts:", error);
+        
+        if (currentTid) {
+            try {
+                console.log("Tentando estorno de emergência...");
+                await refundTransaction(currentTid, currentAmount);
+            } catch (_refundErr) { 
+                console.error("Falha no estorno de emergência.", _refundErr);
+            }
         }
 
-        if (!response.ok) {
-            toast.error("❌ Erro ao salvar confirmação no banco: " + (response.message || response.data));
-            return res.redirect("/checkout?status=failure");
-        }
-
-        return res.redirect("/checkout?status=success");
-
-    } catch (error) {
-        toast.error("❌ Erro não tratado no processamento do sucesso: " + (error instanceof Error ? error.message : String(error)));
-        return res.redirect("/checkout?status=failure");
+        const message = error instanceof Error ? error.message : "Erro desconhecido";
+        return res.status(500).json({ error: message });
     }
 }

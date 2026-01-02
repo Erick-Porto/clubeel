@@ -5,7 +5,6 @@
     width: 100%;
 }
 
-/* Grid de Itens */
 .cartListContainer {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -13,7 +12,6 @@
     width: 100%;
 }
 
-/* Empty State */
 .emptyCart {
     display: flex;
     flex-direction: column;
@@ -33,7 +31,6 @@
     color: #ccc;
 }
 
-/* Cart Item (Estilo Card Moderno) */
 .cartItem {
     background-color: white;
     border: 1px solid #eee;
@@ -54,7 +51,6 @@
     border-color: var(--grena-light);
 }
 
-/* Imagem */
 .cartItemImageContainer {
     width: 100%;
     height: 160px;
@@ -75,7 +71,6 @@
     transform: scale(1.05);
 }
 
-/* Detalhes */
 .cartItemDetails {
     display: flex;
     flex-direction: column;
@@ -112,7 +107,6 @@
     align-self: flex-start;
 }
 
-/* Botão de Remover (Flutuante) */
 .removeItemButton {
     position: absolute;
     top: 10px;
@@ -138,7 +132,6 @@
     transform: scale(1.1);
 }
 
-/* Resumo do Carrinho (Rodapé) */
 .cartSummary {
     display: flex;
     justify-content: space-between;
@@ -181,19 +174,18 @@
 }
 
 .checkoutButton:hover {
-    background-color: #800000; /* Grena mais escuro */
+    background-color: #800000;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(115, 0, 1, 0.3);
 }
 
-/* Responsividade */
 @media (max-width: 768px) {
     .cartListContainer {
-        grid-template-columns: 1fr; /* Coluna única no mobile */
+        grid-template-columns: 1fr;
     }
 
     .cartItem {
-        flex-direction: row; /* Horizontal no mobile */
+        flex-direction: row;
         align-items: center;
         padding: 12px;
     }

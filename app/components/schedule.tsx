@@ -34,7 +34,6 @@ interface ScheduleProps {
     rules?: unknown[];
 }
 
-// --- FUNÇÃO AUXILIAR GMT-3 ---
 const createGMT3Date = (dateStr: string, timeStr: string): Date => {
     return new Date(`${dateStr}T${timeStr}:00-03:00`);
 };
@@ -57,7 +56,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const [loadedContent, setLoadedContent] = useState<LoadedContent[]>([])
     const [selectedItems, setSelectedItems] = useState<LoadedContent[]>([]);
     const [localQuantity, setLocalQuantity] = useState<number>(0);
-    // 1. FETCH
+
 const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate) return;
         try {
@@ -66,7 +65,6 @@ const fetchData = useCallback(async () => {
                 place_id: placeId
             });
 
-            // CORREÇÃO: Usar !response.ok
             if (!response.ok || !response.data) {
                 const msg = response.message as unknown;
                 const errorText = msg instanceof Error ? msg.message : String(msg);
@@ -75,14 +73,10 @@ const fetchData = useCallback(async () => {
                 return;
             }
 
-            // CORREÇÃO: Acessar response.data
             const rawData = response.data;
 
             if (rawData.quantity !== undefined) setLocalQuantity(rawData.quantity);
 
-            // Adaptação para pegar o array correto dentro do response.data
-            // Se o Laravel retorna [ ... ] direto, rawData será o array
-            // Se retorna { data: [...] }, rawData.data será o array
             const listToMap = Array.isArray(rawData) ? rawData : (rawData.data || rawData.options || []);
 
             const mappedContent: LoadedContent[] = listToMap.map((item: [string, string, number | null, number | null]) => ({
@@ -105,7 +99,6 @@ const fetchData = useCallback(async () => {
         setSelectedItems([]);
     }, [fetchData]);
 
-    // 2. CÁLCULOS
     const userOwnedIndices = useMemo(() => {
         return loadedContent
             .map((item, index) => (item.owner === userId && (item.status === 1 || item.status === 3)) ? index : -1)
@@ -114,7 +107,6 @@ const fetchData = useCallback(async () => {
 
     const userTotalAppointments = userOwnedIndices.length;
 
-    // 3. SELEÇÃO
     const toggleSelectHour = (item: LoadedContent, index: number) => {
         if (selectedItems.includes(item)) {
             setSelectedItems(prev => prev.filter(i => i !== item));
@@ -145,13 +137,11 @@ const fetchData = useCallback(async () => {
         setSelectedItems(prev => [...prev, item].sort((a, b) => a.start.localeCompare(b.start)));
     };
 
-    // 4. RESERVAR (CORRIGIDO)
 const handleReserve = async () => {
         if (!session?.accessToken) return toast.error("Sessão inválida.");
         if (selectedItems.length === 0) return toast.info("Selecione um horário.");
 
         const payload: ReservationPayload[] = selectedItems.map(item => {
-            // 1. Validação com Date Object (GMT-3)
             const startObj = createGMT3Date(currentDate, item.start);
             const endObj = createGMT3Date(currentDate, item.end);
 
@@ -160,8 +150,6 @@ const handleReserve = async () => {
                 throw new Error("Data inválida");
             }
 
-            // 2. Formatação Correta para o Backend ("YYYY-MM-DD HH:mm:ss")
-            // Usamos template string simples pois já temos os valores corretos nas variáveis
             const startString = `${currentDate} ${item.start}:00`;
             const endString = `${currentDate} ${item.end}:00`;
 
@@ -170,7 +158,7 @@ const handleReserve = async () => {
                 place_id: placeId,
                 price: numericPrice,
                 status_id: 3,
-                start_schedule: startString, // Agora envia a string formatada corretamente
+                start_schedule: startString,
                 end_schedule: endString
             };
         });
@@ -178,11 +166,9 @@ const handleReserve = async () => {
         try {
             const response = await API_CONSUME("POST", "schedule", {}, payload);
 
-            // CORREÇÃO: Validar response.ok
             if (!response.ok) {
-                // Se o backend enviar mensagem de erro específica (ex: "Horário ocupado"), mostramos ela
                 toast.error(response.message || "Não foi possível reservar este horário.");
-                fetchData(); // Recarrega para mostrar status atualizado
+                fetchData();
                 return;
             }
 
@@ -195,7 +181,6 @@ const handleReserve = async () => {
         }
     };
 
-    // 5. RENDER
     const allActiveIndices = useMemo(() => {
         const currentSelectionIndices = selectedItems.map(sel => loadedContent.indexOf(sel));
         return [...userOwnedIndices, ...currentSelectionIndices].sort((a, b) => a - b);
@@ -274,7 +259,6 @@ const handleReserve = async () => {
 
                             if (isSelected) itemClass += ` ${styles.selected}`;
 
-                            // CORREÇÃO: Variável 'isNonAdjacent' removida pois não era utilizada
                             if (!isBlocked && !isSelected && allActiveIndices.length > 0) {
                                 const isNeighbor = index === minActiveIndex - 1 || index === maxActiveIndex + 1;
                                 if (!isNeighbor || limitReached) {

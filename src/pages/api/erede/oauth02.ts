@@ -1,13 +1,15 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const AUTH_URL = process.env.INTERNAL_EREDE_AUTH_URL;
+
     if (req.method !== 'POST') {
         res.setHeader('Allow', 'POST');
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     try {
-        const eredeRes = await fetch('https://rl7-sandbox-api.useredecloud.com.br/oauth2/token', {
+        const eredeRes = await fetch(AUTH_URL || '', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

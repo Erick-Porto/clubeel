@@ -35,6 +35,3 @@
     color: #666;
     font-size: 0.95rem;
 }
-
-/* O componente LatestAppointments/Cart deve usar classes globais ou módulos internos que gerem CARDS */
-/* Se você tiver acesso aos CSS deles, certifique-se de usar display: grid */

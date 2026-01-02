@@ -6,8 +6,7 @@ config.autoAddCss = false
 
 import { NextAuthProvider } from '@/components/provider';
 import { ToastContainer } from "react-toastify";
-import { CartProvider } from "@/context/CartContext"; // Importe o CartProvider
-
+import { CartProvider } from "@/context/CartContext"; 
 
 export const metadata: Metadata = {
   title: "Clube dos Funcionários",
@@ -23,11 +22,8 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body >
-        {/* <UserProvider>
-          {children}
-        </UserProvider> */}
         <NextAuthProvider>
-          <CartProvider> {/* Adicione o CartProvider aqui */}
+          <CartProvider>
             {children}
           </CartProvider>
         </NextAuthProvider>
@@ -38,7 +34,6 @@ export default function RootLayout({
             newestOnTop={false}
             closeOnClick
             rtl={false}
-            // escapeMarkup={true} - Removed: Property does not exist in newer versions
             pauseOnFocusLoss={false}
             draggable
             pauseOnHover={false}

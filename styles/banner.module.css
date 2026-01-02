@@ -2,22 +2,20 @@
     position: relative;
     width: 100%;
     height: 280px;
-    margin-top: 70px; /* Compensação do Header fixo */
+    margin-top: 70px;
     background-color: #e0e0e0;
-    /* CORREÇÃO: Z-Index alto para o avatar flutuar sobre o conteúdo abaixo */
     z-index: 1; 
-    overflow: visible; /* Permite que o avatar "vaze" para fora */
+    overflow: visible;
 }
 
-/* Imagem de Capa (Presa dentro da caixa) */
 .bannerImageWrapper {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden; /* Corta a imagem para não vazar */
-    border-radius: 0 0 0 0; /* Opcional: arredondar cantos inferiores se quiser */
+    overflow: hidden;
+    border-radius: 0 0 0 0;
     z-index: 0;
 }
 
@@ -35,10 +33,8 @@
     z-index: 1;
 }
 
-/* Container do Avatar e Texto */
 .profileContent {
     position: absolute;
-    /* Faz o conteúdo descer para fora da capa */
     bottom: -50px; 
     left: 50%;
     transform: translateX(-50%);
@@ -48,8 +44,8 @@
     display: flex;
     align-items: flex-end;
     gap: 25px;
-    z-index: 30; /* Garante que texto/avatar fiquem acima da própria imagem */
-    pointer-events: none; /* Permite clicar no fundo se não acertar o avatar */
+    z-index: 30;
+    pointer-events: none;
 }
 
 /* Avatar */
@@ -62,7 +58,7 @@
     padding: 4px;
     background-color: white;
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    pointer-events: auto; /* Reativa cliques no avatar */
+    pointer-events: auto;
 }
 
 .avatarImage {
@@ -97,9 +93,8 @@
     transform: scale(1.1);
 }
 
-/* Texto */
 .userInfo {
-    padding-bottom: 60px; /* Empurra o texto para cima para ficar DENTRO da capa escura */
+    padding-bottom: 60px;
     color: white;
     text-shadow: 0 2px 4px rgba(0,0,0,0.7);
     flex-grow: 1;
@@ -134,7 +129,6 @@
     border: 1px solid rgba(255,255,255,0.5);
 }
 
-/* Responsividade */
 @media (max-width: 768px) {
     .bannerContainer {
         height: 220px;
@@ -155,7 +149,6 @@
     }
 
     .userInfo {
-        /* No mobile, o texto desce para o fundo branco */
         padding-bottom: 0; 
         color: #333; 
         text-shadow: none;

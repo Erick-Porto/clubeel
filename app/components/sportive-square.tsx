@@ -29,18 +29,13 @@ const SportiveSquare: React.FC<SportiveSquareProps> = ({ places }) => {
         );
     }
 
-    // CORREÇÃO: Preenchimento Inteligente
-    // 1. Garante que temos itens suficientes para cobrir telas largas antes de duplicar para o loop
-    //    (Ex: se tiver 1 item, repete ele até ter pelo menos 8 itens)
     let fillList = [...places];
-    const MIN_ITEMS_ON_SCREEN = 8; // Garante largura suficiente (8 * 300px = 2400px minimum)
+    const MIN_ITEMS_ON_SCREEN = 8;
     
     while (fillList.length < MIN_ITEMS_ON_SCREEN) {
         fillList = [...fillList, ...places];
     }
 
-    // 2. Duplica a lista preenchida para criar o efeito de loop perfeito (Metade sai, metade entra)
-    // O CSS move -50%, então precisamos de 2 metades idênticas.
     const finalCarouselList = [...fillList, ...fillList];
 
     return (
@@ -48,7 +43,6 @@ const SportiveSquare: React.FC<SportiveSquareProps> = ({ places }) => {
             <div className={Style.carousel}>
                 {finalCarouselList.map((place, index) => (
                     <div
-                        // Usar índice no key é necessário aqui pois os IDs são repetidos
                         key={`${place.id}-clone-${index}`} 
                         className={Style.square}
                     >

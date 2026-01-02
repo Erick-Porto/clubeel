@@ -12,7 +12,6 @@
     align-items: center;
     width: 100%;
     height: 85svh;
-    /* Garante que nada vaze da tela */
     overflow: hidden; 
     position: relative;
 }
@@ -22,14 +21,9 @@
     flex-direction: row;
     gap: 0;
     height: 100%;
-    
-    /* CORREÇÃO PRINCIPAL: */
-    /* Força o container a ter a largura da soma de todos os itens */
     width: max-content; 
-    
     animation: squareScroll linear infinite;
-    animation-duration: 120s; /* Ajustado levemente para fluidez */
-    
+    animation-duration: 120s;
     &:has(.square:hover) {
         animation-play-state: paused;
     }
@@ -48,10 +42,7 @@
     margin: 0;
     border: none;
     z-index: 0;
-    
-    /* Garante que a imagem não encolha */
     flex-shrink: 0; 
-
     &:nth-child(even) {
         align-self: flex-start;
     }
@@ -72,7 +63,7 @@
     top: 0;
     left: 0;
     z-index: 2;
-    background-color: rgba(0, 0, 0, 0.4); /* Fundo escuro leve para leitura */
+    background-color: rgba(0, 0, 0, 0.4);
     transition: opacity 0.3s ease;
 }
 
@@ -80,8 +71,6 @@
     opacity: 1;
 }
 
-/* A classe abaixo parece redundante com .squareInfo, removi o before duplicado de hover para limpar */
-/* Mantive a lógica original do overlay */
 .square::before {
     content: '';
     background-color: black;
@@ -106,10 +95,9 @@
     letter-spacing: 1px;
 } 
 
-/* Ajustes necessários para o componente Image do Next.js */
 .squareImage {
   object-fit: cover; 
-  z-index: -1; /* Fica atrás do overlay */
+  z-index: -1;
 }
 
 @media (max-width: 768px) {
@@ -121,7 +109,6 @@
         height: 75svh;
     }
     .carousel {
-        /* Mais rápido no mobile pois a largura total é menor */
         animation-duration: 60s; 
     }
 }

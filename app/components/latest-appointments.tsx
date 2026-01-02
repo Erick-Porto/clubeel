@@ -30,7 +30,7 @@ interface Appointment {
 interface LatestAppointmentsProps {
     appointmentStatus: number;
     initialLimit?: number;
-    tooltip?: React.ReactNode | null; // Nova prop adicionada
+    tooltip?: React.ReactNode | null;
 }
 
 interface CustomSession {
@@ -100,7 +100,6 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
     if (appointments.length === 0) {
         return (
             <div className={style.latestAppointmentsContainer}>
-                {/* Renderiza o tooltip mesmo se estiver vazio, caso queira avisar algo */}
                 {tooltip && (
                     <div className={style.tooltipAlert}>
                         <FontAwesomeIcon icon={faInfoCircle} />
@@ -120,7 +119,6 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
     return (
         <div className={style.latestAppointmentsContainer}>
             
-            {/* Renderização do Tooltip/Aviso */}
             {tooltip && (
                 <div className={style.tooltipAlert}>
                     <div className={style.tooltipIconWrapper}>
@@ -134,12 +132,9 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                 {visibleAppointments.map((item) => {
                     const startDate = new Date(item.start_schedule);
                     const endDate = new Date(item.end_schedule);
-                    
                     const dateStr = startDate.toLocaleDateString('pt-BR');
                     const timeStr = `${startDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
-                    
                     const price = Number(item.price);
-
                     return (
                         <div key={item.id} className={style.latestAppointmentsItem}>
                             <div className={style.imageContainer}>
@@ -155,17 +150,14 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                             
                             <div className={style.cardContent}>
                                 <h3 className={style.latestAppointmentsItemTitle}>{item.place.name}</h3>
-                                
                                 <div className={style.infoRow}>
                                     <FontAwesomeIcon icon={faCalendarAlt} />
                                     <span>{dateStr}</span>
                                 </div>
-                                
                                 <div className={style.infoRow}>
                                     <FontAwesomeIcon icon={faClock} />
                                     <span>{timeStr}</span>
                                 </div>
-
                                 <div className={style.priceTag}>
                                     R$ {isNaN(price) ? '0.00' : price.toFixed(2)}
                                 </div>

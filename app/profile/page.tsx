@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from "react"; // 1. Adicione Suspense aqui
+import { useState, useEffect, Suspense } from "react";
 import Footer from "@/components/footer";
 import Banner from "@/components/banner";
 import { useSession } from "next-auth/react";

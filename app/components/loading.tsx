@@ -1,5 +1,4 @@
 import Image from "next/image";
-// Certifique-se de que o caminho da imagem esteja correto
 import Logo from "../../public/images/logo-cfcsn-horiz.png"; 
 import Style from "@/styles/loading.module.css";
 
@@ -7,7 +6,6 @@ interface LoadingProps {
     small?: boolean;
 }
 
-// Componente de Tela Cheia
 export const LoadingScreen = () => {
     return (
         <section className={Style.LoadingScreen}>
@@ -27,7 +25,6 @@ export const LoadingScreen = () => {
     );
 };
 
-// Componente Pequeno (para botões ou áreas específicas)
 export const Loading = ({ small = false }: LoadingProps) => {
     return(
         <div className={Style.loadingContainer}>

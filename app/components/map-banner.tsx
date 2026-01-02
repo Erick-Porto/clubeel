@@ -23,7 +23,6 @@ const ICON_SIZE = 50;
 const MAX_SCALE = 4;
 const FALLBACK_MIN_SCALE = 0.5;
 
-// --- Funções Auxiliares ---
 const getHotspotBounds = (vertices: Point[]) => {
   if (vertices.length === 0) return { centerX: 0, centerY: 0 };
   const allX = vertices.map((v) => v.x);
@@ -46,14 +45,12 @@ const formatPolygonPoints = (vertices: Point[]): string => {
   return vertices.map((p) => `${p.x},${p.y}`).join(' ');
 };
 
-// --- COMPONENTE HOTSPOT ---
 const HotspotsOverlay: React.FC<{
   places: Hotspot[];
   onIconClick: (hotspot: Hotspot, e: React.MouseEvent | React.TouchEvent) => void;
 }> = ({ places, onIconClick }) => {
   const { transformState: { scale } } = useTransformContext();
 
-  // Mantém o ícone visível mesmo com zoom out
   const iconScale = scale < 0.5 ? 1 / 0.5 : 1 / scale;
 
   return (
@@ -68,7 +65,6 @@ const HotspotsOverlay: React.FC<{
 
         return (
           <React.Fragment key={spot.id}>
-            {/* Polígono clicável */}
             <polygon 
                 points={polygonPoints} 
                 className={styles.hotspotArea}
@@ -76,7 +72,6 @@ const HotspotsOverlay: React.FC<{
                 onTouchEnd={(e) => onIconClick(spot, e)}
             />
             
-            {/* Ícone Flutuante */}
             <foreignObject
               x={centerX - ICON_SIZE / 2}
               y={centerY - ICON_SIZE / 2}
@@ -93,7 +88,6 @@ const HotspotsOverlay: React.FC<{
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
               >
-                {/* Efeito de onda/pulse atrás do ícone */}
                 <div className={styles.pulseRing} />
                 <Image src={spot.icon} alt={spot.name} className={styles.hotspotIcon} draggable={false} height={50} width={50}/>
               </div>
@@ -105,7 +99,6 @@ const HotspotsOverlay: React.FC<{
   );
 };
 
-// --- COMPONENTE PRINCIPAL ---
 const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
   const [activeHotspot, setActiveHotspot] = useState<Hotspot | null>(null);
   const [popupPosition, setPopupPosition] = useState<Point>({ x: 0, y: 0 });
@@ -132,7 +125,6 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
     e.stopPropagation();
     setActiveHotspot(hotspot);
     
-    // Lógica para posicionar o popup
     let clientX, clientY;
     if ('changedTouches' in e) {
       clientX = e.changedTouches[0].clientX;
@@ -142,7 +134,6 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
       clientY = (e as React.MouseEvent).clientY;
     }
 
-    // Ajuste simples para Desktop: Se clicar muito à direita, move o popup para esquerda
     const isRightEdge = typeof window !== 'undefined' && clientX > window.innerWidth - 320;
     const finalX = isRightEdge ? clientX - 310 : clientX;
 
@@ -166,7 +157,6 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
           wheel={{ step: 0.2 }}
         >
           <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }}>
-            {/* Ao clicar na área vazia do mapa, fecha o popup */}
             <div className={styles.mapScene} onMouseUp={closePopup} onTouchEnd={closePopup}>
               <div className={styles.mapContent} />
               <HotspotsOverlay places={places} onIconClick={handleIconClick} />
@@ -175,12 +165,10 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
         </TransformWrapper>
       </div>
 
-      {/* POPUP ESTILIZADO */}
       {activeHotspot && (
         <div
           className={styles.popup}
           id='popup-places'
-          // No mobile, o CSS ignora esses estilos inline e fixa no bottom
           style={{ left: popupPosition.x, top: popupPosition.y }}
           onMouseDown={(e) => e.stopPropagation()} 
           onTouchStart={(e) => e.stopPropagation()}
@@ -197,7 +185,6 @@ const MapBanner: React.FC<{ places: Hotspot[] }> = ({ places }) => {
                 priority={true}
                 quality={100} />
              ) : (
-                // Fallback visual caso não tenha imagem
                 <div style={{width:'100%', height:'100%', background: '#ddd', display:'flex', alignItems:'center', justifyContent:'center', color:'#888'}}>
                     Sem Imagem
                 </div>

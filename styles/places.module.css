@@ -1,7 +1,7 @@
 /* Banner Imersivo */
 .placeBanner {
   width: 100%;
-  height: 40vh; /* Altura mais moderna, nem muito grande nem pequena */
+  height: 40vh;
   min-height: 300px;
   display: flex;
   justify-content: center;
@@ -13,7 +13,6 @@
   margin-bottom: 40px;
 }
 
-/* Overlay gradiente para legibilidade do texto */
 .placeBanner::after {
   content: "";
   position: absolute;
@@ -39,7 +38,6 @@
   margin: 0;
 }
 
-/* Container do Seletor de Datas */
 .dateSelectionContainer {
   width: 100%;
   max-width: 1200px;
@@ -56,14 +54,13 @@
   flex-grow: 1;
   overflow: hidden;
   position: relative;
-  /* Máscara para suavizar as bordas laterais */
   mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 }
 
 .dateSelection {
   display: flex;
-  width: 300%; /* 3 blocos de 7 dias */
+  width: 300%;
   transform: translateX(-33.333%);
   transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
   list-style: none;
@@ -73,7 +70,6 @@
 .dateSelection.next { transform: translateX(-66.666%); }
 .dateSelection.prev { transform: translateX(0%); }
 
-/* Item de Data (Estilo Cápsula) */
 .dateSelectionItem {
   flex: 1;
   display: flex;
@@ -112,7 +108,6 @@
   margin-top: 4px;
 }
 
-/* Setas de Navegação */
 .dateSelectionArrow {
   background: white;
   border: 1px solid #eee;
@@ -143,10 +138,10 @@
   opacity: 0.3;
   cursor: not-allowed;
   background-color: #f9f9f9;
-  pointer-events: none; /* Impede o clique via CSS */
-  text-decoration: line-through; /* Opcional: risca o texto */
+  pointer-events: none;
+  text-decoration: line-through;
 }
-/* Grid de Locais */
+
 .placeList {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -157,7 +152,6 @@
   padding: 0 20px;
 }
 
-/* Card de Local Moderno */
 .placeCard {
   background: white;
   border-radius: 16px;
@@ -194,7 +188,6 @@
   transform: scale(1.05);
 }
 
-/* Badge de Status (Sobre a imagem) */
 .statusBadge {
   position: absolute;
   top: 12px;
@@ -236,7 +229,6 @@
   margin: 0;
 }
 
-/* Botão de Ação */
 .placeAction {
   display: block;
   width: 100%;
@@ -257,7 +249,7 @@
 }
 
 .btnReserve:hover {
-  background-color: #5a0000; /* Escurecer um pouco a cor grena */
+  background-color: #5a0000;
   box-shadow: 0 4px 12px rgba(115, 0, 1, 0.2);
 }
 
@@ -267,7 +259,6 @@
   cursor: not-allowed;
 }
 
-/* Estado Desabilitado do Card */
 .placeCardDisabled {
   opacity: 0.8;
 }
@@ -280,7 +271,6 @@
     background-position: 0 35%;
   }
 }
-/* Responsividade */
 @media (max-width: 768px) {
   .placeBanner {
     height: 30vh;
@@ -311,7 +301,7 @@
 
 @media (max-width: 480px) {
   .placeList {
-    grid-template-columns: 1fr; /* 1 coluna no mobile */
+    grid-template-columns: 1fr;
   }
   
   .placeBannerCover h1 {

@@ -1,6 +1,3 @@
-/* payment-selector.module.css */
-
-/* --- TABS --- */
 .tabsContainer {
   display: flex;
   background-color: #f5f5f5;
@@ -32,7 +29,6 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* --- CARTÃO 3D --- */
 .cardWrapper {
   perspective: 1000px;
   width: 100%;
@@ -67,9 +63,6 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  
-  /* Padrão (Grená) */
-  /* background: linear-gradient(135deg, var(--grena), var(--grena-dark)); */
   background-image: url('/images/default-card.png');
   background-size: cover;
   background-repeat: no-repeat;
@@ -83,18 +76,16 @@
   padding: 0;
 }
 
-/* --- TEMAS DE BANCOS (Cores Oficiais) --- */
-.nubank .cardFront, .nubank .cardBack { background: linear-gradient(135deg, #820ad1, #48037a); } /* Roxo */
-.inter .cardFront, .inter .cardBack { background: linear-gradient(135deg, #FF7A00, #FF5000); } /* Laranja */
-.itau .cardFront, .itau .cardBack { background: linear-gradient(135deg, #ec7000, #104da1); } /* Azul/Laranja */
-.bradesco .cardFront, .bradesco .cardBack { background: linear-gradient(135deg, #cc092f, #980320); } /* Vermelho */
-.santander .cardFront, .santander .cardBack { background: linear-gradient(135deg, #ec0000, #a30000); } /* Vermelho Vivo */
-.bb .cardFront, .bb .cardBack { background: linear-gradient(135deg, #f9dd16, #003399); color: #003399; } /* Amarelo/Azul */
-.original .cardFront, .original .cardBack { background: linear-gradient(135deg, #23C55E, #15803d); } /* Verde */
-.neon .cardFront, .neon .cardBack { background: linear-gradient(135deg, #00A3BF, #005F7F); } /* Azul Neon */
-.black .cardFront, .black .cardBack { background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #444; } /* Black Card */
+.nubank .cardFront, .nubank .cardBack { background: linear-gradient(135deg, #820ad1, #48037a); } 
+.inter .cardFront, .inter .cardBack { background: linear-gradient(135deg, #FF7A00, #FF5000); }  
+.itau .cardFront, .itau .cardBack { background: linear-gradient(135deg, #ec7000, #104da1); }
+.bradesco .cardFront, .bradesco .cardBack { background: linear-gradient(135deg, #cc092f, #980320); }
+.santander .cardFront, .santander .cardBack { background: linear-gradient(135deg, #ec0000, #a30000); }
+.bb .cardFront, .bb .cardBack { background: linear-gradient(135deg, #f9dd16, #003399); color: #003399; }
+.original .cardFront, .original .cardBack { background: linear-gradient(135deg, #23C55E, #15803d); }
+.neon .cardFront, .neon .cardBack { background: linear-gradient(135deg, #00A3BF, #005F7F); }
+.black .cardFront, .black .cardBack { background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #444; }
 
-/* Elementos Visuais */
 .chip {
   width: 50px;
   height: 35px;
@@ -167,7 +158,6 @@
   font-family: 'Courier New', monospace;
 }
 
-/* Verso */
 .magneticStrip {
   background: #222;
   width: 100%;
@@ -196,7 +186,6 @@
   font-size: 1.1rem;
 }
 
-/* Form */
 .formGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;

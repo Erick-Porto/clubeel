@@ -10,7 +10,6 @@ export const useIsMobile = () => {
 
     useEffect(() => {
         const checkScreenSize = () => {
-            // Verifica se a largura é menor ou igual a 1024px
             setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
         };
 

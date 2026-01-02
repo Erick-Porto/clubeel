@@ -14,8 +14,8 @@ interface CarouselProps{
 export default function Carousel({height, controllers}: CarouselProps) {
   const [files, setFiles] = useState<string[]>([]);
   const [activeItem, setActiveItem] = useState(0);
-  const [isLoading, setIsLoading] = useState(true); // 1. Adicionar estado de carregamento
-
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
     async function fetchFiles() {
       try {
@@ -27,16 +27,15 @@ export default function Carousel({height, controllers}: CarouselProps) {
         setFiles(data);
       } catch (error) {
         toast.error("Erro ao buscar imagens do carrossel: " + (error instanceof Error ? error.message : String(error)));
-        setFiles([]); // Garante que a lista esteja vazia em caso de erro
+        setFiles([]);
       } finally {
-        setIsLoading(false); // Finaliza o carregamento, com sucesso ou erro
+        setIsLoading(false);
       }
     }
     fetchFiles();
   }, []);
 
   useEffect(() => {
-    // 2. Garante que o intervalo só seja criado se houver imagens
     if (files.length === 0) {
       return;
     }
@@ -46,7 +45,7 @@ export default function Carousel({height, controllers}: CarouselProps) {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [files]); // A dependência agora é o array de 'files'
+  }, [files]);
 
   const handlePrevClick = () => {
     if (files.length === 0) return;
@@ -58,7 +57,6 @@ export default function Carousel({height, controllers}: CarouselProps) {
     setActiveItem((prevActiveItem) => (prevActiveItem + 1) % files.length);
   };
 
-  // 3. Renderiza um estado de carregamento ou mensagem de erro
   if (isLoading) {
     return <div className={styles.carousel} style={{ height: `${height}vh`, backgroundColor: '#f0f0f0' }}><span className={styles.loadingText}>Carregando...</span></div>;
   }

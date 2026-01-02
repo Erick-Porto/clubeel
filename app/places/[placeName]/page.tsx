@@ -14,8 +14,6 @@ import { LoadingScreen } from "@/components/loading";
 import TutorialOverlay, { TutorialStep } from "@/app/components/tutorial-overlay";
 import { toast } from "react-toastify";
 
-// --- INTERFACES ---
-
 interface Rule {
     type: 'include' | 'exclude';
     start_date: string | null;
@@ -40,37 +38,30 @@ interface Group {
     image_horizontal: string;
 }
 
-// --- FUNÇÃO AUXILIAR PARA CALCULAR DIFERENÇA DE DIAS ---
 const getDaysDifference = (date1: Date, date2: Date) => {
     const oneDay = 24 * 60 * 60 * 1000;
-    // Normaliza para meia-noite para evitar erros de horas
     const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
     const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
     return Math.round((d1.getTime() - d2.getTime()) / oneDay);
 }
 
-// --- LÓGICA DE DISPONIBILIDADE ---
 const isPlaceAvailableOnDate = (place: Place, selectedDate: Date): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Por padrão, a quadra está FECHADA até que uma regra diga o contrário
     if (!place.schedule_rules || place.schedule_rules.length === 0) return false;
 
-    let isAllowed = false; // Começa fechado
-    let isBlocked = false; // Bloqueio explícito
+    let isAllowed = false;
+    let isBlocked = false;
 
     const selectedWeekday = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
     const diffDays = getDaysDifference(selectedDate, today);
 
-    // Passado é sempre bloqueado
     if (diffDays < 0) return false;
 
     for (const rule of place.schedule_rules) {
-        // Ignora regras inativas
         if (rule.status_id !== null && Number(rule.status_id) !== 1) continue;
 
-        // 1. Validação de Intervalo de Datas (Start/End)
         const ruleStartDate = rule.start_date ? new Date(rule.start_date+ "T00:00:00") : null;
         const ruleEndDate = rule.end_date ? new Date(rule.end_date+ "T23:59:59") : null;
         
@@ -81,57 +72,44 @@ const isPlaceAvailableOnDate = (place: Place, selectedDate: Date): boolean => {
             (!ruleStartDate || selectedDate >= ruleStartDate) &&
             (!ruleEndDate || selectedDate <= ruleEndDate);
 
-        // Se a data não bate com a vigência desta regra, pula para a próxima regra
         if (!isDateInRange) continue; 
 
-        // 2. Regras de Bloqueio (EXCLUDE)
         if (rule.type === 'exclude') {
             if(rule.start_time || rule.end_time) {
-                // Regras com horário específico não são tratadas aqui
                 continue;
             }
-            // Se não tiver dias específicos ou se o dia bater, bloqueia
             if (!rule.weekdays || rule.weekdays.length === 0) {
                 isBlocked = true;
             } else {
-                // CORREÇÃO: Tipagem segura para map
                 const ruleDays = rule.weekdays.map((d) => (typeof d === 'string' ? d : d.name).toLowerCase());
                 if (ruleDays.includes(selectedWeekday)) 
                     isBlocked = true;
             }
         }
         
-        // 3. Regras de Permissão (INCLUDE)
         else if (rule.type === 'include') {
             let ruleIsValid = true;
 
-            // A. Verifica Dia da Semana
             if (rule.weekdays && rule.weekdays.length > 0) {
-                // CORREÇÃO: Tipagem segura para map
                 const ruleDays = rule.weekdays.map((d) => (typeof d === 'string' ? d : d.name).toLowerCase());
                 if (!ruleDays.includes(selectedWeekday)) 
                     ruleIsValid = false;
             }
 
-            // B. Verifica Antecedência MÁXIMA (Não pode ser muito longe)
             if (rule.maximum_antecedence !== null && rule.maximum_antecedence >= 0) {
                 if (diffDays > rule.maximum_antecedence)
                     ruleIsValid = false;
             }
 
-            // C. Verifica Antecedência MÍNIMA (Não pode ser muito perto)
             if (rule.minimum_antecedence !== null && rule.minimum_antecedence >= 0) {
                 if (diffDays < rule.minimum_antecedence) 
                     ruleIsValid = false;
             }
 
-            // Se passou por todas as checagens DESTA regra, libera o dia
             if (ruleIsValid)
                 isAllowed = true;
         }
     }
-
-    // O dia está disponível se: Foi permitido por alguma regra E NÃO foi bloqueado por nenhuma
     return isAllowed && !isBlocked;
 };
 
@@ -163,17 +141,13 @@ const fetchPlaces = useCallback(async () => {
 
             const response = await API_CONSUME("GET", `places/${placeId}`, {}, null);
 
-            // 1. Validação de Sucesso (Novo Padrão)
             if (!response.ok || !response.data) {
                 toast.error("Erro ao buscar locais: " + (response.message || "Erro desconhecido"));
-                // Opcional: toast.error("Não foi possível carregar as quadras.");
                 return;
             }
 
-            // 2. Acesso aos dados via response.data
             const apiData = response.data;
             
-            // Agora acessamos .places e .group dentro de apiData
             const placesArray: Place[] = Object.values(apiData.places || {});
             
             setGroup(apiData.group);
@@ -211,18 +185,8 @@ const fetchPlaces = useCallback(async () => {
         return () => clearInterval(interval);
     }, [fetchPlaces]);
 
-    // Gera a View SEMPRE centrada na data selecionada
     useEffect(() => {
         const newWeek: Date[] = [];
-        // Gera 21 dias (3 blocos de 7): 
-        // -10 a -4 (Passado/Prev)
-        // -3 a +3 (Visível/Center) -> selecionada é o índice 0 deste loop relativo
-        // +4 a +10 (Futuro/Next)
-        
-        // O CSS mostra o "meio" (-33.33%), que corresponde aos índices 7 a 13 do array de 21 itens.
-        // Se o loop vai de -10 a +10, o índice 10 é o zero (selectedDate).
-        // Visualmente o centro da tela será a selectedDate.
-        
         for (let i = -10; i <= 10; i++) {
             const d = new Date(selectedDate);
             d.setDate(selectedDate.getDate() + i);
@@ -237,28 +201,19 @@ const fetchPlaces = useCallback(async () => {
         const today = new Date();
         const diff = getDaysDifference(selectedDate, today);
 
-        // Validações antes de animar
         if (direction === 'prev') {
-             // Se voltar 7 dias cair no passado (antes de hoje), bloqueia
-             // Ex: Estou no dia +3. Voltar 7 vai para -4. Bloqueia.
-             // Mas se estou no dia +8. Voltar 7 vai para +1. Permite.
-             // A lógica simples é: Se a data destino < hoje, não vai (ou vai p/ hoje).
-             // Aqui vamos bloquear se o destino for inválido.
-             if (diff < 7) { // Se estou a menos de 7 dias de hoje, voltar 7 cairia no passado.
-                 // Opcional: Poderia ir para "Hoje" em vez de travar.
-                 return;
-             }
+            if (diff < 7) {
+                return;
+            }
         }
 
         if (direction === 'next') {
-            // Se avançar 7 dias ultrapassar a antecedência
             if (diff + 7 > maxAntecedence) return;
         }
 
         setIsAnimating(direction);
 
         setTimeout(() => {
-            // Atualiza a data selecionada (o que regenera a view centrada nela)
             const newDate = new Date(selectedDate);
             newDate.setDate(selectedDate.getDate() + (direction === 'next' ? 7 : -7));
             setSelectedDate(newDate);
@@ -271,13 +226,9 @@ const fetchPlaces = useCallback(async () => {
         return <LoadingScreen />;
     }
 
-    // Cálculos para habilitar/desabilitar setas
     const today = new Date();
     const daysFromToday = getDaysDifference(selectedDate, today);
     
-    // Pode voltar se estiver a pelo menos 7 dias no futuro (para não cair no passado)
-    // Ou ajustável: Pode voltar se não for hoje? (Se for hoje, disable)
-    // No modelo de pulo de 7 dias:
     const canGoPrev = daysFromToday >= 7; 
     const canGoNext = (daysFromToday + 7) <= maxAntecedence;
 
@@ -305,7 +256,7 @@ const fetchPlaces = useCallback(async () => {
             offset: -90,
             mOffset: -160,
             targetClickableItem: 'schedule-button-0',
-            waitForAction: true // O botão "Próximo" some, forçando o usuário a clicar no mapa/link real
+            waitForAction: true
         }
     ]
 
@@ -337,8 +288,6 @@ const fetchPlaces = useCallback(async () => {
                         <ul className={`${style.dateSelection} ${isAnimating ? style[isAnimating] : ''}`}>
                             {weekView.map((item, index) => {
                                 const isSelected = selectedDate.toDateString() === item.toDateString();
-                                
-                                // Bloqueio Individual: Passado ou Futuro > Antecedência
                                 const itemDiff = getDaysDifference(item, today);
                                 const isDisabled = itemDiff < 0 || itemDiff > maxAntecedence;
 

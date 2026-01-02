@@ -44,8 +44,6 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
     const updateSpotlight = useCallback(() => {
         const step = steps[currentStep];
         
-        // FIX: Removemos os retornos antecipados (return) para permitir
-        // que ambos os retângulos sejam calculados se necessário.
         let foundTarget = false;
 
         if (step?.targetId) {
@@ -69,7 +67,7 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
             }
         }
         
-        if (!foundTarget) setTargetRect(null); // Limpa se não achou targetId
+        if (!foundTarget) setTargetRect(null);
 
         if (step?.targetClickableItem) {
             const ce = document.getElementById(step.targetClickableItem);
@@ -193,8 +191,6 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
         };
     }
 
-    // Lógica segura para saber onde renderizar a mãozinha
-    // Se tiver targetClickableRect, a mão vai nele. Se não, vai no targetRect.
     const handRect = targetClickableRect || targetRect;
 
     return createPortal(
@@ -258,7 +254,6 @@ export default function TutorialOverlay({ steps, pageKey, onComplete}: TutorialO
                 </div>
             </div>
 
-            {/* FIX: Renderização Condicional Segura */}
             {isWaitingAction && handRect && (
                 <div
                     className={styles.gestureIcon}

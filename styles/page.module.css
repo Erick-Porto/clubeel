@@ -1,22 +1,15 @@
 .page {
   --header-height: 80px;
   --page-bg: var(--background);
-  
-  /* Padrão para TODAS as páginas: Ocupa a tela, mas permite scroll */
   width: 100vw;
   min-height: 100vh; 
-  
   display: flex;
   flex-direction: column;
   background-color: var(--page-bg);
-  
-  /* Garante espaço para o Header fixo em todas as páginas */
   padding-top: var(--header-height);
-  
   overflow-x: hidden;
 }
 
-/* Container interno da Home */
 .main {
   width: 100%;
   display: flex;
@@ -24,7 +17,6 @@
   flex: 1; 
 }
 
-/* Estilos de Seção da Home */
 .Section {
   width: 100%;
   min-height: 100vh;
@@ -40,7 +32,6 @@
 
 .contentWrapper {
   width: 100%;
-  /* max-width: 1200px; */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -75,24 +66,16 @@
   margin-top: auto;
 }
 
-/* ========================================== */
-/* MOBILE / TABLET (<= 1024px)                */
-/* ========================================== */
 @media (max-width: 1024px) {
-  
-  /* --- REGRAS ESPECÍFICAS DA HOME PAGE (App Mode) --- */
   .homePage {
-    padding-top: 0; /* Home controla seu próprio padding */
-    height: 100dvh; /* Trava altura */
-    overflow: hidden; /* Trava scroll da janela */
+    padding-top: 0;
+    height: 100dvh;
+    overflow: hidden;
     position: fixed;
     top: 0;
     left: 0;
   }
 
-  /* Se não for homePage, .page mantém o comportamento padrão (scroll vertical + padding) */
-
-  /* O container .main DENTRO da homePage vira o slider horizontal */
   .homePage .main {
     flex-direction: row;
     height: 100%;
@@ -111,7 +94,6 @@
     width: 100vw;
     height: 100%;
     justify-content: flex-start; 
-    /* Padding ajustado para Home (considerando Header e Navbar) */
     padding: 90px 20px 120px; 
     overflow-y: auto; 
     scroll-snap-align: center;

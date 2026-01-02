@@ -86,9 +86,7 @@ export default function Header({
             {!isMobile && (
                 <nav className={styles.desktopNav}>
                     <ul className={styles.navigateOptions}>
-                        
-                        {/* CORREÇÃO AQUI: '&& profileOptions' garante que não seja undefined */}
-                        {options === null && profileOptions && (
+                                                {options === null && profileOptions && (
                             profileOptions.map((opt, index) => (
                                 <li key={index} className={opt.active ? styles.activePage : ''}>
                                     <button 
@@ -101,8 +99,6 @@ export default function Header({
                                 </li>
                             ))
                         )}
-
-                        {/* Menu Principal */}
                         {options && options.length > 0 && (
                             onlyScroll ? (
                                 options.map((item, index) => {

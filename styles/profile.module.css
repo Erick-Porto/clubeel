@@ -1,27 +1,19 @@
-/* --- LAYOUT PRINCIPAL --- */
 .profilePageContainer {
-    background-color: #f4f6f8; /* Fundo cinza bem claro para destacar os cards */
+    background-color: #f4f6f8;
     min-height: 100vh;
-    /* padding-bottom: 60px; */
 }
 
 .profileContentWrapper {
     max-width: 1200px;
-    
-    /* CORREÇÃO: Remove margem negativa que causava sobreposição errada */
     margin: 0 auto; 
-    
-    /* Espaço para o avatar que está "vazando" do banner */
     padding: 60px 20px 0 20px; 
-    
     position: relative;
-    z-index: 1; /* Menor que o Banner (20) */
+    z-index: 1;
     display: grid;
     grid-template-columns: 280px 1fr;
     gap: 30px;
 }
 
-/* --- SIDEBAR DE NAVEGAÇÃO --- */
 .profileSidebar {
     background: white;
     border-radius: 16px;
@@ -65,7 +57,6 @@
     box-shadow: 0 4px 12px rgba(115, 0, 1, 0.2);
 }
 
-/* --- ÁREA DE CONTEÚDO (DIREITA) --- */
 .contentCard {
     background: white;
     border-radius: 16px;
@@ -84,7 +75,6 @@
     font-weight: 700;
 }
 
-/* --- ESTILOS DOS FORMULÁRIOS --- */
 .formContainer {
     width: 100%;
 }
@@ -134,7 +124,6 @@
     cursor: not-allowed;
 }
 
-/* Botões */
 .actionButtons {
     grid-column: 1 / -1;
     display: flex;
@@ -180,7 +169,6 @@
     background-color: #fff5f5;
 }
 
-/* --- REGRAS DE SENHA (BADGES) --- */
 .passwordRulesContainer {
     background-color: #f9f9f9;
     padding: 15px;
@@ -215,7 +203,6 @@
     font-weight: 600;
 }
 
-/* --- MODAL --- */
 .modalOverlay {
     position: fixed;
     inset: 0;
@@ -261,21 +248,19 @@
     to { opacity: 1; }
 }
 
-/* --- RESPONSIVIDADE --- */
 @media (max-width: 900px) {
     .profileContentWrapper {
         grid-template-columns: 1fr;
         margin-top: 0;
         gap: 20px;
-        /* Mais espaço no mobile pois o layout é vertical */
         padding-top: 90px; 
     }
 
     .profileSidebar {
         position: static;
         padding: 10px;
-        border-radius: 0 0 16px 16px; /* Arredonda só embaixo se estiver colado no banner */
-        margin-top: -20px; /* Puxa um pouco para cima do banner */
+        border-radius: 0 0 16px 16px;
+        margin-top: -20px;
     }
 
     .profileMenu {
@@ -293,7 +278,7 @@
     }
 
     .formGrid {
-        grid-template-columns: 1fr; /* Inputs empilhados */
+        grid-template-columns: 1fr;
     }
 
     .contentCard {

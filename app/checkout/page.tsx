@@ -22,17 +22,15 @@ const formatPrice = (p: number | string): string => {
     return n.toFixed(2);
 };
 
-// Componente de Mensagem de Status Atualizado (Unificado)
 const PaymentStatusMessage: React.FC<{ type: 'success' | 'error' | 'expired' | 'refunded_conflict'; message: string; onRetry: () => void; }> = ({ type, message, onRetry }) => {
     const router = useRouter();
     const [timeLeft, setTimeLeft] = useState(15);
 
-    // Define o destino e a cor baseada no tipo
 const config = {
         success: {
             destination: '/profile?tab=schedules',
             buttonText: 'Ver meus agendamentos',
-            colorClass: style.statusSuccess, // Usa animação pulseIcon
+            colorClass: style.statusSuccess,
             icon: (
                 <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             ),
@@ -41,7 +39,7 @@ const config = {
         expired: {
             destination: '/',
             buttonText: 'Voltar ao Início',
-            colorClass: style.statusExpired, // Usa animação fadePulse (amarelo)
+            colorClass: style.statusExpired,
             icon: (
                 <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             ),
@@ -50,7 +48,7 @@ const config = {
         refunded_conflict: {
             destination: '/',
             buttonText: 'Voltar ao Início',
-            colorClass: style.statusError, // Usa animação shakeIcon (vermelho - erro crítico)
+            colorClass: style.statusError,
             icon: (
                 <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
             ),
@@ -59,7 +57,7 @@ const config = {
         error: {
             destination: '/checkout',
             buttonText: 'Tentar Novamente',
-            colorClass: style.statusError, // Usa animação shakeIcon (vermelho)
+            colorClass: style.statusError,
             icon: (
                 <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
             ),
@@ -74,9 +72,8 @@ const config = {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    // Ação ao finalizar o timer
                     if (type === 'error') {
-                        onRetry(); // Reseta o estado local para tentar de novo
+                        onRetry();
                     } else {
                         router.push(currentConfig.destination);
                     }
@@ -124,9 +121,7 @@ const CheckoutComponent = () => {
     const searchParams = useSearchParams();
     const router = useRouter();
     
-    // Estados
     const [validatingPayment, setValidatingPayment] = useState(false);
-    // Adicionei 'refunded_conflict' aos tipos possíveis
     const [paymentResult, setPaymentResult] = useState<'success' | 'error' | 'expired' | 'refunded_conflict' | null>(null);
     const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
@@ -144,7 +139,7 @@ const CheckoutComponent = () => {
         const isSuccess = status === 'success' || status === 'approved';
         const isFailure = status === 'failure' || status === 'rejected' || status === 'null';
         const isExpired = status === 'expired';
-        const isConflict = status === 'refunded_conflict' || status === 'conflict_refunded'; // Aceita ambos
+        const isConflict = status === 'refunded_conflict' || status === 'conflict_refunded';
 
         if (isSuccess || isFailure || isExpired || isConflict) {
             setValidatingPayment(true);
@@ -178,7 +173,7 @@ const CheckoutComponent = () => {
     if (validatingPayment) return <LoadingScreen />;
 
     const handleRetryOrExit = () => {
-        setPaymentResult(null); // Reseta para exibir o checkout novamente
+        setPaymentResult(null);
     };
 
     const TUTORIAL_STEPS: TutorialStep[] = [
@@ -213,7 +208,6 @@ const CheckoutComponent = () => {
         }
     };
 
-    // Gera a mensagem correta baseada no status
     const getStatusMessage = () => {
         switch(paymentResult) {
             case 'success': return "Pagamento confirmado. Sua quadra está reservada!";

@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 import API_CONSUME from "@/services/api-consume";
 import CryptoJS from "crypto-js";
 
-// --- TIPOS ---
 interface FormData {
     name: string;
     email: string;
@@ -22,7 +21,6 @@ interface ModalProps {
     onConfirm: (password: string) => Promise<void>;
 }
 
-// --- MODAL ---
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm }) => {
     const [password, setPassword] = useState("");
     const [isConfirming, setIsConfirming] = useState(false);
@@ -84,22 +82,15 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm }) => {
     );
 };
 
-// --- DADOS PESSOAIS ---
 export const ProfileForm = () => {
     const { data: session, update: updateSession } = useSession();
     const [isEditable, setIsEditable] = useState(false);
     const [modalState, setModalState] = useState(false);
     
-    // Estado local controla o que é exibido
     const [formData, setFormData] = useState<FormData>({
         name: "", email: "", telephone: "", cpf: "", title: ""
     });
 
-    // CORREÇÃO CRÍTICA:
-    // Removemos 'session' das dependências e deixamos apenas 'session?.user?.id'.
-    // Isso faz com que ele carregue os dados APENAS ao abrir a página.
-    // Atualizações subsequentes (Salvar) não vão disparar esse efeito, evitando
-    // que os dados antigos da sessão sobrescrevam o que você acabou de editar.
     useEffect(() => {
         if (session?.user) {
             setFormData({
@@ -110,8 +101,7 @@ export const ProfileForm = () => {
                 title: session.user.title || "",
             });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [session?.user?.id]); 
+    }, [session?.user]); 
 
     const enableEdit = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -130,7 +120,6 @@ export const ProfileForm = () => {
             const cpfClean = formData.cpf.replace(/\D/g, ''); 
             const encryptedPassword = CryptoJS.SHA256(currentPassword).toString();
 
-            // 1. Valida senha
             const loginResponse = await API_CONSUME("POST", "login", {}, {
                 login: cpfClean,
                 password: encryptedPassword
@@ -140,7 +129,6 @@ export const ProfileForm = () => {
                 throw new Error("Senha incorreta");
             }
 
-            // 2. Atualiza Dados na API
             const updateResponse = await API_CONSUME("PUT", `member/update`, {}, {
                 cpf: cpfClean,
                 email: formData.email,
@@ -153,15 +141,10 @@ export const ProfileForm = () => {
 
             toast.success("Perfil atualizado com sucesso!");
             
-            // 3. Atualiza a sessão em background (sem esperar que ela atualize a tela)
             await updateSession({
                 ...session,
                 user: { ...session.user, email: formData.email, telephone: formData.telephone }
             });
-
-            // 4. Fechamos o modal e o modo de edição.
-            // Como o useEffect não está mais "ouvindo" qualquer mudança na sessão,
-            // o 'formData' atual (que já tem os dados novos) permanecerá na tela.
             setModalState(false);
             setIsEditable(false);
 
@@ -170,12 +153,9 @@ export const ProfileForm = () => {
         }
     };
 
-    // Função de Cancelar:
-    // Como o useEffect não roda o tempo todo, precisamos resetar manualmente aqui.
     const handleCancelEdit = () => {
         setIsEditable(false);
         if (session?.user) {
-            // Reverte para o que está na sessão (dados originais/salvos anteriormente)
             setFormData({
                 name: session.user.name || "",
                 email: session.user.email || "",
@@ -258,7 +238,6 @@ export const ProfileForm = () => {
     );
 }
 
-// --- SENHA ---
 export const PasswordForm = () => {
     const { data: session } = useSession();
     const [modalState, setModalState] = useState(false);

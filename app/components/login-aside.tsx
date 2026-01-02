@@ -35,7 +35,6 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
         setAuthInterface(useInterface);
     }, [useInterface, searchParams]);
 
-    // --- Funções de Validação (Mantidas) ---
     function verifyCode({ code }: { code: string }) {
         let value = code.toUpperCase().replace(/[^0-9FCNESC]/g, '');
         value = value.slice(0, 8);
@@ -74,7 +73,6 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
             const documentValue = cpf.replace(/\D/g, '');
             const encryptedPassword = CryptoJS.SHA256(password).toString();
             
-            // CORREÇÃO: Login direto sem CSRF
             const result = await signIn('credentials', {
                 redirect: false,
                 login: documentValue,
@@ -87,7 +85,6 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
             }
 
             if (result?.error) {
-                // Se der erro 419 aqui, é configuração do NextAuth, mas deve sumir com a mudança do api-consume
                 toast.error("Falha ao entrar: " + result.error);
             } else if (result?.ok) {
                 toast.success("Bem-vindo de volta!");
@@ -121,20 +118,17 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 password: encryptedPassword,
             });
 
-            // CORREÇÃO AQUI: Usar !response.ok
             if (!response.ok) {
                 if (response.status >= 500) {
                     setIsMaintenance(true);
                 } else {
-                    // response.message já vem populado pelo API_CONSUME novo
                     toast.error(response.message || "Falha ao registrar.");
                 }
-                return; // Impede que o código continue para o login
+                return;
             }
 
             toast.success("Cadastro realizado! Entrando...");
             
-            // Login automático...
             const loginResult = await signIn('credentials', {
                 redirect: false,
                 login: documentValue,

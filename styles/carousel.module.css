@@ -1,11 +1,9 @@
-
-/* O Carousel agora ocupa o espaço restante (flex: 1) */
 .carousel {
   position: relative;
   flex: 1; 
   height: 100%;
   overflow: hidden;
-  background-color: #000; /* Fundo preto para loading */
+  background-color: #000;
 }
 
 .carouselItem {
@@ -17,18 +15,17 @@
   background-size: cover;
   background-position: center;
   opacity: 0;
-  transition: opacity 1.5s ease-in-out, transform 6s ease; /* Zoom suave */
+  transition: opacity 1.5s ease-in-out, transform 6s ease;
   transform: scale(1);
   z-index: 1;
 }
 
 .carouselItem.active {
   opacity: 1;
-  transform: scale(1.05); /* Leve zoom in quando ativo */
+  transform: scale(1.05);
   z-index: 2;
 }
 
-/* Overlay Gradiente Moderno */
 .carousel::after {
   content: '';
   position: absolute;
@@ -41,7 +38,6 @@
   pointer-events: none;
 }
 
-/* Controles */
 .carouselButtons {
   position: absolute;
   bottom: 40px;
@@ -74,12 +70,10 @@
   transform: scale(1.1);
 }
 
-/* Logo flutuante (opcional no desktop novo, mas mantido para mobile) */
 .coverLogo {
   display: none; 
 }
 
-/* MOBILE */
 @media (max-width: 900px) {
   .carousel {
     width: 100%;

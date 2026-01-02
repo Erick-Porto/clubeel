@@ -17,15 +17,15 @@ import { toast } from "react-toastify";
 
 interface Point { x: number; y: number; }
 interface Place {
-    id: number; // FIX: Changed from string to number to match SportiveSquare
+    id: number;
     name: string; icon: string; image_vertical: string;
     image_horizontal: string; vertices: Point[]; category: string;
 }
 
 interface ApiPlaceData {
-    id?: string | number; // Explicitly define id to avoid 'any' casting
+    id?: string | number;
     vertices: string | number[][];
-    [key: string]: unknown; // Permite outras propriedades
+    [key: string]: unknown;
 }
 
 const NAV_OPTIONS: HeaderOption[] = [
@@ -34,7 +34,6 @@ const NAV_OPTIONS: HeaderOption[] = [
     // { text: "Social", id: "sociais" }
 ];
 
-// 2. Configuração dos Passos
 const TUTORIAL_STEPS: TutorialStep[] = [
     {
         targetId: 'map-section',
@@ -49,16 +48,16 @@ const TUTORIAL_STEPS: TutorialStep[] = [
         description: ( <p> Ícones piscantes indicam quadras disponíveis. Clique em um para ver o local.</p> ),
         offset: -50,
         mOffset: -30,
-        waitForAction: true // O botão "Próximo" some, forçando o usuário a clicar no mapa/link real
+        waitForAction: true
     },
     {
-        targetId: 'popup-places', // Continua no mapa
+        targetId: 'popup-places',
         title: 'Inicie a Reserva',
         description: 'Clique em "Ver Detalhes e Reservar" no popup da quadra para avançar para a próxima etapa.',
         offset: 150,
         mOffset: 5,
         targetClickableItem: 'reserve-button',
-        waitForAction: true // O botão "Próximo" some, forçando o usuário a clicar no mapa/link real
+        waitForAction: true
     }
 ];
 
@@ -76,24 +75,19 @@ const Home = () => {
     const sportsRef = useRef<HTMLDivElement>(null);
     // const socialRef = useRef<HTMLDivElement>(null);
 
-    // Fetch Data (Mantido)
 useEffect(() => {
         const fetchPlaces = async () => {
             if (status !== 'authenticated' || !session?.accessToken) return;
             
-            // O try/catch aqui ainda é útil para erros de transformação de dados (JSON.parse),
-            // mas não é estritamente necessário para o API_CONSUME (que já trata rede).
             try {
                 const response = await API_CONSUME("GET", "places/group");
 
                 // 1. Verificação de segurança (Novo padrão)
                 if (!response.ok || !response.data) {
-                    console.log(response)
                     toast.error("Erro ao buscar locais: " + response.message);
                     return;
                 }
 
-                // 2. Acessamos response.data explicitamente
                 const rawPlacesArray = Object.values(response.data) as ApiPlaceData[];
                 
                 const transformedPlaces = rawPlacesArray.map((apiPlace): Place => {
@@ -121,19 +115,6 @@ useEffect(() => {
         fetchPlaces();
     }, [session, status]);
 
-    // ... (Efeitos de scroll e navegação mantidos iguais) ...
-    
-    // Foco Inicial Mobile
-    // useEffect(() => {
-    //     if (isMobile && mainContainerRef.current && places.length > 0) {
-    //          setTimeout(() => {
-    //             const width = window.innerWidth;
-    //             mainContainerRef.current?.scrollTo({ left: width, behavior: 'auto' });
-    //         }, 200);
-    //     }
-    // }, [isMobile, places.length]);
-
-    // Scroll Spy
     useEffect(() => {
         const container = isMobile ? mainContainerRef.current : pageContainerRef.current;
         const target = isMobile ? mainContainerRef.current : null; 
@@ -202,12 +183,10 @@ useEffect(() => {
 
             <div className={style.main} ref={mainContainerRef}>
                 
-                {/* 4. Adicionado ID 'map-section' para o tutorial encontrar */}
                 <section className={`${style.Section} ${style.sectionMap}`} ref={mapRef} id="mapa">
                     <div id="map-section" style={{width: '100%', height: '100%', display:'flex', flexDirection:'column', alignItems:'center'}}>
                          {!isMobile && <h1 className={style.sectionTitle}>Mapa do Clube</h1>}
                         <div className={style.contentWrapper}>
-                            {/* FIX: Convert ID to string for MapBanner which expects Hotspot[] (id: string) */}
                             <MapBanner places={places.filter(p => p.vertices && p.vertices.length > 0).map(p => ({ ...p, id: String(p.id) }))} />
                         </div>
                     </div>

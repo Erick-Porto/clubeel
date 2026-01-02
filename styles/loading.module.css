@@ -13,7 +13,6 @@
 }
 
 .loadingLogo {
-    /* O controle de tamanho agora é feito via Next Image width/height */
     margin-bottom: 40px;
     animation: fadePulse 2s infinite ease-in-out;
 }
@@ -26,12 +25,11 @@
     height: 100%;
 }
 
-/* Spinner Moderno (Anel Fino) */
 .loading {
     width: 48px;
     height: 48px;
-    border: 4px solid rgba(115, 0, 1, 0.2); /* Cor Grena muito clara */
-    border-left-color: var(--grena); /* Cor Grena sólida */
+    border: 4px solid rgba(115, 0, 1, 0.2);
+    border-left-color: var(--grena);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }

@@ -11,16 +11,13 @@ interface BannerProps {
 }
 
 const Banner = ({ lastScheduleImage }: BannerProps) => {
-    // 1. Hooks movidos para DENTRO do componente
     const { data: session } = useSession();
     const [avatarImage, setAvatarImage] = useState('/images/default-avatar.png');
 
-    // Atalho para facilitar o uso no JSX
     const user = session?.user;
 
     useEffect(() => {
         const fetchAvatarImage = async () => {
-            // Verificação de segurança dentro da função async
             if (!session?.user?.id || !session?.accessToken) return;
 
             try {
@@ -55,17 +52,14 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
         if (session?.user?.id) {
             fetchAvatarImage();
         }
-    // 2. Dependência adicionada conforme aviso do linter
     }, [session?.user?.id, session?.accessToken]);
 
-    // Se não tiver usuário, não renderiza nada (proteção)
     if (!user) return null;
 
     const coverImage = lastScheduleImage || '/images/default-cover.jpg'; 
 
     return(
         <div className={style.bannerContainer}>
-            {/* Capa de Fundo */}
             <div className={style.bannerImageWrapper}>
                 <Image 
                     src={coverImage} 
@@ -78,10 +72,7 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
                 <div className={style.bannerOverlay}></div>
             </div>
 
-            {/* Conteúdo do Perfil */}
             <div className={style.profileContent}>
-                
-                {/* Avatar + Botão de Edição */}
                 <div className={style.avatarWrapper}>
                     <Image 
                         src={avatarImage}
@@ -93,12 +84,8 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
                     />
                 </div>
 
-                {/* Informações de Texto */}
                 <div className={style.userInfo}>
                     <h1 className={style.userName}>{user.name}</h1>
-                    
-                    {/* O TypeScript pode reclamar de 'title' se não estiver na tipagem do NextAuth, 
-                        mas mantive conforme seu código original */}
                     {user.title && (
                         <div className={style.userTitle}>
                             <FontAwesomeIcon icon={faIdBadge} />

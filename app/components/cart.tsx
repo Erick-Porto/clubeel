@@ -74,7 +74,6 @@ const Cart = () => {
                     const isoDate = String(item.start_schedule).split(' ')[0];
                     const date = isoDate ? isoDate.split('-').reverse().join('/') : '--/--';
                     
-                    // CORREÇÃO: Garantir number para toFixed
                     const numericPrice = item.price || 0;
 
                     return(

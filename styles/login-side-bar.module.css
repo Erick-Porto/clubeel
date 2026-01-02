@@ -139,7 +139,6 @@
     text-decoration: underline;
 }
 
-/* --- DATE PICKER CUSTOMIZATION --- */
 .sidebarBody input[type="date"] {
     appearance: none;
     -webkit-appearance: none;
@@ -175,9 +174,6 @@
     box-shadow: 0 0 0 3px rgba(160, 0, 1, 0.1);
 }
 
-/* =============================================== */
-/* TELA DE MANUTENÇÃO (NOVO)                       */
-/* =============================================== */
 .maintenanceContainer {
     display: flex;
     flex-direction: column;

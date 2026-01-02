@@ -14,7 +14,7 @@ export interface IApiResponse<T = any> {
 async function API_CONSUME<T = any>(
     method: string, 
     endpoint: string, 
-    headers: Record<string, string> = {}, // Tipagem explícita aqui ajuda
+    headers: Record<string, string> = {},
     body: any = null
 ): Promise<IApiResponse<T>> {
     const baseURL = IS_SERVER ? `${INTERNAL_API}/api` : PROXY_API;

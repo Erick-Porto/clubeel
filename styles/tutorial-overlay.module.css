@@ -4,26 +4,25 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 10000; /* Acima de tudo */
-  pointer-events: none; /* Deixa clicar no highlight se necessário */
+  z-index: 10000;
+  pointer-events: none;
   transition: opacity 0.3s ease;
 }
 
 .mask {
   width: 100%;
   height: 100%;
-  fill: rgba(0, 0, 0, 0.75); /* Fundo escuro */
-  transition: all 0.3s ease-out; /* Transição mais rápida e suave */
+  fill: rgba(0, 0, 0, 0.75);
+  transition: all 0.3s ease-out;
 }
 
-/* Animação de Pulso ao redor do destaque */
 .pulseRing {
   position: absolute;
-  border-radius: 12px; /* Mesmo arredondamento do destaque */
+  border-radius: 12px;
   box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
   animation: pulse-white 2s infinite;
   pointer-events: none;
-  z-index: 10001; /* Acima da máscara, abaixo do card */
+  z-index: 10001;
 }
 
 @keyframes pulse-white {
@@ -41,7 +40,6 @@
   }
 }
 
-/* Card de Instrução */
 .card {
   position: absolute;
   background-color: white;
@@ -50,12 +48,10 @@
   box-shadow: 0 10px 40px rgba(0,0,0,0.3);
   width: 90%;
   max-width: 380px;
-  pointer-events: auto; /* Permite interagir com o card */
-  /* transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); Movimento fluido */
+  pointer-events: auto;
   animation: floatUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* Conteúdo do Card */
 .stepCounter {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -80,7 +76,6 @@
   margin-bottom: 20px;
 }
 
-/* Botões */
 .footer {
   display: flex;
   justify-content: space-between;
@@ -116,7 +111,6 @@
   background-color: #800000;
 }
 
-/* Ícones animados no texto */
 .iconWrapper {
   display: inline-flex;
   align-items: center;
@@ -130,13 +124,11 @@
   font-size: 0.9rem;
 }
 
-/* Animação de entrada */
 @keyframes floatUp {
   from { opacity: 0; transform: translate(-50%, -40%); }
   to { opacity: 1; transform: translate(-50%, -50%); }
 }
 
-/* Ícone de Gesto */
 .gestureIcon {
     position: absolute;
     color: white;
