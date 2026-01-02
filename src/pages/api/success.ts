@@ -8,16 +8,13 @@ const REDE_CLIENT_SECRET = process.env.INTERNAL_EREDE_SECRET_ID as string;
 const BASE_URL = process.env.INTERNAL_EREDE_API_URL as string;
 const AUTH_URL = process.env.INTERNAL_EREDE_AUTH_URL as string;
 
-// 1. Criamos uma interface local para tipar a resposta sem usar 'any'
 interface ApiErrorResponse {
     status?: number;
     message?: string;
     error?: string;
 }
 
-async function refundTransaction(tid: string, amount: number) {
-    console.log(`Iniciando estorno para TID: ${tid}`);
-    
+async function refundTransaction(tid: string, amount: number) {    
     const credentials = Buffer.from(`${REDE_CLIENT_ID}:${REDE_CLIENT_SECRET}`).toString('base64');
     const authRes = await fetch( AUTH_URL, {
         method: 'POST',
@@ -46,7 +43,6 @@ async function refundTransaction(tid: string, amount: number) {
         throw new Error("Falha no estorno automático");
     }
 
-    console.log("Estorno realizado com sucesso.");
     return await refundRes.json();
 }
 
@@ -95,16 +91,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
         };
 
-        console.log("Enviando confirmação para API Core:", JSON.stringify(updatePayload));
-
         const response = await API_CONSUME("POST", `schedule/payment`, {
             Session: `${session.accessToken}` 
         }, updatePayload);
 
-        console.log("Resposta da API Core:", response);
-
-        // 2. Usamos a interface criada (Type Casting Seguro) ao invés de 'any'
-        // 'unknown' é necessário como passo intermediário seguro
         const apiRes = response as unknown as ApiErrorResponse;
 
         const hasConflict = apiRes?.status === 409 || 
@@ -131,7 +121,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         if (currentTid) {
             try {
-                console.log("Tentando estorno de emergência...");
                 await refundTransaction(currentTid, currentAmount);
             } catch (_refundErr) { 
                 console.error("Falha no estorno de emergência.", _refundErr);
