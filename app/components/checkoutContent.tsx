@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import style from '@/styles/checkout.module.css'
-import { useSession } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { useCart, CartItem } from '@/context/CartContext'
 import Link from 'next/link';
 import { Loading } from './loading';
@@ -19,7 +19,7 @@ const CheckoutContent: React.FC<{total: number, formatPrice: (p: number) => stri
     const handleCancelSchedule = async (scheduleId: number) => {
         if (cancellingId || !session?.accessToken) {
             if (!session?.accessToken) toast.error("Sessão inválida.");
-            return;
+            return signOut({ callbackUrl: '/login' });
         }
         setCancellingId(scheduleId);
 

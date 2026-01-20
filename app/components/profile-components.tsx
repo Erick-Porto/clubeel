@@ -3,7 +3,7 @@ import style from "@/styles/profile.module.css";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faTimes, faSpinner, faLock } from "@fortawesome/free-solid-svg-icons";
-import { useSession } from "next-auth/react"; 
+import { signOut, useSession } from "next-auth/react"; 
 import API_CONSUME from "@/services/api-consume";
 import CryptoJS from "crypto-js";
 
@@ -114,7 +114,10 @@ export const ProfileForm = () => {
     };
 
     const handleUpdateProfile = async (currentPassword: string) => {
-        if (!session?.accessToken) throw new Error("Sessão inválida.");
+        if (!session?.accessToken) {
+            toast.error("Sessão inválida.");
+            return signOut({ callbackUrl: '/login' });
+        }
 
         try {
             const cpfClean = formData.cpf.replace(/\D/g, ''); 
@@ -263,7 +266,10 @@ export const PasswordForm = () => {
     };
 
 const handleUpdate = async (currentPassword: string) => {
-        if (!session?.accessToken) throw new Error("Sessão inválida.");
+        if (!session?.accessToken) {
+            toast.error("Sessão inválida.");
+            return signOut({ callbackUrl: '/login' });
+        }
         
         try {
             const cpfClean = (session?.user?.cpf || "").replace(/\D/g, '');

@@ -92,10 +92,11 @@
   .Section {
     min-width: 100vw;
     width: 100vw;
-    height: 100%;
+    box-sizing: border-box;
+    height: fit-content;
     justify-content: flex-start; 
     padding: 90px 20px 120px; 
-    overflow-y: auto; 
+    /* overflow-y: auto; */
     scroll-snap-align: center;
   }
 /* 

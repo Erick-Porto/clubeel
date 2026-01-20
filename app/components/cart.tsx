@@ -7,7 +7,7 @@ import { faTrashAlt, faCartShopping, faCalendarAlt, faClock } from '@fortawesome
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import { useCart, CartItem } from '@/context/CartContext';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useMemo } from 'react';
 import URIGen from '@/utils/uriGen';
 
@@ -19,7 +19,7 @@ const Cart = () => {
         
         if (!session?.accessToken) {
             toast.error("Sessão inválida. Por favor, faça login novamente.");
-            return;
+            return signOut({ callbackUrl: '/login' });
         }
         try {
             removeCartItem(scheduleId);

@@ -5,7 +5,7 @@ import styles from '@/styles/schedule.module.css';
 import BookingButton from '@/components/booking-button';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
 import API_CONSUME from '@/services/api-consume';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -48,7 +48,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const userId = Number(session?.user?.id);
 
     const [currentDate, setCurrentDate] = useState<string>(dateProp || new Date().toISOString().split('T')[0]);
-
+    const [cartTotal, setCartTotal] = useState<number>(0);
     useEffect(() => {
         if (dateProp) setCurrentDate(dateProp);
     }, [dateProp]);
@@ -60,6 +60,10 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate) return;
         try {
+            refreshCart();
+            cart.forEach(i =>{
+                setCartTotal(prev => prev + i.price);
+            })
             const response = await API_CONSUME("POST", "schedule/time-options", {}, {
                 date: currentDate,
                 place_id: placeId
@@ -88,7 +92,7 @@ const fetchData = useCallback(async () => {
 
             mappedContent.sort((a, b) => a.start.localeCompare(b.start));
             setLoadedContent(mappedContent);
-
+            
         } catch(error) {
             toast.error('Erro ao buscar horários: ' + (error instanceof Error ? error.message : String(error)));
         }
@@ -138,7 +142,10 @@ const fetchData = useCallback(async () => {
     };
 
 const handleReserve = async () => {
-        if (!session?.accessToken) return toast.error("Sessão inválida.");
+        if (!session?.accessToken) {
+            toast.error("Sessão inválida.");
+            return signOut({ callbackUrl: '/login' });
+        }
         if (selectedItems.length === 0) return toast.info("Selecione um horário.");
 
         const payload: ReservationPayload[] = selectedItems.map(item => {
@@ -294,7 +301,7 @@ const handleReserve = async () => {
                     <>
                         <div className={styles.mobileSummary}>
                             <span>Total:</span>
-                            <strong>R$ {(selectedItems.length * numericPrice).toFixed(2)}</strong>
+                            <strong>R$ {((selectedItems.length * numericPrice)+cartTotal).toFixed(2)}</strong>
                         </div>
                         <ActionButtons />
                         <div className={styles.mobileButtons}>
