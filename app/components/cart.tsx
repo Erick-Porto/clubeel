@@ -16,6 +16,7 @@ const Cart = () => {
     const { cart, refreshCart, isLoading, removeCartItem } = useCart();
 
     const handleRemoveItem = async (scheduleId: number) => {
+        
         if (!session?.accessToken) {
             toast.error("Sessão inválida. Por favor, faça login novamente.");
             return;
@@ -77,36 +78,37 @@ const Cart = () => {
                     const numericPrice = item.price || 0;
 
                     return(
-                        <Link href={URIGen(item.place.name, item.place.id, isoDate)} className={style.cartItem} key={item.id || index}>
-                            <div className={style.cartItemImageContainer}>
-                                <Image 
-                                    alt={item.place.name || 'Local'} 
-                                    fill
-                                    priority={true}
-                                    quality={100}
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    className={style.cartItemImage} 
-                                    src={item.place.image || '/images/placeholder.jpg'}
-                                />
-                            </div>
-                            
-                            <div className={style.cartItemDetails}>
-                                <h3 className={style.cartItemTitle}>{item.place.name}</h3>
-                                <div className={style.cartItemInfo}>
-                                    <span>
-                                        <FontAwesomeIcon icon={faCalendarAlt} width={14} />
-                                        {date}
-                                    </span>
-                                    <span>
-                                        <FontAwesomeIcon icon={faClock} width={14} />
-                                        {hourDisplay}
-                                    </span>
-                                    <span className={style.cartItemPrice}>
-                                        R$ {numericPrice.toFixed(2)}
-                                    </span>
+                        <div key={item.id || index} className={style.cartItem} >
+                            <Link href={URIGen(item.place.name, item.place.id, isoDate)}>
+                                <div className={style.cartItemImageContainer}>
+                                    <Image 
+                                        alt={item.place.name || 'Local'} 
+                                        fill
+                                        priority={true}
+                                        quality={100}
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        className={style.cartItemImage} 
+                                        src={item.place.image || '/images/placeholder.jpg'}
+                                    />
                                 </div>
-                            </div>
-                            
+                                
+                                <div className={style.cartItemDetails}>
+                                    <h3 className={style.cartItemTitle}>{item.place.name}</h3>
+                                    <div className={style.cartItemInfo}>
+                                        <span>
+                                            <FontAwesomeIcon icon={faCalendarAlt} width={14} />
+                                            {date}
+                                        </span>
+                                        <span>
+                                            <FontAwesomeIcon icon={faClock} width={14} />
+                                            {hourDisplay}
+                                        </span>
+                                        <span className={style.cartItemPrice}>
+                                            R$ {numericPrice.toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </Link>
                             <button 
                                 className={style.removeItemButton} 
                                 onClick={() => handleRemoveItem(item.id)}
@@ -114,7 +116,7 @@ const Cart = () => {
                             >
                                 <FontAwesomeIcon icon={faTrashAlt} />
                             </button>
-                        </Link>
+                        </div>
                     )})}
             </div>
             

@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import style from "@/styles/page.module.css";
 import Footer from "@/components/footer";
 import Header, { HeaderOption } from "@/components/header";
-import MobileNavBar from "./components/mobileNavBar";
+// import MobileNavBar from "@/components/mobileNavBar";
 import SportiveSquare from "@/components/sportive-square";
-import MapBanner from "@/components/map-banner";
+// import MapBanner from "@/components/map-banner";
 import API_CONSUME from "@/services/api-consume";
 import { useSession } from "next-auth/react";
 import { useIsMobile } from "./hooks/useIsMobile";
@@ -14,7 +14,7 @@ import TutorialOverlay, { TutorialStep } from "@/components/tutorial-overlay";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-
+import ItensGrid from "@/components/ItensGrid";
 interface Point { x: number; y: number; }
 interface Place {
     id: number;
@@ -29,8 +29,8 @@ interface ApiPlaceData {
 }
 
 const NAV_OPTIONS: HeaderOption[] = [
-    { text: "Mapa", id: "mapa" },
-    { text: "Esportes", id: "esportivas" },
+    // { text: "Mapa", id: "mapa" },
+    // { text: "Esportes", id: "esportivas" },
     // { text: "Social", id: "sociais" }
 ];
 
@@ -71,7 +71,7 @@ const Home = () => {
 
     const pageContainerRef = useRef<HTMLDivElement>(null);
     const mainContainerRef = useRef<HTMLDivElement>(null);
-    const mapRef = useRef<HTMLDivElement>(null);
+    // const mapRef = useRef<HTMLDivElement>(null);
     const sportsRef = useRef<HTMLDivElement>(null);
     // const socialRef = useRef<HTMLDivElement>(null);
 
@@ -132,14 +132,14 @@ useEffect(() => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
                     const id = entry.target.id;
-                    if (id === 'mapa') setActiveSection('mapa');
+                    // if (id === 'mapa') setActiveSection('mapa');
                     if (id === 'esportes') setActiveSection('esportivas');
                     // if (id === 'social') setActiveSection('sociais');
                 }
             });
         }, options);
 
-        if (mapRef.current) observer.observe(mapRef.current);
+        // if (mapRef.current) observer.observe(mapRef.current);
         if (sportsRef.current) observer.observe(sportsRef.current);
         // if (socialRef.current) observer.observe(socialRef.current);
 
@@ -151,7 +151,7 @@ useEffect(() => {
         setActiveSection(id as 'mapa' | 'esportivas' | 'sociais');
 
         let targetRef = null;
-        if (id === 'mapa') targetRef = mapRef;
+        // if (id === 'mapa') targetRef = mapRef;
         if (id === 'esportivas') targetRef = sportsRef;
         // if (id === 'sociais') targetRef = socialRef;
 
@@ -183,19 +183,23 @@ useEffect(() => {
 
             <div className={style.main} ref={mainContainerRef}>
                 
-                <section className={`${style.Section} ${style.sectionMap}`} ref={mapRef} id="mapa">
+                {/* <section className={`${style.Section} ${style.sectionMap}`} ref={mapRef} id="mapa">
                     <div id="map-section" style={{width: '100%', height: '100%', display:'flex', flexDirection:'column', alignItems:'center'}}>
                          {!isMobile && <h1 className={style.sectionTitle}>Mapa do Clube</h1>}
                         <div className={style.contentWrapper}>
                             <MapBanner places={places.filter(p => p.vertices && p.vertices.length > 0).map(p => ({ ...p, id: String(p.id) }))} />
                         </div>
                     </div>
-                </section>
+                </section>*/}
                 
-                <section className={`${style.Section} ${style.sectionSports}`} ref={sportsRef} id="esportes">
+                <section style={isMobile ? {padding: '75px 0px 0px', scrollbarWidth: 'none', minHeight: '87dvh'} : {}} className={`${style.Section} ${style.sectionSports}`} ref={sportsRef} id="esportes">
                     <div className={style.contentWrapper}>
-                        <h1 className={style.sectionTitle}>Áreas Esportivas</h1>
-                        <SportiveSquare places={places.filter(p => p.category === "esportiva")}/>
+                        {!isMobile && <h1 className={style.sectionTitle}>Áreas Esportivas</h1>}
+                        {
+                            isMobile ?
+                            (<ItensGrid data={places.filter(p => p.category === "esportiva")}/>):
+                            (<SportiveSquare places={places.filter(p => p.category === "esportiva")}/>)
+                        }
                     </div>
                 </section>
 
@@ -215,12 +219,12 @@ useEffect(() => {
 
             </div>
             
-            {isMobile && (
+            {/* {isMobile && (
                 <MobileNavBar 
                     onNavigate={(id) => handleNavigation(id)} 
                     activeSection={activeSection} 
                 />
-            )}
+            )} */}
         </div>
     );
 }

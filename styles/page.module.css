@@ -70,21 +70,21 @@
   .homePage {
     padding-top: 0;
     height: 100dvh;
-    overflow: hidden;
+    /* overflow: hidden; */
     position: fixed;
     top: 0;
     left: 0;
   }
 
   .homePage .main {
-    flex-direction: row;
+    /* flex-direction: row; */
     height: 100%;
     width: 100vw;
     overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
+    /* overflow-y: hidden;
+    scroll-snap-type: x mandatory; */
     scrollbar-width: none;
-    -ms-overflow-style: none;
+    /* -ms-overflow-style: none; */
   }
   
   .homePage .main::-webkit-scrollbar { display: none; }
@@ -98,10 +98,10 @@
     overflow-y: auto; 
     scroll-snap-align: center;
   }
-
+/* 
   .sectionSocial { order: 1; }
   .sectionMap { order: 2; }
-  .sectionSports { order: 3; }
+  .sectionSports { order: 3; } */
 
   .sectionMap {
     padding: 0; 
@@ -109,8 +109,6 @@
     padding-bottom: 80px;
     overflow: hidden;
   }
-
-  .footerContainer { display: none; }
 
   .sectionTitle {
     font-size: 1.8rem;
