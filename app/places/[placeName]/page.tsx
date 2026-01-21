@@ -13,6 +13,7 @@ import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons
 import { LoadingScreen } from "@/components/loading";
 import TutorialOverlay, { TutorialStep } from "@/app/components/tutorial-overlay";
 import { toast } from "react-toastify";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
 
 interface Rule {
     type: 'include' | 'exclude';
@@ -129,10 +130,18 @@ const PlacesPage = () => {
     const [weekView, setWeekView] = useState<Date[]>([]);
     const [maxAntecedence, setMaxAntecedence] = useState(0);
     const [isAnimating, setIsAnimating] = useState<'next' | 'prev' | null>(null);
+    const [dateDifference, setDateDifference] = useState(0);
+    const isMobile = useIsMobile();
+    useEffect(() => {
+        if (status === 'loading') return;
+    }, [status, router]);
 
     useEffect(() => {
-        if (status === 'loading') return; 
-    }, [status, router]);
+        if (isMobile)
+            setDateDifference(8);
+        else
+            setDateDifference(20);
+    }, []);
 
 const fetchPlaces = useCallback(async () => {
         if (status !== 'authenticated' || !session || !placeId) return;
@@ -186,14 +195,16 @@ const fetchPlaces = useCallback(async () => {
     }, [fetchPlaces]);
 
     useEffect(() => {
-        const newWeek: Date[] = [];
-        for (let i = -10; i <= 10; i++) {
-            const d = new Date(selectedDate);
-            d.setDate(selectedDate.getDate() + i);
-            newWeek.push(d);
-        }
-        setWeekView(newWeek);
-    }, [selectedDate]);
+    const newWeek: Date[] = [];
+    const offset = Math.floor(dateDifference / 2);
+
+    for (let i = -offset; i <= offset; i++) {
+        const d = new Date(selectedDate);
+        d.setDate(selectedDate.getDate() + i);
+        newWeek.push(d);
+    }
+    setWeekView(newWeek);
+}, [selectedDate, dateDifference]);
 
     const handleDateSelectionArrow = (direction: 'next' | 'prev') => {
         if (isAnimating) return;
@@ -202,20 +213,20 @@ const fetchPlaces = useCallback(async () => {
         const diff = getDaysDifference(selectedDate, today);
 
         if (direction === 'prev') {
-            if (diff < 7) {
+            if (diff < dateDifference) {
                 return;
             }
         }
 
         if (direction === 'next') {
-            if (diff + 7 > maxAntecedence) return;
+            if (diff + dateDifference > maxAntecedence) return;
         }
 
         setIsAnimating(direction);
 
         setTimeout(() => {
             const newDate = new Date(selectedDate);
-            newDate.setDate(selectedDate.getDate() + (direction === 'next' ? 7 : -7));
+            newDate.setDate(selectedDate.getDate() + (direction === 'next' ? dateDifference : -dateDifference));
             setSelectedDate(newDate);
             
             setIsAnimating(null);
@@ -229,8 +240,8 @@ const fetchPlaces = useCallback(async () => {
     const today = new Date();
     const daysFromToday = getDaysDifference(selectedDate, today);
     
-    const canGoPrev = daysFromToday >= 7; 
-    const canGoNext = (daysFromToday + 7) <= maxAntecedence;
+    const canGoPrev = daysFromToday >= dateDifference; 
+    const canGoNext = (daysFromToday + dateDifference) <= maxAntecedence;
 
     const TUTORIAL_STEPS: TutorialStep[] = [
         {
@@ -279,7 +290,7 @@ const fetchPlaces = useCallback(async () => {
                         className={style.dateSelectionArrow}
                         onClick={() => handleDateSelectionArrow("prev")}
                         disabled={!canGoPrev || !!isAnimating}
-                        aria-label="Voltar 7 dias"
+                        aria-label="Avançar data"
                     >
                         <FontAwesomeIcon icon={faChevronLeft} />
                     </button>
@@ -313,7 +324,7 @@ const fetchPlaces = useCallback(async () => {
                         className={style.dateSelectionArrow}
                         onClick={() => handleDateSelectionArrow("next")}
                         disabled={!canGoNext || !!isAnimating}
-                        aria-label="Avançar 7 dias"
+                        aria-label="Avançar data"
                     >
                         <FontAwesomeIcon icon={faChevronRight} />
                     </button>

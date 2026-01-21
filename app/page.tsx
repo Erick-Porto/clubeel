@@ -192,7 +192,7 @@ useEffect(() => {
                     </div>
                 </section>*/}
                 
-                <section style={isMobile ? {padding: '75px 0px 0px', scrollbarWidth: 'none', minHeight: '87dvh'} : {}} className={`${style.Section} ${style.sectionSports}`} ref={sportsRef} id="esportes">
+                <section style={isMobile ? {padding: '75px 0px 0px', scrollbarWidth: 'none', minHeight: 'auto'} : {}} className={`${style.Section} ${style.sectionSports}`} ref={sportsRef} id="esportes">
                     <div className={style.contentWrapper}>
                         {!isMobile && <h1 className={style.sectionTitle}>Áreas Esportivas</h1>}
                         {
