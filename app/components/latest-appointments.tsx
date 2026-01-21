@@ -139,8 +139,8 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                         <div key={item.id} className={style.latestAppointmentsItem}>
                             <div className={style.imageContainer}>
                                 <Image 
-                                    src={item.place.image || '/images/placeholder.jpg'} 
-                                    alt={item.place.name || 'Local'}
+                                    src={item.place_image || '/images/placeholder.jpg'} 
+                                    alt={item.place_name || 'Local'}
                                     fill
                                     priority={true}
                                     quality={100}
@@ -149,7 +149,7 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                             </div>
                             
                             <div className={style.cardContent}>
-                                <h3 className={style.latestAppointmentsItemTitle}>{item.place.name}</h3>
+                                <h3 className={style.latestAppointmentsItemTitle}>{item.place_name}</h3>
                                 <div className={style.infoRow}>
                                     <FontAwesomeIcon icon={faCalendarAlt} />
                                     <span>{dateStr}</span>
