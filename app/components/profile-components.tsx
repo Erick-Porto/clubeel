@@ -1,3 +1,4 @@
+'use client'
 import { useState, useEffect } from "react";
 import style from "@/styles/profile.module.css";
 import { toast } from "react-toastify";

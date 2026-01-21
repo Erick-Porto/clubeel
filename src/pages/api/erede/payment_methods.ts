@@ -84,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             payload.expirationMonth = expMonth;
             payload.expirationYear = expYear;
             payload.securityCode = cardData.cvv;
-            payload.installments = 1; 
+            if (method === 'credit') payload.installments = 1;
             payload.softDescriptor = "Espacos CFCSN"; 
         }
 

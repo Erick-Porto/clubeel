@@ -39,40 +39,40 @@ export default function CheckoutPayment({ amount }: CPParams) {
     const { data: sessionData } = useSession();
     const session = sessionData as CustomSession | null;
   // 2. Instanciar o router  
-  const router = useRouter();
-  const { cart } = useCart(); 
-  const [method, setMethod] = useState<PaymentMethod>("credit");
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+    const router = useRouter();
+    const { cart } = useCart(); 
+    const [method, setMethod] = useState<PaymentMethod>("credit");
+    const [isFlipped, setIsFlipped] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
-  const [pixResult, setPixResult] = useState<PixResponse | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [cardData, setCardData] = useState({
+    const [pixResult, setPixResult] = useState<PixResponse | null>(null);
+    const [timeLeft, setTimeLeft] = useState(0);
+    const [cardData, setCardData] = useState({
     number: "",
     holder: "",
     expiry: "",
     cvv: "",
     cpf: ""
-  });
+    });
 
-  // Estado Visual do Cartão
-  const [cardTheme, setCardTheme] = useState({
+    // Estado Visual do Cartão
+    const [cardTheme, setCardTheme] = useState({
     name: "CFCSN",
     styleClass: "",
     scheme: ""
-  });
+    });
 
-useEffect(() => {
-    if (timeLeft > 0 && pixResult) {
-      const timerId = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(timerId);
-    } else if (timeLeft === 0 && pixResult) {
-      setStatus({ type: 'error', msg: 'O tempo sugerido para pagamento expirou.' });
-    }
-  }, [timeLeft, pixResult]);
+    useEffect(() => {
+        if (timeLeft > 0 && pixResult) {
+        const timerId = setInterval(() => {
+            setTimeLeft((prev) => prev - 1);
+        }, 1000);
+        return () => clearInterval(timerId);
+        } else if (timeLeft === 0 && pixResult) {
+        setStatus({ type: 'error', msg: 'O tempo sugerido para pagamento expirou.' });
+        }
+    }, [timeLeft, pixResult]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
