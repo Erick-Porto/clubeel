@@ -45,6 +45,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+    dangerouslyAllowSVG: true,
     qualities: [100],
   },
   // async rewrites() {

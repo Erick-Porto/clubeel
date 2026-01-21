@@ -1,11 +1,9 @@
 'use client';
-
 import { useEffect, useState, useCallback } from 'react';
 import style from '@/styles/latest-appointments.module.css';
 import API_CONSUME from '@/services/api-consume';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// Adicionei faInfoCircle aos imports
 import { faCalendarAlt, faClock, faChevronDown, faChevronUp, faInfoCircle } from '@fortawesome/free-solid-svg-icons'; 
 import Image from 'next/image';
 import { toast } from 'react-toastify';
@@ -20,7 +18,7 @@ interface Appointment {
     place_id?: number;
     place: Place;
     place_name?: string;
-    place_image?: string;
+    place_image?: string | null;
     start_schedule: string;
     end_schedule: string;
     price: number;
@@ -135,8 +133,8 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                     const dateStr = startDate.toLocaleDateString('pt-BR');
                     const timeStr = `${startDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
                     const price = Number(item.price);
-                    const placeImage = item.place_image || item.place.image || '/images/placeholder.jpg';
-                    const placeName = item.place_name || item.place.name || 'Local';
+                    const placeName = item.place.name || 'Local';
+                    const placeImage = item.place.image || `https://placehold.co/400x300/fff/cecece?font=montserrat&text=${placeName}`;
 
                     return (
                         <div key={item.id} className={style.latestAppointmentsItem}>
@@ -144,10 +142,10 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                                 <Image 
                                     src={placeImage} 
                                     alt={placeName}
-                                    fill
                                     priority={true}
                                     quality={100}
                                     className={style.latestAppointmentsItemImage}
+                                    fill
                                 />
                             </div>
                             
