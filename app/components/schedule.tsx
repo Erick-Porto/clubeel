@@ -60,7 +60,6 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate) return;
         try {
-            refreshCart();
             cart.forEach(i =>{
                 setCartTotal(prev => prev + i.price);
             })
@@ -96,7 +95,7 @@ const fetchData = useCallback(async () => {
         } catch(error) {
             toast.error('Erro ao buscar horários: ' + (error instanceof Error ? error.message : String(error)));
         }
-    }, [placeId, session, currentDate]);
+    }, [placeId, session, currentDate, cart]);
 
     useEffect(() => {
         fetchData();

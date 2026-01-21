@@ -44,8 +44,8 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
 
                 setAvatarImage(base64);
             } 
-            catch (error) {
-                toast.error("Erro ao buscar avatar: " + (error instanceof Error ? error.message : String(error)));
+            catch {
+                toast.error("Foto de perfil não encontrada.");
             }
         };
 
@@ -56,7 +56,7 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
 
     if (!user) return null;
 
-    const coverImage = lastScheduleImage || '/images/default-cover.jpg'; 
+    const coverImage = lastScheduleImage || 'https://placehold.co/1280x720/fff/cecece?font=montserrat&text=Clube+dos+Funcionarios'; 
 
     return(
         <div className={style.bannerContainer}>

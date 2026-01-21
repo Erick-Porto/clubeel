@@ -10,9 +10,9 @@ import SportiveSquare from "@/components/sportive-square";
 import API_CONSUME from "@/services/api-consume";
 import { useSession } from "next-auth/react";
 import { useIsMobile } from "./hooks/useIsMobile";
-import TutorialOverlay, { TutorialStep } from "@/components/tutorial-overlay";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
+// import TutorialOverlay, { TutorialStep } from "@/components/tutorial-overlay";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import ItensGrid from "@/components/ItensGrid";
 interface Point { x: number; y: number; }
@@ -34,32 +34,32 @@ const NAV_OPTIONS: HeaderOption[] = [
     // { text: "Social", id: "sociais" }
 ];
 
-const TUTORIAL_STEPS: TutorialStep[] = [
-    {
-        targetId: 'map-section',
-        title: 'Explore o Clube',
-        description: ( <p><FontAwesomeIcon icon={faHandPointer} /> Use o zoom para navegar pelo mapa.</p> ),
-        offset: -700,
-        mOffset: -450
-    },
-    {
-        targetId: 'hotspot-0',
-        title: 'Encontre Disponibilidade',
-        description: ( <p> Ícones piscantes indicam quadras disponíveis. Clique em um para ver o local.</p> ),
-        offset: -50,
-        mOffset: -30,
-        waitForAction: true
-    },
-    {
-        targetId: 'popup-places',
-        title: 'Inicie a Reserva',
-        description: 'Clique em "Ver Detalhes e Reservar" no popup da quadra para avançar para a próxima etapa.',
-        offset: 150,
-        mOffset: 5,
-        targetClickableItem: 'reserve-button',
-        waitForAction: true
-    }
-];
+// const TUTORIAL_STEPS: TutorialStep[] = [
+//     {
+//         targetId: 'map-section',
+//         title: 'Explore o Clube',
+//         description: ( <p><FontAwesomeIcon icon={faHandPointer} /> Use o zoom para navegar pelo mapa.</p> ),
+//         offset: -700,
+//         mOffset: -450
+//     },
+//     {
+//         targetId: 'hotspot-0',
+//         title: 'Encontre Disponibilidade',
+//         description: ( <p> Ícones piscantes indicam quadras disponíveis. Clique em um para ver o local.</p> ),
+//         offset: -50,
+//         mOffset: -30,
+//         waitForAction: true
+//     },
+//     {
+//         targetId: 'popup-places',
+//         title: 'Inicie a Reserva',
+//         description: 'Clique em "Ver Detalhes e Reservar" no popup da quadra para avançar para a próxima etapa.',
+//         offset: 150,
+//         mOffset: 5,
+//         targetClickableItem: 'reserve-button',
+//         waitForAction: true
+//     }
+// ];
 
 const Home = () => {
     const [activeSection, setActiveSection] = useState<'mapa' | 'esportivas' | 'sociais'>('mapa');
@@ -171,7 +171,7 @@ useEffect(() => {
     return (
         <div className={`${style.page} ${isMobile ? style.homePage : ''}`} ref={pageContainerRef}> 
             
-            <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Página inicial" />
+            {/*<TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Página inicial" />*/}
 
             <Header 
                 options={NAV_OPTIONS} 
