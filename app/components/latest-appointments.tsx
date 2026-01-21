@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { toast } from 'react-toastify';
 
 interface Place {
-    name: string;
+    name?: string;
     image?: string;
 }
 
@@ -18,7 +18,7 @@ interface Appointment {
     place_id?: number;
     place: Place;
     place_name?: string;
-    place_image?: string | null;
+    place_image?: string;
     start_schedule: string;
     end_schedule: string;
     price: number;
@@ -133,8 +133,8 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                     const dateStr = startDate.toLocaleDateString('pt-BR');
                     const timeStr = `${startDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
                     const price = Number(item.price);
-                    const placeName = item.place.name || 'Local';
-                    const placeImage = item.place.image || `https://placehold.co/400x300/fff/cecece?font=montserrat&text=${placeName}`;
+                    const placeName = item.place?.name || 'Local';
+                    const placeImage = item.place?.image || `https://placehold.co/400x300/fff/cecece?font=montserrat&text=${placeName}`;
 
                     return (
                         <div key={item.id} className={style.latestAppointmentsItem}>
