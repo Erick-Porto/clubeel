@@ -135,12 +135,15 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                     const dateStr = startDate.toLocaleDateString('pt-BR');
                     const timeStr = `${startDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
                     const price = Number(item.price);
+                    const placeImage = item.place_image || item.place.image || '/images/placeholder.jpg';
+                    const placeName = item.place_name || item.place.name || 'Local';
+
                     return (
                         <div key={item.id} className={style.latestAppointmentsItem}>
                             <div className={style.imageContainer}>
                                 <Image 
-                                    src={item.place_image || '/images/placeholder.jpg'} 
-                                    alt={item.place_name || 'Local'}
+                                    src={placeImage} 
+                                    alt={placeName}
                                     fill
                                     priority={true}
                                     quality={100}
