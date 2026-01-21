@@ -58,7 +58,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const [localQuantity, setLocalQuantity] = useState<number>(0);
 
 const fetchData = useCallback(async () => {
-        if (!placeId || !session?.accessToken || !currentDate) return;
+        if (!placeId || !session?.accessToken || !currentDate)  return signOut({ callbackUrl: '/login' });
         try {
             cart.forEach(i =>{
                 setCartTotal(prev => prev + i.price);
@@ -142,7 +142,7 @@ const fetchData = useCallback(async () => {
 
 const handleReserve = async () => {
         if (!session?.accessToken) {
-            toast.error("Sessão inválida.");
+            toast.error("Sessão inválida. Por favor, faça login novamente.");
             return signOut({ callbackUrl: '/login' });
         }
         if (selectedItems.length === 0) return toast.info("Selecione um horário.");

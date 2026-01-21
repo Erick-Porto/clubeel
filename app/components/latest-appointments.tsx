@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import style from '@/styles/latest-appointments.module.css';
 import API_CONSUME from '@/services/api-consume';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faClock, faChevronDown, faChevronUp, faInfoCircle } from '@fortawesome/free-solid-svg-icons'; 
 import Image from 'next/image';
@@ -51,7 +51,7 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
     const [isExpanded, setIsExpanded] = useState(false);
 
     const fetchAppointments = useCallback(async () => {
-        if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id) return;
+        if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id)  return signOut({ callbackUrl: '/login' });;
 
         try {
             setIsLoading(true);
@@ -133,8 +133,8 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                     const dateStr = startDate.toLocaleDateString('pt-BR');
                     const timeStr = `${startDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
                     const price = Number(item.price);
-                    const placeName = item.place?.name || 'Local';
-                    const placeImage = item.place?.image || `https://placehold.co/400x300/fff/cecece?font=montserrat&text=${placeName}`;
+                    const placeName = item.place.name || 'Local';
+                    const placeImage = item.place.image || `https://placehold.co/400x300/fff/cecece?font=montserrat&text=${placeName}`;
 
                     return (
                         <div key={item.id} className={style.latestAppointmentsItem}>

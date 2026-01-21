@@ -253,12 +253,12 @@
         grid-template-columns: 1fr;
         margin-top: 0;
         gap: 20px;
-        padding-top: 90px; 
+        padding: 90px 0 0 0;
     }
 
     .profileSidebar {
         position: static;
-        padding: 10px;
+        padding: 5px;
         border-radius: 0 0 16px 16px;
         margin-top: -20px;
     }
@@ -267,13 +267,13 @@
         flex-direction: row;
         overflow-x: auto;
         padding-bottom: 5px;
-        gap: 10px;
+        gap: 5px;
     }
 
     .menuItem {
         white-space: nowrap;
-        font-size: 0.9rem;
-        padding: 10px 16px;
+        font-size: .7rem;
+        padding: 8px;
         flex-shrink: 0;
     }
 

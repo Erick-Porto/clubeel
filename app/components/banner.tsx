@@ -2,7 +2,7 @@ import Image from "next/image";
 import style from "@/styles/banner.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faIdBadge } from "@fortawesome/free-solid-svg-icons";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -18,7 +18,7 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
 
     useEffect(() => {
         const fetchAvatarImage = async () => {
-            if (!session?.user?.id || !session?.accessToken) return;
+            if (!session?.user?.id || !session?.accessToken)  return signOut({ callbackUrl: '/login' });
 
             try {
                 const response = await fetch(`${process.env.INTERNAL_LARA_API_URL}/api/image/${session.user.id}`, {

@@ -8,7 +8,7 @@ import Header, { HeaderOption } from "@/components/header";
 import SportiveSquare from "@/components/sportive-square";
 // import MapBanner from "@/components/map-banner";
 import API_CONSUME from "@/services/api-consume";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useIsMobile } from "./hooks/useIsMobile";
 // import TutorialOverlay, { TutorialStep } from "@/components/tutorial-overlay";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -77,7 +77,7 @@ const Home = () => {
 
 useEffect(() => {
         const fetchPlaces = async () => {
-            if (status !== 'authenticated' || !session?.accessToken) return;
+            if (status !== 'authenticated' || !session?.accessToken) return signOut({ callbackUrl: '/login' });
             
             try {
                 const response = await API_CONSUME("GET", "places/group");

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Footer from "@/components/footer";
 import Banner from "@/components/banner";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { ProfileForm, PasswordForm } from "@/components/profile-components";
 import style from '@/styles/profile.module.css';
 import Appointments from "@/components/appointments";
@@ -48,7 +48,7 @@ const ProfileContent = () => {
 
 useEffect(() => {
         const fetchLastPlaceImage = async () => {
-            if (status !== 'authenticated' || !session?.accessToken) return;
+            if (status !== 'authenticated' || !session?.accessToken)  return signOut({ callbackUrl: '/login' });
 
             try {
                 const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`);

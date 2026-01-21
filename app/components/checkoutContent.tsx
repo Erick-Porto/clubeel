@@ -18,8 +18,10 @@ const CheckoutContent: React.FC<{total: number, formatPrice: (p: number) => stri
     const [cancellingId, setCancellingId] = useState<number | null>(null);
     const handleCancelSchedule = async (scheduleId: number) => {
         if (cancellingId || !session?.accessToken) {
-            if (!session?.accessToken) toast.error("Sessão inválida.");
-            return signOut({ callbackUrl: '/login' });
+            if (!session?.accessToken) {
+                toast.error("Sessão inválida. Por favor, faça login novamente.");
+                return signOut({ callbackUrl: '/login' });
+            }
         }
         setCancellingId(scheduleId);
 
