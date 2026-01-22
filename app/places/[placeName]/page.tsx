@@ -14,7 +14,6 @@ import { LoadingScreen } from "@/components/loading";
 import TutorialOverlay, { TutorialStep } from "@/app/components/tutorial-overlay";
 import { toast } from "react-toastify";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
-import { sign } from "crypto";
 
 interface Rule {
     type: 'include' | 'exclude';
