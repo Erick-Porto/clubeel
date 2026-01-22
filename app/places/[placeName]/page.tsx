@@ -7,13 +7,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from "react";
 import API_CONSUME from "@/services/api-consume";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { LoadingScreen } from "@/components/loading";
 import TutorialOverlay, { TutorialStep } from "@/app/components/tutorial-overlay";
 import { toast } from "react-toastify";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
+import { sign } from "crypto";
 
 interface Rule {
     type: 'include' | 'exclude';
@@ -151,6 +152,7 @@ const fetchPlaces = useCallback(async () => {
             const response = await API_CONSUME("GET", `places/${placeId}`, {}, null);
 
             if (!response.ok || !response.data) {
+                if (response.status === 401) signOut({ callbackUrl: '/login' });
                 toast.error("Erro ao buscar locais: " + (response.message || "Erro desconhecido"));
                 return;
             }

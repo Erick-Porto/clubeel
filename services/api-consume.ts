@@ -1,3 +1,4 @@
+import { signOut } from "next-auth/react";
 import { toast } from "react-toastify";
 
 const IS_SERVER = typeof window === 'undefined';
@@ -64,7 +65,6 @@ async function API_CONSUME<T = any>(
         if (!IS_SERVER && response.status >= 500) {
             toast.error(`Erro no Servidor (${response.status})`);
         }
-        
         return {
             data: responseData,
             status: response.status,
@@ -76,7 +76,7 @@ async function API_CONSUME<T = any>(
         if (IS_SERVER) {
             console.error(`[API_CONSUME NETWORK ERROR] Falha ao conectar em ${url}:`, error.message);
         }
-        
+        // signOut({ callbackUrl: '/login' });
         return { 
             data: null, 
             status: 503, 
