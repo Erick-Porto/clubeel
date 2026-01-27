@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useSession } from 'next-auth/react';
 import API_CONSUME from '@/services/api-consume';
 import { toast } from 'react-toastify';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export interface CartItem {
     id: number;
@@ -60,6 +60,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isLoading, setIsLoading] = useState(true); 
     const router = useRouter();
+    const pathname = usePathname();
     const hasFetchedInitial = useRef(false);
 
 const fetchCartData = useCallback(async (token: string, userId: string | number) => {
@@ -109,10 +110,10 @@ const fetchCartData = useCallback(async (token: string, userId: string | number)
                 return cleanCartItems;
             });
 
-            if(cleanCartItems.length === 0){
-                toast.warn("Seu carrinho está vazio, você foi redirecionado para a página inicial.");
-                router.push('/');
-            }
+            if(cleanCartItems.length === 0 && pathname === '/checkout')
+                {toast.warn("Seu carrinho está vazio, você foi redirecionado para a página inicial.");
+                router.push('/');}
+            
         } catch (error) {
             toast.error("Erro crítico ao processar carrinho: " + (error instanceof Error ? error.message : String(error)));
         } finally {
