@@ -218,19 +218,24 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                             <h1 className={styles.welcomeTitle}>Criar Conta</h1>
                             <form className={styles.sidebarBody} onSubmit={register}>
                                 <div className={styles.inputGroup}>
-                                    <input type="text" value={cpf} onChange={(e) => verifyDocument({ cpf: e.target.value })} placeholder="CPF" required />
+                                    <label htmlFor="cpf">CPF</label>
+                                    <input type="text" id="cpf" value={cpf} onChange={(e) => verifyDocument({ cpf: e.target.value })} placeholder="CPF" required />
                                 </div>
                                 <div className={styles.inputGroup}>
-                                    <input type="text" value={matricula} onChange={(e) => verifyCode({ code: e.target.value })} onBlur={finalizeCode} placeholder="Matrícula (Ex: 00000)" required />
+                                    <label htmlFor="matricula">Matrícula</label>
+                                    <input type="text" id="matricula" value={matricula} onChange={(e) => verifyCode({ code: e.target.value })} onBlur={finalizeCode} placeholder="Matrícula (Ex: 00000)" required />
                                 </div>
                                 <div className={styles.inputGroup}>
-                                    <input type="date" value={bornAs} placeholder="MM/DD/YYYY" onChange={(e) => setBornAs(e.target.value)} required />
+                                    <label htmlFor="bornAs">Data de Nascimento</label>
+                                    <input type="date" id="bornAs" value={bornAs} placeholder="DD/MM/AAAA" onChange={(e) => setBornAs(e.target.value)} required />
                                 </div>
                                 <div className={styles.inputGroup}>
-                                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Senha" required />
+                                    <label htmlFor="password">Senha</label>
+                                    <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Senha" required />
                                 </div>
                                 <div className={styles.inputGroup}>
-                                    <input type="password" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} placeholder="Confirmar senha" required />
+                                    <label htmlFor="repeatPassword">Confirmar senha</label>
+                                    <input type="password" id="repeatPassword" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} placeholder="Confirmar senha" required />
                                 </div>
                                 
                                 <input type="submit" value={isLoading ? "Criando..." : "Cadastrar"} className={styles.button} disabled={isLoading} />
