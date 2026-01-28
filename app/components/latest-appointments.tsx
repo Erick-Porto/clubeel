@@ -150,7 +150,7 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
                             </div>
                             
                             <div className={style.cardContent}>
-                                <h3 className={style.latestAppointmentsItemTitle}>{item.place_name}</h3>
+                                <h3 className={style.latestAppointmentsItemTitle}>{item.place.name}</h3>
                                 <div className={style.infoRow}>
                                     <FontAwesomeIcon icon={faCalendarAlt} />
                                     <span>{dateStr}</span>

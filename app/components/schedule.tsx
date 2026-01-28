@@ -23,6 +23,7 @@ interface LoadedContent {
     start: string;
     end: string;
     owner: number | null;
+    ownerName?: string | null;
     status: number | null;
 }
 
@@ -243,6 +244,7 @@ const handleReserve = async () => {
                             const isSelected = selectedItems.includes(item);
 
                             let itemClass = styles.scheduleItem;
+                            let ownerName = "";
                             let label = `R$ ${numericPrice.toFixed(2)}`;
                             let isClickable = true;
                             let isBlocked = false;
@@ -261,6 +263,7 @@ const handleReserve = async () => {
                                 itemClass += ` ${styles.reservedByOthers}`;
                                 label = "Ocupado";
                                 isBlocked = true;
+                                ownerName = item.ownerName ? item.ownerName : '';
                             }
 
                             if (isSelected) itemClass += ` ${styles.selected}`;
@@ -287,6 +290,7 @@ const handleReserve = async () => {
                                         {item.start} - {item.end}
                                     </span>
                                     <span className={styles.priceLabel}>{label}</span>
+                                    <span className={styles.priceLabel}>{ownerName}</span>
                                 </li>
                             );
                         })}
@@ -311,7 +315,7 @@ const handleReserve = async () => {
                         <div className={styles.calendarImageContainer}>
                             {src ? (
                                 <Image
-                                    src={src}
+                                    src={'/'+src}
                                     width={400}
                                     height={275}
                                     alt="Local" 
