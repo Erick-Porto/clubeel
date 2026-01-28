@@ -153,7 +153,7 @@ const fetchPlaces = useCallback(async () => {
             if (!response.ok || !response.data) {
                 if (response.status === 401) signOut({ callbackUrl: '/login' });
                 toast.error("Erro ao buscar locais: " + (response.message || "Erro desconhecido"));
-                return;
+                signOut({ callbackUrl: '/login' });
             }
 
             const apiData = response.data;
@@ -186,6 +186,7 @@ const fetchPlaces = useCallback(async () => {
 
         } catch (error) {
             toast.error("Erro ao buscar locais: " + (error instanceof Error ? error.message : String(error)));
+            signOut({ callbackUrl: '/login' });
         }
     }, [placeId, session, status]);
 

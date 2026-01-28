@@ -85,7 +85,7 @@ useEffect(() => {
                 // 1. Verificação de segurança (Novo padrão)
                 if (!response.ok || !response.data) {
                     toast.error("Erro ao buscar locais: " + response.message);
-                    return;
+                    signOut({ callbackUrl: '/login' });
                 }
 
                 const rawPlacesArray = Object.values(response.data) as ApiPlaceData[];

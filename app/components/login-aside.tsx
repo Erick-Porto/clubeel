@@ -22,7 +22,31 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     const [authInterface, setAuthInterface] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isMaintenance, setIsMaintenance] = useState(false);
-    
+    const validateBirthDate = (dateStr: string) => {
+        if (dateStr.length < 10) return "Data incompleta.";
+
+        const [day, month, year] = dateStr.split('/').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 1. Verifica se a data é real (Ex: 31/02 vira 03/03 no JS, aqui pegamos isso)
+        const isValidDate = 
+            dateObj.getFullYear() === year &&
+            dateObj.getMonth() === month - 1 &&
+            dateObj.getDate() === day;
+
+        if (!isValidDate) return "Esta data não existe no calendário (ex: 31/02).";
+
+        // 2. Verifica se é maior que hoje
+        if (dateObj > today) return "A data de nascimento não pode ser no futuro.";
+
+        // 3. Verifica idade mínima razoável (opcional)
+        if (year < 1900) return "Ano inválido.";
+
+        return null; // Data válida
+    };
+
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -51,11 +75,12 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
         else if (!isAssociado) {
             toast.error("Matrícula inválida!");
             setMatricula("");
-            e.target.focus();
+            if(e.target.value !== "") e.target.focus();
             return;
         }
         setMatricula(value);
     }
+    
     function verifyDocument({ cpf }: { cpf: string }) {
         let documentValue = cpf.replace(/\D/g, '');
         if (documentValue.length > 11) documentValue = documentValue.slice(0, 11);
@@ -105,16 +130,26 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
             toast.error("As senhas não coincidem.");
             return;
         }
+
+        const dateError = validateBirthDate(bornAs);
+        if (dateError) {
+            toast.error(dateError);
+            return;
+        }
+
         setIsLoading(true);
         
         try {
             const documentValue = cpf.replace(/\D/g, '');
             const encryptedPassword = CryptoJS.SHA256(password).toString();
             
+            const [d, m, y] = bornAs.split('/');
+            const formattedBirthDate = `${y}-${m}-${d}`;
+
             const response = await API_CONSUME("POST", "register", {}, {
                 title: matricula,
                 cpf: documentValue,
-                birthDate: bornAs,
+                birthDate: formattedBirthDate,
                 password: encryptedPassword,
             });
 
@@ -227,7 +262,38 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                                 </div>
                                 <div className={styles.inputGroup}>
                                     <label htmlFor="bornAs">Data de Nascimento</label>
-                                    <input type="date" id="bornAs" value={bornAs} placeholder="DD/MM/AAAA" onChange={(e) => setBornAs(e.target.value)} required />
+                                    <input 
+                                        type="text" 
+                                        id="bornAs" 
+                                        value={bornAs} 
+                                        placeholder="DD/MM/AAAA" 
+                                        inputMode="numeric"
+                                        maxLength={10}
+                                        onChange={(e) => {
+                                            let val = e.target.value.replace(/\D/g, '');
+                                            
+                                            // Validação básica de dígitos iniciais
+                                            if (val.length >= 2 && parseInt(val.slice(0, 2)) > 31) val = '31';
+                                            if (val.length >= 4 && parseInt(val.slice(2, 4)) > 12) val = val.slice(0, 2) + '12';
+                                            if (val.length > 8) val = val.slice(0, 8);
+                                            
+                                            // Máscara
+                                            if (val.length >= 5) {
+                                                val = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`;
+                                            } else if (val.length >= 3) {
+                                                val = `${val.slice(0, 2)}/${val.slice(2)}`;
+                                            }
+                                            setBornAs(val);
+                                        }}
+                                        onBlur={(e) => {
+                                        const error = validateBirthDate(e.target.value);
+                                        if (error && e.target.value !== "") {
+                                            toast.error(error);
+                                            
+                                        }
+                                    }}
+                                        required 
+                                    />
                                 </div>
                                 <div className={styles.inputGroup}>
                                     <label htmlFor="password">Senha</label>
