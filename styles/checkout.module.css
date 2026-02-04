@@ -42,7 +42,6 @@
     border: 1px solid #f0f0f0;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     position: relative;
-    overflow: hidden;
 }
 
 .cartItem:hover {
@@ -59,6 +58,18 @@
     padding: 16px;
     padding-right: 50px; 
     align-items: center;
+}
+
+.cartItemActions{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 5px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 2;
 }
 
 .itemCancelling {
@@ -108,10 +119,6 @@
 }
 
 .cancelScheduleButton {
-    position: absolute;
-    top: 50%;
-    right: 15px;
-    transform: translateY(-50%);
     background: #f9f9f9;
     border: 1px solid #eee;
     width: 40px;
@@ -122,8 +129,7 @@
     justify-content: center;
     cursor: pointer;
     color: #999;
-    transition: all 0.2s ease;
-    z-index: 2;
+    transition: all .2s;
 }
 
 .cancelScheduleButton:hover {

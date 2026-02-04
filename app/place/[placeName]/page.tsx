@@ -22,6 +22,7 @@ interface PlaceData {
     rules: unknown[]; 
     schedule: unknown[]; 
     price: number;
+    placeGroupId?: number;
 }
 
 const PlacePage = () => {
@@ -42,13 +43,11 @@ const fetchData = useCallback(async () => {
 
         try {
             const response = await API_CONSUME("GET", `place/${placeID}`, {}, null);
-
             if (!response.ok || !response.data) {
                 toast.warn(`Erro ao carregar local (${placeID}): ` + (response.message || "Erro desconhecido"));
                 router.push('/');
                 return;
             }
-
             const placeData = response.data;
 
             setData({
@@ -57,7 +56,8 @@ const fetchData = useCallback(async () => {
                 price: Number(placeData.price) || 0, 
                 image: placeData.image || "",
                 rules: placeData.schedule_rules || [],
-                schedule: Array.isArray(placeData.schedule) ? placeData.schedule : []
+                schedule: Array.isArray(placeData.schedule) ? placeData.schedule : [],
+                placeGroupId: placeData.place_group_id,
             });
 
         } catch (error) {
@@ -108,6 +108,22 @@ const fetchData = useCallback(async () => {
                 offset: -150,
                 mOffset: 100,
                 waitForAction: true
+            },
+            {
+                targetId: 'expire-clock',
+                title: 'Expirar',
+                description: (
+                    <>
+                        <p>
+                            Cada agendamento adicionado ao carrinho possui um tempo limite para ser finalizado.
+                            Este relógio indica quanto tempo resta para você concluir a compra com base no seu agendamento mais próximo de expirar.
+                            Após esse tempo, o agendamento será liberado para ser reservado novamente, por você ou outro usuário.
+                        </p>
+                    </>
+                ),
+                offset: -150,
+                mOffset: 100,
+
             },
             {
                 targetId: 'action-buttons-2',

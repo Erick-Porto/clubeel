@@ -98,7 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         const transactionData = await transactionResponse.json();
-
         if (!transactionResponse.ok) {
             return res.status(400).json({ error: transactionData.returnMessage || 'Erro', details: transactionData });
         }

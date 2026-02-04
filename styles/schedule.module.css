@@ -1,3 +1,9 @@
+.clockWrapper{
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
 .placeContainer {
     display: flex;
     flex-direction: row;

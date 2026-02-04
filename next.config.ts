@@ -44,6 +44,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'http',
+        hostname: '192.168.100.48',
+        port: '8000',
+        pathname: '/**',
+      },
     ],
     dangerouslyAllowSVG: true,
     qualities: [100],

@@ -9,7 +9,7 @@ import { usePathname, useRouter } from 'next/navigation';
 export interface CartItem {
     id: number;
     place_id: number;
-    place:any;
+    place: Place;
     place_name?: string;
     place_image?: string;
     start_schedule: string; 
@@ -17,6 +17,13 @@ export interface CartItem {
     price: number; 
     member_id?: number;
     status_id?: number;
+    created_at: string;
+}
+
+interface Place {
+    id: number;
+    name: string; icon: string; image_vertical: string;
+    image: string;
 }
 
 interface CartContextType {

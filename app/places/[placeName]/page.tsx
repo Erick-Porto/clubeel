@@ -31,6 +31,7 @@ interface Place {
     id: string;
     name: string;
     image: string;
+    available_slots: number;
     schedule_rules: Rule[];
 }
 
@@ -46,75 +47,6 @@ const getDaysDifference = (date1: Date, date2: Date) => {
     return Math.round((d1.getTime() - d2.getTime()) / oneDay);
 }
 
-const isPlaceAvailableOnDate = (place: Place, selectedDate: Date): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (!place.schedule_rules || place.schedule_rules.length === 0) return false;
-
-    let isAllowed = false;
-    let isBlocked = false;
-
-    const selectedWeekday = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    const diffDays = getDaysDifference(selectedDate, today);
-
-    if (diffDays < 0) return false;
-
-    for (const rule of place.schedule_rules) {
-        if (rule.status_id !== null && Number(rule.status_id) !== 1) continue;
-
-        const ruleStartDate = rule.start_date ? new Date(rule.start_date+ "T00:00:00") : null;
-        const ruleEndDate = rule.end_date ? new Date(rule.end_date+ "T23:59:59") : null;
-        
-        if (ruleStartDate) ruleStartDate.setHours(0,0,0,0);
-        if (ruleEndDate) ruleEndDate.setHours(23,59,59,999);
-
-        const isDateInRange =
-            (!ruleStartDate || selectedDate >= ruleStartDate) &&
-            (!ruleEndDate || selectedDate <= ruleEndDate);
-
-        if (!isDateInRange) continue; 
-
-        if (rule.type === 'exclude') {
-            if(rule.start_time || rule.end_time) {
-                continue;
-            }
-            if (!rule.weekdays || rule.weekdays.length === 0) {
-                isBlocked = true;
-            } else {
-                const ruleDays = rule.weekdays.map((d) => (typeof d === 'string' ? d : d.name).toLowerCase());
-                if (ruleDays.includes(selectedWeekday)) 
-                    isBlocked = true;
-            }
-        }
-        
-        else if (rule.type === 'include') {
-            let ruleIsValid = true;
-
-            if (rule.weekdays && rule.weekdays.length > 0) {
-                const ruleDays = rule.weekdays.map((d) => (typeof d === 'string' ? d : d.name).toLowerCase());
-                if (!ruleDays.includes(selectedWeekday)) 
-                    ruleIsValid = false;
-            }
-
-            if (rule.maximum_antecedence !== null && rule.maximum_antecedence >= 0) {
-                if (diffDays > rule.maximum_antecedence)
-                    ruleIsValid = false;
-            }
-
-            if (rule.minimum_antecedence !== null && rule.minimum_antecedence >= 0) {
-                if (diffDays < rule.minimum_antecedence) 
-                    ruleIsValid = false;
-            }
-
-            if (ruleIsValid)
-                isAllowed = true;
-        }
-    }
-    return isAllowed && !isBlocked;
-};
-
-
 const PlacesPage = () => {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -125,7 +57,7 @@ const PlacesPage = () => {
 
     const [places, setPlaces] = useState<Place[]>([]);
     const [group, setGroup] = useState<Group | null>(null);
-    
+    const [limit, setLimit] = useState<number>(0);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [weekView, setWeekView] = useState<Date[]>([]);
     const [maxAntecedence, setMaxAntecedence] = useState(0);
@@ -148,41 +80,23 @@ const fetchPlaces = useCallback(async () => {
 
         try {
 
-            const response = await API_CONSUME("GET", `places/${placeId}`, {}, null);
+            const response = await API_CONSUME("POST", `places/`, {}, {
+                group_id: placeId,
+                member_id: session.user.id,
+                date: selectedDate.toISOString().split('T')[0]
+            });
 
-            if (!response.ok || !response.data) {
-                if (response.status === 401) signOut({ callbackUrl: '/login' });
-                toast.error("Erro ao buscar locais: " + (response.message || "Erro desconhecido"));
-                signOut({ callbackUrl: '/login' });
-            }
-
+            if (!response.ok || !response.data) toast.error("Erro ao buscar locais: " + (response.message || "Erro desconhecido"));
             const apiData = response.data;
             
             const placesArray: Place[] = Object.values(apiData.places || {});
-            
             setGroup(apiData.group);
             setPlaces(placesArray);
+            setLimit(Math.min(apiData.limit.limit, apiData.limit.remaining));
 
-            const newMaxAntecedence = placesArray.reduce((max, place) => {
-                const placeMax = place.schedule_rules.reduce((ruleMax, rule) => {
-                    if (rule.status_id !== 1) {
-                        return ruleMax;
-                    }
-                    if (rule.maximum_antecedence === null && rule.minimum_antecedence === null) {
-                        return ruleMax;
-                    }
+            const currentRuleLimit = apiData.group.maximum_antecedence > apiData.group.minimum_antecedence ? apiData.group.maximum_antecedence : apiData.group.minimum_antecedence;
 
-                    const maxAnt = rule.maximum_antecedence !== null ? rule.maximum_antecedence : 0;
-                    const minAnt = rule.minimum_antecedence !== null ? rule.minimum_antecedence : 0;
-
-                    const currentRuleLimit = maxAnt > minAnt ? maxAnt : minAnt;
-
-                    return Math.max(ruleMax, currentRuleLimit);
-                }, 0);
-                return Math.max(max, placeMax);
-            }, 0);
-
-            setMaxAntecedence(newMaxAntecedence);
+            setMaxAntecedence(currentRuleLimit);
 
         } catch (error) {
             toast.error("Erro ao buscar locais: " + (error instanceof Error ? error.message : String(error)));
@@ -275,7 +189,6 @@ const fetchPlaces = useCallback(async () => {
 
     return (
         <div className={globalStyle.page}>
-            
             <Header options={null} surgeIn={0} onlyScroll={false} profileOptions={null} />
             <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Modalidade" />
             
@@ -333,9 +246,9 @@ const fetchPlaces = useCallback(async () => {
                 </div>
 
                 <div className={style.placeList} id="place-list">
-                    {places.map((item, index) => {
-                        const isAvailable = isPlaceAvailableOnDate(item, selectedDate);
-
+                    { places.length > 0 ? (
+                    places.map((item, index) => {
+                        const isAvailable = limit === 0 ? false : item.available_slots >= 1;
                         return (
                             <div key={item.id} id={`place-card-${index}`} className={`${style.placeCard} ${!isAvailable ? style.placeCardDisabled : ''}`}>
                                 <div className={style.placeCardImageContainer}>
@@ -346,7 +259,7 @@ const fetchPlaces = useCallback(async () => {
                                         aria-label={`Imagem de ${item.name}`}
                                     />
                                     <span className={`${style.statusBadge} ${isAvailable ? style.available : style.unavailable}`}>
-                                        {isAvailable ? 'Disponível' : 'Indisponível'}
+                                        {item.available_slots >= 1 ? `${item.available_slots > 1 ? item.available_slots + ' Disponíveis' : '1 Disponível'}` : item.available_slots === 0 ? 'Esgotado' : 'Indisponível'}
                                     </span>
                                 </div>
 
@@ -365,13 +278,19 @@ const fetchPlaces = useCallback(async () => {
                                         </Link>
                                     ) : (
                                         <div className={`${style.placeAction} ${style.disabledText}`}>
-                                            Não Disponível
+                                            {item.available_slots === 0 ? 'Horários esgotados' : 'Local indisponível'}
                                         </div>
                                     )}
                                 </div>
                             </div>
                         );
-                    })}
+                    })
+                
+                ) : (
+                    <div className={style.noPlacesMessage}>
+                        Nenhuma quadra disponível para a data selecionada.
+                    </div>
+                )}
                 </div>
             </section>
             <Footer />

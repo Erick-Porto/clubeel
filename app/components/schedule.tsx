@@ -9,22 +9,31 @@ import { signOut, useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
 import API_CONSUME from '@/services/api-consume';
 import { useIsMobile } from '../hooks/useIsMobile';
+import Clock from './clock';
 
 interface ReservationPayload {
-    member_id: number;
-    place_id: number;
-    start_schedule: string;
-    end_schedule: string;
-    price: number;
-    status_id: number;
+    member_id: string;
+    place_id: string;
+    selected_slots: string[];
+    price: string;
+    status_id: string;
+    date:string;
 }
 
 interface LoadedContent {
-    start: string;
-    end: string;
-    owner: number | null;
-    ownerName?: string | null;
-    status: number | null;
+    start_time: string;
+    end_time: string;
+    colides: boolean;
+    excluded_by_rule?: object | null;
+    colided_member?: User;
+    colided_status_id?: number;
+    colided_description?: string | null;
+}
+
+interface User {
+    id: number
+    cpf?: string
+    title?: string
 }
 
 interface ScheduleProps {
@@ -33,11 +42,8 @@ interface ScheduleProps {
     price: number;
     dateProp?: string;
     rules?: unknown[];
+    limit?: number;
 }
-
-const createGMT3Date = (dateStr: string, timeStr: string): Date => {
-    return new Date(`${dateStr}T${timeStr}:00-03:00`);
-};
 
 const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) => {
     const { data: session } = useSession();
@@ -46,7 +52,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 
     const placeId = Number(place_id);
     const numericPrice = Number(price) || 0;
-    const userId = Number(session?.user?.id);
+    const userId = Number(session?.user.id);
 
     const [currentDate, setCurrentDate] = useState<string>(dateProp || new Date().toISOString().split('T')[0]);
     const [cartTotal, setCartTotal] = useState<number>(0);
@@ -57,8 +63,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const [loadedContent, setLoadedContent] = useState<LoadedContent[]>([])
     const [selectedItems, setSelectedItems] = useState<LoadedContent[]>([]);
     const [localQuantity, setLocalQuantity] = useState<number>(0);
-
-const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate)  return signOut({ callbackUrl: '/login' });
         try {
             cart.forEach(i =>{
@@ -66,9 +71,9 @@ const fetchData = useCallback(async () => {
             })
             const response = await API_CONSUME("POST", "schedule/time-options", {}, {
                 date: currentDate,
-                place_id: placeId
+                place_id: placeId,
+                member_id: userId
             });
-
             if (!response.ok || !response.data) {
                 const msg = response.message as unknown;
                 const errorText = msg instanceof Error ? msg.message : String(msg);
@@ -76,22 +81,12 @@ const fetchData = useCallback(async () => {
                 toast.error('Erro ao buscar horários: ' + errorText);
                 return;
             }
-
-            const rawData = response.data;
-
-            if (rawData.quantity !== undefined) setLocalQuantity(rawData.quantity);
-
-            const listToMap = Array.isArray(rawData) ? rawData : (rawData.data || rawData.options || []);
-
-            const mappedContent: LoadedContent[] = listToMap.map((item: [string, string, number | null, number | null]) => ({
-                start: item[0],
-                end: item[1],
-                owner: item[2],
-                status: item[3]
-            }));
-
-            mappedContent.sort((a, b) => a.start.localeCompare(b.start));
-            setLoadedContent(mappedContent);
+            
+            const timeOptions = response.data.options;
+            const listToMap = Array.isArray(timeOptions) ? timeOptions : [];
+            const quantityFromPlace = response.data.limit ? response.data.limit.remaining : 2;
+            setLocalQuantity(Number(quantityFromPlace));
+            setLoadedContent(listToMap);
             
         } catch(error) {
             toast.error('Erro ao buscar horários: ' + (error instanceof Error ? error.message : String(error)));
@@ -103,28 +98,20 @@ const fetchData = useCallback(async () => {
         setSelectedItems([]);
     }, [fetchData]);
 
-    const userOwnedIndices = useMemo(() => {
-        return loadedContent
-            .map((item, index) => (item.owner === userId && (item.status === 1 || item.status === 3)) ? index : -1)
-            .filter(index => index !== -1);
-    }, [loadedContent, userId]);
-
-    const userTotalAppointments = userOwnedIndices.length;
-
     const toggleSelectHour = (item: LoadedContent, index: number) => {
         if (selectedItems.includes(item)) {
             setSelectedItems(prev => prev.filter(i => i !== item));
             return;
         }
-        if (item.status !== null) return;
 
-        if ((userTotalAppointments + selectedItems.length + 1) > localQuantity) {
+        if (( selectedItems.length ) > localQuantity) {
             toast.error(`Limite de ${localQuantity} agendamentos atingido.`);
             return;
         }
 
         const currentSelectionIndices = selectedItems.map(sel => loadedContent.indexOf(sel));
-        const allMyIndices = [...userOwnedIndices, ...currentSelectionIndices].sort((a, b) => a - b);
+        
+        const allMyIndices = [...currentSelectionIndices].sort((a, b) => a - b);
 
         if (allMyIndices.length > 0) {
             const firstIndex = allMyIndices[0];
@@ -138,37 +125,26 @@ const fetchData = useCallback(async () => {
             }
         }
 
-        setSelectedItems(prev => [...prev, item].sort((a, b) => a.start.localeCompare(b.start)));
+        setSelectedItems(prev => [...prev, item].sort((a, b) => a.start_time.localeCompare(b.start_time)));
     };
 
-const handleReserve = async () => {
+    const handleReserve = async () => {
         if (!session?.accessToken) {
             toast.error("Sessão inválida. Por favor, faça login novamente.");
             return signOut({ callbackUrl: '/login' });
         }
-        if (selectedItems.length === 0) return toast.info("Selecione um horário.");
+        if (selectedItems.length === 0) return toast.info("Selecione ao menos um horário.");
 
-        const payload: ReservationPayload[] = selectedItems.map(item => {
-            const startObj = createGMT3Date(currentDate, item.start);
-            const endObj = createGMT3Date(currentDate, item.end);
+        const selectedSlots = selectedItems.map(i => `${i.start_time} - ${i.end_time}`);
 
-            if (isNaN(startObj.getTime()) || isNaN(endObj.getTime())) {
-                toast.error("Data inválida gerada para: " + JSON.stringify(item));
-                throw new Error("Data inválida");
-            }
-
-            const startString = `${currentDate} ${item.start}:00`;
-            const endString = `${currentDate} ${item.end}:00`;
-
-            return {
-                member_id: userId,
-                place_id: placeId,
-                price: numericPrice,
-                status_id: 3,
-                start_schedule: startString,
-                end_schedule: endString
-            };
-        });
+        const payload: ReservationPayload = {
+            member_id: userId.toString(),
+            place_id: placeId.toString(),
+            selected_slots: selectedSlots,
+            price: numericPrice.toString(),
+            status_id: '3',
+            date: currentDate.toString(),
+        };
 
         try {
             const response = await API_CONSUME("POST", "schedule", {}, payload);
@@ -178,7 +154,6 @@ const handleReserve = async () => {
                 fetchData();
                 return;
             }
-
             await refreshCart();
             setSelectedItems([]);
             toast.success('Adicionado ao carrinho!');
@@ -190,13 +165,12 @@ const handleReserve = async () => {
 
     const allActiveIndices = useMemo(() => {
         const currentSelectionIndices = selectedItems.map(sel => loadedContent.indexOf(sel));
-        return [...userOwnedIndices, ...currentSelectionIndices].sort((a, b) => a - b);
-    }, [userOwnedIndices, selectedItems, loadedContent]);
+        return [...currentSelectionIndices].sort((a, b) => a - b);
+    }, [selectedItems, loadedContent]);
 
     const minActiveIndex = allActiveIndices.length > 0 ? allActiveIndices[0] : -1;
     const maxActiveIndex = allActiveIndices.length > 0 ? allActiveIndices[allActiveIndices.length - 1] : -1;
-    const limitReached = (userTotalAppointments + selectedItems.length) >= localQuantity;
-
+    const limitReached = (selectedItems.length) >= localQuantity;
     const ActionButtons = () => (
         <div className={isMobile? styles.mobileButtons : styles.actionButtonsWrapper}>
             <div style={isMobile ? {minWidth: '140px'}:{}} id='action-buttons-1'>
@@ -244,27 +218,44 @@ const handleReserve = async () => {
                             const isSelected = selectedItems.includes(item);
 
                             let itemClass = styles.scheduleItem;
-                            let ownerName = "";
+                            // let memberName = "";
+                            // let owner = "";
                             let label = `R$ ${numericPrice.toFixed(2)}`;
                             let isClickable = true;
                             let isBlocked = false;
 
-                            if (item.owner === userId) {
-                                if (item.status === 1 || item.status === 2) {
+                            if (item.colided_member?.id === userId) {
+                                if ((item.colided_status_id === 1 || item.colided_status_id === 2) && !item.colided_description) {
                                     itemClass += ` ${styles.myConfirmed}`;
                                     label = "Confirmado";
                                     isBlocked = true;
-                                } else if (item.status === 3) {
+                                }
+                                else if((item.colided_status_id === 1 || item.colided_status_id === 2) && item.colided_description){
+                                    itemClass += ` ${styles.reservedByOthers}`;
+                                    label = "Indisponível";
+                                    isBlocked = true;
+                                }
+                                else if (item.colided_status_id === 3) {
                                     itemClass += ` ${styles.inCart}`;
                                     label = "No Carrinho";
                                     isBlocked = true;
                                 }
-                            } else if (item.owner !== 0) {
+                            } else if (item.colides && item.colided_member) {
                                 itemClass += ` ${styles.reservedByOthers}`;
                                 label = "Ocupado";
                                 isBlocked = true;
-                                ownerName = item.ownerName ? item.ownerName : '';
+                                // memberName = item.colided_member.name ? (item.colided_member.name).split(' ') : '' 
+                                // owner = `${memberName[0]} ${memberName[memberName.length -1]}`;
+                            } else if (item.excluded_by_rule){
+                                itemClass += ` ${styles.reservedByOthers}`;
+                                label = "Indisponível";
+                                isBlocked = true;
+                            } else if  (localQuantity === 0 && (item.colided_member?.id !== userId)){
+                                itemClass += ` ${styles.reservedByOthers}`;
+                                label = "Indisponível";
+                                isBlocked = true;
                             }
+
 
                             if (isSelected) itemClass += ` ${styles.selected}`;
 
@@ -272,6 +263,7 @@ const handleReserve = async () => {
                                 const isNeighbor = index === minActiveIndex - 1 || index === maxActiveIndex + 1;
                                 if (!isNeighbor || limitReached) {
                                     itemClass += ` ${styles.nonAdjacent}`;
+                                    isBlocked = true;
                                 }
                             }
 
@@ -280,17 +272,18 @@ const handleReserve = async () => {
                             return (
                                 <li
                                     id={`schedule-${index}`}
-                                    key={`${index}-${item.start}`}
+                                    key={`${index}-${item.start_time}`}
                                     className={itemClass}
                                     onClick={() => {
-                                        if (isClickable) toggleSelectHour(item, index);
+                                        if(item.colided_description) toast.info(item.colided_description);
+                                        else if (isClickable) toggleSelectHour(item, index);
                                     }}
                                 >
                                     <span className={styles.timeLabel}>
-                                        {item.start} - {item.end}
+                                        {item.start_time} - {item.end_time}
                                     </span>
                                     <span className={styles.priceLabel}>{label}</span>
-                                    <span className={styles.priceLabel}>{ownerName}</span>
+                                    {/* <span className={styles.priceLabel}>{owner}</span> */}
                                 </li>
                             );
                         })}
@@ -315,7 +308,7 @@ const handleReserve = async () => {
                         <div className={styles.calendarImageContainer}>
                             {src ? (
                                 <Image
-                                    src={'/'+src}
+                                    src={src}
                                     width={400}
                                     height={275}
                                     alt="Local" 
@@ -325,7 +318,10 @@ const handleReserve = async () => {
                                 />
                             ) : <div className={styles.imagePlaceholder}>Imagem não disponível</div>
                             }
-
+                            
+                            <div className={styles.clockWrapper} id='expire-clock'>
+                                <Clock/>
+                            </div>
                         </div>
                         <div className={styles.desktopActions}>
                             <h3>Resumo</h3>

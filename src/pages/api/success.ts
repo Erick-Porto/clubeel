@@ -37,7 +37,6 @@ async function refundTransaction(tid: string, amount: number) {
         },
         body: JSON.stringify({ amount: amount })
     });
-
     if (!refundRes.ok) {
         const err = await refundRes.json();
         console.error("ERRO FATAL: Falha ao estornar:", err);
@@ -98,7 +97,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }, updatePayload);
 
         const apiRes = response as unknown as ApiErrorResponse;
-
         const hasConflict = apiRes?.status === 409 || 
                             apiRes?.message?.includes("conflito") || 
                             apiRes?.error === "expired";
@@ -111,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             await refundTransaction(currentTid, currentAmount);
 
             return res.status(409).json({ 
-                error: "expired", 
+                error: "error", 
                 message: apiRes?.message || "Erro ao confirmar agendamento. Valor estornado." 
             });
         }

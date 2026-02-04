@@ -14,7 +14,24 @@ import API_CONSUME from "@/services/api-consume";
 import { useSession } from 'next-auth/react';
 
 type PaymentMethod = "credit" | "debit" | "pix";
-type TimeOption = [string, string, number | null, number | null];
+
+interface TimeOption {
+    start_time: string;
+    end_time: string;
+    colides: boolean;
+    excluded_by_rule?: object | null;
+    colided_member?: User;
+    colided_status_id?: number;
+}
+
+interface User {
+    id: string;
+    cpf?: string;
+    title?: string;
+    telephone?: string;
+    born_date?: string;
+}
+
 interface CPParams {
   amount: number;
 }
@@ -123,7 +140,8 @@ try {
             async (item) => {
                 if (!item.start_schedule || !item.place) return;
 
-                const parts = item.start_schedule.split(/[\sT]+/);
+                // const parts = item.start_schedule.split(/[\sT]+/);
+                const parts = item.start_schedule.split(' ');
                 const datePart = parts[0];
                 const timePart = parts[1]; 
 
@@ -131,18 +149,18 @@ try {
                     Session: `${session?.accessToken}`
                 }, {
                     date: datePart,
-                    place_id: item.place_id
+                    place_id: item.place_id,
+                    member_id: session?.user?.id
                 });
                 
                 const optionsArray = response.data.options;
-                
                 const availableTimes = optionsArray.filter((option: TimeOption) => {
-                    const resourceOwner = Number(option[2]); 
+                    const resourceOwner = Number(option.colided_member?.id) || 0; 
                     const currentUserId = Number(session?.user?.id);
 
                     return resourceOwner === 0 || resourceOwner === currentUserId;
                 });
-                const availableTimeStrings = availableTimes.map((t: TimeOption) => String(t[0]).substring(0, 5));
+                const availableTimeStrings = availableTimes.map((t: TimeOption) => String(t.start_time).substring(0, 5));
                 const timeToCheck = String(timePart).substring(0, 5);
                 if (availableTimeStrings.includes(timeToCheck)) {
                     return true;
@@ -154,7 +172,7 @@ try {
     } catch (updateError: unknown) {
         const message = updateError instanceof Error ? updateError.message : "Erro ao verificar disponibilidade.";
         setStatus({ type: 'error', msg: message });
-        router.push('/checkout?status=expired');
+        router.push('/checkout?status=error');
         setLoading(false);
         return; 
     }
