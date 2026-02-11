@@ -51,7 +51,9 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
     const [isExpanded, setIsExpanded] = useState(false);
 
     const fetchAppointments = useCallback(async () => {
-        if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id)  return signOut({ callbackUrl: '/login' });;
+        if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id) 
+            return toast.error("Sessão inválida. Por favor, faça login novamente.");
+            // signOut({ callbackUrl: '/login' });;
 
         try {
             setIsLoading(true);

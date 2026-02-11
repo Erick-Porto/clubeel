@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { config } from '@fortawesome/fontawesome-svg-core'
+import TokenValidator from "@/components/Auth/TokenValidator";
 import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 
@@ -24,6 +25,7 @@ export default function RootLayout({
       <body >
         <NextAuthProvider>
           <CartProvider>
+            <TokenValidator />
             {children}
           </CartProvider>
         </NextAuthProvider>

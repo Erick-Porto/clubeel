@@ -18,8 +18,9 @@ const Cart = () => {
     const handleRemoveItem = async (scheduleId: number) => {
         
         if (!session?.accessToken) {
-            toast.error("Sessão inválida. Por favor, faça login novamente.");
-            return signOut({ callbackUrl: '/login' });
+            
+            return toast.error("Sessão inválida. Por favor, faça login novamente.");
+            // signOut({ callbackUrl: '/login' });
         }
         try {
             removeCartItem(scheduleId);

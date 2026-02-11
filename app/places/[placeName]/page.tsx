@@ -1,8 +1,8 @@
 "use client"
 import globalStyle from "@/styles/page.module.css";
 import style from "@/styles/places.module.css"
-import Footer from '@/components/footer';
-import Header from '@/components/header';
+import Footer from '@/components/Common/footer';
+import Header from '@/components/Common/header';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from "react";
 import API_CONSUME from "@/services/api-consume";
@@ -10,8 +10,8 @@ import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
-import { LoadingScreen } from "@/components/loading";
-import TutorialOverlay, { TutorialStep } from "@/app/components/tutorial-overlay";
+import { LoadingScreen } from "@/components/Common/loading";
+import TutorialOverlay, { TutorialStep } from "@/app/components/Common/tutorial-overlay";
 import { toast } from "react-toastify";
 import { useIsMobile } from "@/app/hooks/useIsMobile";
 
@@ -100,7 +100,7 @@ const fetchPlaces = useCallback(async () => {
 
         } catch (error) {
             toast.error("Erro ao buscar locais: " + (error instanceof Error ? error.message : String(error)));
-            signOut({ callbackUrl: '/login' });
+            // signOut({ callbackUrl: '/login' });
         }
     }, [placeId, session, status]);
 

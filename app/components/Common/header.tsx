@@ -8,7 +8,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faUserCircle } from '@fortawesome/free-solid-svg-icons';
-import { useIsMobile } from '../hooks/useIsMobile';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 export interface HeaderOption {
     text: string;

@@ -2,17 +2,17 @@
 
 import { useState, useMemo, useEffect, Suspense } from 'react'; 
 import { useSearchParams, useRouter } from 'next/navigation';
-import CheckoutView from "@/components/checkout";
-import Footer from "@/components/footer";
-import Header from "@/components/header";
+import CheckoutView from "@/components/Checkout/checkout";
+import Footer from "@/components/Common/footer";
+import Header from "@/components/Common/header";
 import style from '@/styles/checkout.module.css';
 import globalStyle from '@/styles/page.module.css';
-import CheckoutContent from "../components/checkoutContent";
+import CheckoutContent from "@/components/Checkout/checkoutContent";
 import { useCart } from '@/context/CartContext';
-import { LoadingScreen } from '@/components/loading';
+import { LoadingScreen } from '@/components/Common/loading';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
-import TutorialOverlay, { TutorialStep } from '../components/tutorial-overlay';
+import TutorialOverlay, { TutorialStep } from '@/components/Common/tutorial-overlay';
 import API_CONSUME from '@/services/api-consume';
 import { toast } from 'react-toastify';
 

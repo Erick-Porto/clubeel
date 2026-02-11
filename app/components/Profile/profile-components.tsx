@@ -116,8 +116,8 @@ export const ProfileForm = () => {
 
     const handleUpdateProfile = async (currentPassword: string) => {
         if (!session?.accessToken) {
-            toast.error("Sessão inválida. Por favor, faça login novamente.");
-            return signOut({ callbackUrl: '/login' });
+            return toast.error("Sessão inválida. Por favor, faça login novamente.");
+            // signOut({ callbackUrl: '/login' });
         }
 
         try {
@@ -268,8 +268,8 @@ export const PasswordForm = () => {
 
 const handleUpdate = async (currentPassword: string) => {
         if (!session?.accessToken) {
-            toast.error("Sessão inválida. Por favor, faça login novamente.");
-            return signOut({ callbackUrl: '/login' });
+            return toast.error("Sessão inválida. Por favor, faça login novamente.");
+            // signOut({ callbackUrl: '/login' });
         }
         
         try {

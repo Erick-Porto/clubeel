@@ -2,15 +2,15 @@
 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import Schedule from '@/app/components/schedule';
-import Footer from '@/components/footer';
-import Header from '@/components/header';
+import Schedule from '@/app/components/Schedules/schedule';
+import Footer from '@/components/Common/footer';
+import Header from '@/components/Common/header';
 import globalStyle from "@/styles/page.module.css";
 import style from "@/styles/places.module.css";
 import API_CONSUME from '@/services/api-consume';
 import { useSession } from 'next-auth/react';
-import { LoadingScreen } from '@/components/loading';
-import TutorialOverlay, { TutorialStep } from '@/app/components/tutorial-overlay';
+import { LoadingScreen } from '@/components/Common/loading';
+import TutorialOverlay, { TutorialStep } from '@/app/components/Common/tutorial-overlay';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';

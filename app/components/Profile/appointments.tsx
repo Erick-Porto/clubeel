@@ -1,8 +1,8 @@
-import LatestAppointments from "@/components/latest-appointments";
-import Cart from "@/components/cart";
+import LatestAppointments from "./latest-appointments";
+import Cart from "./cart";
 import { useCart } from "@/context/CartContext";
 import style from '@/styles/appointments.module.css'
-import { Loading } from "./loading";
+import { Loading } from "@/components/Common/loading";
 import Link from "next/link";
 
 const Appointments = () => {

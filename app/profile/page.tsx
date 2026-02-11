@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, Suspense } from "react";
-import Footer from "@/components/footer";
-import Banner from "@/components/banner";
+import Footer from "@/components/Common/footer";
+import Banner from "@/components/Profile/banner";
 import { signOut, useSession } from "next-auth/react";
-import { ProfileForm, PasswordForm } from "@/components/profile-components";
+import { ProfileForm, PasswordForm } from "@/components/Profile/profile-components";
 import style from '@/styles/profile.module.css';
-import Appointments from "@/components/appointments";
-import Header from "../components/header";
+import Appointments from "@/components/Profile/appointments";
+import Header from "../components/Common/header";
 import { useCart } from "@/context/CartContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -48,7 +48,9 @@ const ProfileContent = () => {
 
 useEffect(() => {
         const fetchLastPlaceImage = async () => {
-            if (status !== 'authenticated' || !session?.accessToken)  return signOut({ callbackUrl: '/login' });
+            if (status !== 'authenticated' || !session?.accessToken)
+                return toast.error("Sessão inválida. Por favor, faça login novamente.");
+                // signOut({ callbackUrl: '/login' });
 
             try {
                 const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`);

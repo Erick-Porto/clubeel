@@ -49,7 +49,7 @@ async function refundTransaction(tid: string, amount: number) {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const session = await getServerSession(req, res, authOptions);
     if (!session || !session.accessToken) {
-        signOut({ callbackUrl: '/login' });
+        // signOut({ callbackUrl: '/login' });
         return res.status(401).json({ error: "Sessão expirada." });
     }
 

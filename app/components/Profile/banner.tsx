@@ -18,7 +18,8 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
 
     useEffect(() => {
         const fetchAvatarImage = async () => {
-            if (!session?.user?.id || !session?.accessToken)  return signOut({ callbackUrl: '/login' });
+            if (!session?.user?.id || !session?.accessToken)  return toast.error("Sessão inválida. Por favor, faça login novamente.");
+            //signOut({ callbackUrl: '/login' });
 
             try {
                 const response = await fetch(`${process.env.INTERNAL_LARA_API_URL}/api/image/${session.user.id}`, {

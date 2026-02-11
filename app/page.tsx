@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import style from "@/styles/page.module.css";
-import Footer from "@/components/footer";
-import Header, { HeaderOption } from "@/components/header";
+import Footer from "@/components/Common/footer";
+import Header, { HeaderOption } from "@/components/Common/header";
 // import MobileNavBar from "@/components/mobileNavBar";
-import SportiveSquare from "@/components/sportive-square";
+import SportiveSquare from "@/components/Common/sportive-square";
 // import MapBanner from "@/components/map-banner";
 import API_CONSUME from "@/services/api-consume";
 import { useSession, signOut } from "next-auth/react";
@@ -14,7 +14,7 @@ import { useIsMobile } from "./hooks/useIsMobile";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-import ItensGrid from "@/components/ItensGrid";
+import ItensGrid from "@/components/Common/ItensGrid";
 interface Point { x: number; y: number; }
 interface Place {
     id: number;
@@ -77,7 +77,9 @@ const Home = () => {
 
 useEffect(() => {
         const fetchPlaces = async () => {
-            if (status !== 'authenticated' || !session?.accessToken) return signOut({ callbackUrl: '/login' });
+            if (status !== 'authenticated' || !session?.accessToken)
+                return toast.error("Sessão inválida. Por favor, faça login novamente.");
+            // signOut({ callbackUrl: '/login' });
             
             try {
                 const response = await API_CONSUME("GET", "places/group");
@@ -85,7 +87,7 @@ useEffect(() => {
                 // 1. Verificação de segurança (Novo padrão)
                 if (!response.ok || !response.data) {
                     toast.error("Erro ao buscar locais: " + response.message);
-                    signOut({ callbackUrl: '/login' });
+                    // signOut({ callbackUrl: '/login' });
                 }
 
                 const rawPlacesArray = Object.values(response.data) as ApiPlaceData[];
