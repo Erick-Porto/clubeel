@@ -4,7 +4,7 @@ import style from "@/styles/profile.module.css";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faTimes, faSpinner, faLock } from "@fortawesome/free-solid-svg-icons";
-import { signOut, useSession } from "next-auth/react"; 
+import { useSession } from "next-auth/react"; 
 import API_CONSUME from "@/services/api-consume";
 import CryptoJS from "crypto-js";
 
@@ -116,8 +116,8 @@ export const ProfileForm = () => {
 
     const handleUpdateProfile = async (currentPassword: string) => {
         if (!session?.accessToken) {
-            return toast.error("Sessão inválida. Por favor, faça login novamente.");
-            // signOut({ callbackUrl: '/login' });
+            toast.error("Sessão inválida. Por favor, faça login novamente.");
+            return;
         }
 
         try {
@@ -268,8 +268,9 @@ export const PasswordForm = () => {
 
 const handleUpdate = async (currentPassword: string) => {
         if (!session?.accessToken) {
-            return toast.error("Sessão inválida. Por favor, faça login novamente.");
-            // signOut({ callbackUrl: '/login' });
+            toast.error("Sessão inválida. Por favor, faça login novamente.");
+            return;
+            
         }
         
         try {

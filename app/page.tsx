@@ -8,7 +8,7 @@ import Header, { HeaderOption } from "@/components/Common/header";
 import SportiveSquare from "@/components/Common/sportive-square";
 // import MapBanner from "@/components/map-banner";
 import API_CONSUME from "@/services/api-consume";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useIsMobile } from "./hooks/useIsMobile";
 // import TutorialOverlay, { TutorialStep } from "@/components/tutorial-overlay";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -77,9 +77,11 @@ const Home = () => {
 
 useEffect(() => {
         const fetchPlaces = async () => {
-            if (status !== 'authenticated' || !session?.accessToken)
-                return toast.error("Sessão inválida. Por favor, faça login novamente.");
-            // signOut({ callbackUrl: '/login' });
+            if (status !== 'authenticated' || !session?.accessToken) {
+                toast.error("Sessão inválida. Por favor, faça login novamente.");
+                return;
+            }
+            
             
             try {
                 const response = await API_CONSUME("GET", "places/group");
@@ -87,7 +89,7 @@ useEffect(() => {
                 // 1. Verificação de segurança (Novo padrão)
                 if (!response.ok || !response.data) {
                     toast.error("Erro ao buscar locais: " + response.message);
-                    // signOut({ callbackUrl: '/login' });
+                    
                 }
 
                 const rawPlacesArray = Object.values(response.data) as ApiPlaceData[];

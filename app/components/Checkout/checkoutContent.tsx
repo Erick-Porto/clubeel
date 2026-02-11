@@ -1,7 +1,7 @@
 'use client'
 import React, { useMemo, useState } from 'react'
 import style from '@/styles/checkout.module.css'
-import { signOut, useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { useCart, CartItem } from '@/context/CartContext'
 import Link from 'next/link';
 import { Loading } from '@/components/Common/loading';
@@ -30,8 +30,9 @@ const CheckoutContent: React.FC<{total: number, formatPrice: (p: number) => stri
     const handleCancelSchedule = async (scheduleId: number) => {
         if (cancellingId || !session?.accessToken) {
             if (!session?.accessToken) {
-                return toast.error("Sessão inválida. Por favor, faça login novamente.");
-                // signOut({ callbackUrl: '/login' });
+                toast.error("Sessão inválida. Por favor, faça login novamente.");
+                return;
+                
             }
         }
         setCancellingId(scheduleId);

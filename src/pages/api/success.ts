@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/api/auth/[...nextauth]";
 import API_CONSUME from "@/services/api-consume";
-import { signOut } from "next-auth/react";
 
 const REDE_CLIENT_ID = process.env.INTERNAL_EREDE_CLIENT_ID as string;
 const REDE_CLIENT_SECRET = process.env.INTERNAL_EREDE_SECRET_ID as string;
@@ -49,7 +48,7 @@ async function refundTransaction(tid: string, amount: number) {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const session = await getServerSession(req, res, authOptions);
     if (!session || !session.accessToken) {
-        // signOut({ callbackUrl: '/login' });
+        
         return res.status(401).json({ error: "Sessão expirada." });
     }
 

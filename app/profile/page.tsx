@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Footer from "@/components/Common/footer";
 import Banner from "@/components/Profile/banner";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { ProfileForm, PasswordForm } from "@/components/Profile/profile-components";
 import style from '@/styles/profile.module.css';
 import Appointments from "@/components/Profile/appointments";
@@ -48,10 +48,11 @@ const ProfileContent = () => {
 
 useEffect(() => {
         const fetchLastPlaceImage = async () => {
-            if (status !== 'authenticated' || !session?.accessToken)
-                return toast.error("Sessão inválida. Por favor, faça login novamente.");
-                // signOut({ callbackUrl: '/login' });
-
+            if (status !== 'authenticated' || !session?.accessToken) {
+                toast.error("Sessão inválida. Por favor, faça login novamente.");
+                return;
+                
+            }
             try {
                 const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`);
 

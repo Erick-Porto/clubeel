@@ -5,7 +5,7 @@ import styles from '@/styles/schedule.module.css';
 import BookingButton from './booking-button';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
-import { signOut, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
 import API_CONSUME from '@/services/api-consume';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -64,9 +64,11 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const [selectedItems, setSelectedItems] = useState<LoadedContent[]>([]);
     const [localQuantity, setLocalQuantity] = useState<number>(0);
     const fetchData = useCallback(async () => {
-        if (!placeId || !session?.accessToken || !currentDate)
-            return toast.error("Dados insuficientes para carregar horários.");
-            // signOut({ callbackUrl: '/login' });
+        if (!placeId || !session?.accessToken || !currentDate) {
+            toast.error("Dados insuficientes para carregar horários.");
+            
+            return;
+        }
         try {
             cart.forEach(i =>{
                 setCartTotal(prev => prev + i.price);
@@ -132,8 +134,9 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 
     const handleReserve = async () => {
         if (!session?.accessToken) {
-            return toast.error("Sessão inválida. Por favor, faça login novamente.");
-            // signOut({ callbackUrl: '/login' });
+            toast.error("Sessão inválida. Por favor, faça login novamente.");
+            return;
+            
         }
         if (selectedItems.length === 0) return toast.info("Selecione ao menos um horário.");
 

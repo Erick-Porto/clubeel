@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from "react";
 import API_CONSUME from "@/services/api-consume";
 import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { LoadingScreen } from "@/components/Common/loading";
@@ -100,7 +100,7 @@ const fetchPlaces = useCallback(async () => {
 
         } catch (error) {
             toast.error("Erro ao buscar locais: " + (error instanceof Error ? error.message : String(error)));
-            // signOut({ callbackUrl: '/login' });
+            
         }
     }, [placeId, session, status]);
 

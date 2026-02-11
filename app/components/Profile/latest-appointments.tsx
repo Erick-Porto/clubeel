@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import style from '@/styles/latest-appointments.module.css';
 import API_CONSUME from '@/services/api-consume';
-import { signOut, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faClock, faChevronDown, faChevronUp, faInfoCircle } from '@fortawesome/free-solid-svg-icons'; 
 import Image from 'next/image';
@@ -51,10 +51,10 @@ const LatestAppointments = ({ appointmentStatus, initialLimit = 4, tooltip }: La
     const [isExpanded, setIsExpanded] = useState(false);
 
     const fetchAppointments = useCallback(async () => {
-        if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id) 
-            return toast.error("Sessão inválida. Por favor, faça login novamente.");
-            // signOut({ callbackUrl: '/login' });;
-
+        if (status !== 'authenticated' || !session?.accessToken || !session?.user?.id) {
+            toast.error("Sessão inválida. Por favor, faça login novamente.");
+            return;
+        }
         try {
             setIsLoading(true);
             

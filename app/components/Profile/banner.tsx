@@ -2,7 +2,7 @@ import Image from "next/image";
 import style from "@/styles/banner.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faIdBadge } from "@fortawesome/free-solid-svg-icons";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -18,7 +18,10 @@ const Banner = ({ lastScheduleImage }: BannerProps) => {
 
     useEffect(() => {
         const fetchAvatarImage = async () => {
-            if (!session?.user?.id || !session?.accessToken)  return toast.error("Sessão inválida. Por favor, faça login novamente.");
+            if (!session?.user?.id || !session?.accessToken){
+                    toast.error("Sessão inválida. Por favor, faça login novamente.");
+                    return;
+                }
             //signOut({ callbackUrl: '/login' });
 
             try {
