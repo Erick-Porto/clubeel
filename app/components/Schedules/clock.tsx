@@ -5,21 +5,39 @@ import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHourglassStart, faHourglassEnd } from "@fortawesome/free-solid-svg-icons";
 
-
 const CART_EXPIRY_TOAST_ID = "cart-expiry-toast";
+
+// ✅ 1. TRADUTOR DE DATAS: Garante que funcione em iPhones e sempre fixe no fuso de SP
+const parseSafeDate = (dateStr: string) => {
+    if (!dateStr) return 0;
+    
+    // Troca o espaço por T (exigência do Safari)
+    let safeDate = dateStr.replace(' ', 'T');
+    
+    // Se a data não vier com fuso, força o fuso de Brasília (-03:00) 
+    // Isso impede que a data mude se o celular do usuário estiver com o fuso errado
+    if (!safeDate.includes('-03:00') && !safeDate.includes('Z') && !safeDate.includes('+')) {
+        safeDate += '-03:00';
+    }
+    
+    const time = new Date(safeDate).getTime();
+    return isNaN(time) ? 0 : time;
+};
 
 export default function Clock() {
     const { cart, refreshCart } = useCart();
     const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
-    const [isFull, setIsFull] = useState(true); // True = Start, False = End
+    const [isFull, setIsFull] = useState(true);
     const [rotation, setRotation] = useState(0);
     const [pulse, setPulse] = useState(false);
+    
     const oldestItem = useMemo(() => {
         if (!cart || cart.length === 0) return null;
         
         return cart.reduce((prev: CartItem, curr: CartItem) => {
-            const datePrev = new Date(prev.created_at).getTime();
-            const dateCurr = new Date(curr.created_at).getTime();
+            // Usa o tradutor seguro para comparar as datas
+            const datePrev = parseSafeDate(prev.created_at);
+            const dateCurr = parseSafeDate(curr.created_at);
             return datePrev < dateCurr ? prev : curr;
         });
     }, [cart]);
@@ -31,12 +49,16 @@ export default function Clock() {
         }
 
         const calculateTimeLeft = () => {
-            const expirationTime = new Date(oldestItem.created_at).getTime() + (10 * 60 * 1000);
+            const itemTime = parseSafeDate(oldestItem.created_at);
+            const expirationTime = itemTime + (10 * 60 * 1000);
             const now = new Date().getTime();
             
             const difference = Math.floor((expirationTime - now) / 1000);
             
-            return difference > 600 ? 600 : (difference <= 0 ? 0 : difference);
+            // ✅ 2. REMOVIDA A TRAVA DE 600:
+            // Agora, se o servidor estiver 5 segundos adiantado, o relógio mostrará 10:05 e descerá normalmente, 
+            // em vez de ficar congelado e invisível para o React.
+            return difference <= 0 ? 0 : difference;
         };
 
         setSecondsLeft(calculateTimeLeft());
@@ -64,7 +86,7 @@ export default function Clock() {
             return;
         }
 
-        const message = `Um item do seu carrinho ira expirar em ${formatTime(secondsLeft)}`;
+        const message = `Um item do seu carrinho irá expirar em ${formatTime(secondsLeft)}`;
 
         if (secondsLeft <= 60) {
             setPulse(true);
