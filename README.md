@@ -159,12 +159,6 @@ cp .env.example .env.local
 
 Variáveis Necessárias (.env.local)
 
-# Pagamentos (Mercado Pago)
-NEXT_PUBLIC_MP_PUBLIC_TOKEN=seu_token_publico
-
-# Mapas (Google Maps Embed)
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=sua_api_key
-
 # Backend (Laravel API)
 NEXT_PUBLIC_LARA_API=[https://api.clubeel.com.br](https://api.clubeel.com.br)
 NEXT_PUBLIC_LARA_API_TOKEN=seu_token_integracao
