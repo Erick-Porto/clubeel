@@ -117,9 +117,9 @@ const fetchCartData = useCallback(async (token: string, userId: string | number)
                 return cleanCartItems;
             });
 
-            if(cleanCartItems.length === 0 && pathname === '/checkout')
-                {toast.warn("Seu carrinho está vazio, você foi redirecionado para a página inicial.");
-                router.push('/');}
+            // if(cleanCartItems.length === 0 && pathname === '/checkout')
+            //     {toast.warn("Seu carrinho está vazio, você foi redirecionado para a página inicial.");
+            //     router.push('/');}
             
         } catch (error) {
             toast.error("Erro crítico ao processar carrinho: " + (error instanceof Error ? error.message : String(error)));
@@ -127,6 +127,13 @@ const fetchCartData = useCallback(async (token: string, userId: string | number)
             setIsLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        if (!isLoading && cart.length === 0 && pathname === '/checkout') {
+            toast.warn("O seu carrinho está vazio, foi redirecionado para a página inicial.");
+            router.push('/');
+        }
+    }, [cart.length, isLoading, pathname, router]);
 
     useEffect(() => {
         if (status === 'authenticated' && session?.accessToken && session?.user?.id) {

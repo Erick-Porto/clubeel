@@ -11,7 +11,7 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import API_CONSUME from "@/services/api-consume";
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 type PaymentMethod = "credit" | "debit" | "pix";
 
@@ -57,7 +57,7 @@ export default function CheckoutPayment({ amount }: CPParams) {
     const session = sessionData as CustomSession | null;
   // 2. Instanciar o router  
     const router = useRouter();
-    const { cart } = useCart(); 
+    const { cart, clearCart } = useCart(); 
     const [method, setMethod] = useState<PaymentMethod>("credit");
     const [isFlipped, setIsFlipped] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -132,15 +132,19 @@ export default function CheckoutPayment({ amount }: CPParams) {
   };
 
 const handlePayment = async () => {
+    if (!session?.accessToken || !session?.user?.id) {
+        toast.error("Sessão expirada ou dados incompletos. Por favor, faça login novamente.");
+        await signOut({ callbackUrl: '/login', redirect: true });
+        return;
+    }
+
     setLoading(true);
     setStatus(null);
 
-try {
+    try {
         await Promise.all(cart.map(
             async (item) => {
                 if (!item.start_schedule || !item.place) return;
-
-                // const parts = item.start_schedule.split(/[\sT]+/);
                 const parts = item.start_schedule.split(' ');
                 const datePart = parts[0];
                 const timePart = parts[1]; 
@@ -223,6 +227,8 @@ try {
 
             if (saveOrderRes.ok) {
                 setStatus({ type: 'success', msg: 'Pagamento confirmado!' });
+                clearCart();
+                router.refresh()
                 router.push('/checkout?status=success');
             } 
             else if (saveOrderRes.status === 409 || saveResult.error === 'expired') {
