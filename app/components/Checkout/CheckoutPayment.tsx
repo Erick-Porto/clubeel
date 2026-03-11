@@ -57,7 +57,7 @@ export default function CheckoutPayment({ amount }: CPParams) {
     const session = sessionData as CustomSession | null;
   // 2. Instanciar o router  
     const router = useRouter();
-    const { cart, clearCart } = useCart(); 
+    const { cart } = useCart(); 
     const [method, setMethod] = useState<PaymentMethod>("credit");
     const [isFlipped, setIsFlipped] = useState(false);
     const [loading, setLoading] = useState(false);
