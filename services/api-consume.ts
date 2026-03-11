@@ -12,21 +12,19 @@ export interface IApiResponse<T = any> {
     message?: string;
 }
 
-// Adicionei um parâmetro opcional options no final
+// 1. O parâmetro options permite pular a checagem em rotas específicas (como o próprio login)
 async function API_CONSUME<T = any>(
     method: string, 
     endpoint: string, 
     headers: Record<string, string> = {},
     body: any = null,
-    options: { skipAuthCheck?: boolean } = {} // Novo parâmetro
+    options: { skipAuthCheck?: boolean } = {} 
 ): Promise<IApiResponse<T>> {
     
-    // ... (Mantenha a lógica de URL e Headers igual ao seu código original) ...
     const baseURL = IS_SERVER ? `${INTERNAL_API}/api` : PROXY_API;
     const cleanEndpoint = endpoint.replace(/^\//, '');
     const url = `${baseURL}/${cleanEndpoint}`;
     
-    // ... (Configuração de headers igual ao original) ...
     const appToken = process.env.INTERNAL_LARA_API_TOKEN;
     let requestHeaders: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -36,31 +34,33 @@ async function API_CONSUME<T = any>(
     if (IS_SERVER) {
          const hasAuth = Object.keys(requestHeaders).some(k => k.toLowerCase() === 'authorization');
          if (!hasAuth && appToken) requestHeaders['Authorization'] = `Bearer ${appToken}`;
-    } else {
-        requestHeaders = { ...headers }; 
     }
 
     const config: RequestInit = {
         method,
         headers: requestHeaders,
-        cache: 'no-store' 
+        cache: 'no-store'
     };
-    if (body) config.body = JSON.stringify(body);
+
+    if (body) {
+        config.body = JSON.stringify(body);
+    }
 
     try {
         const response = await fetch(url, config);
-        
-        // --- CORREÇÃO AQUI ---
-        // Se der 401 E não estivermos no servidor E não for a própria verificação de token
-        if (response.status === 401 && !IS_SERVER && !options.skipAuthCheck) {
-            console.warn("[API_CONSUME] Token expirado. Iniciando SignOut...");
+
+        // ✅ INTERCEPTOR DE AUTENTICAÇÃO GLOBAL
+        // Se a API retornar 401 ou 403, forçamos o logout do usuário imediatamente.
+        if ((response.status === 401 || response.status === 403) && !IS_SERVER && !options.skipAuthCheck) {
+            console.warn(`[API_CONSUME] Acesso negado na rota ${endpoint}. Iniciando SignOut...`);
+            
+            toast.error("Sua sessão expirou. Por favor, faça login novamente.");
             
             // Força o logout e limpa os cookies do NextAuth
             await signOut({ callbackUrl: '/login', redirect: true });
             
-            return { data: null, status: 401, ok: false, message: "Sessão expirada." };
+            return { data: null, status: response.status, ok: false, message: "Sessão expirada." };
         }
-        // ---------------------
 
         const responseText = await response.text();
         let responseData = null;
@@ -85,7 +85,7 @@ async function API_CONSUME<T = any>(
         if (IS_SERVER) {
             console.error(`[API_CONSUME NETWORK ERROR] Falha ao conectar em ${url}:`, error.message);
         }
-        return { data: null, status: 503, ok: false, message: "Falha na comunicação." };
+        return { data: null, status: 503, ok: false, message: "Falha de conexão com a API." };
     }
 }
 

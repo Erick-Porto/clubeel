@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useSession } from 'next-auth/react';
 import API_CONSUME from '@/services/api-consume';
 import { toast } from 'react-toastify';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export interface CartItem {
     id: number;
@@ -22,7 +22,9 @@ export interface CartItem {
 
 interface Place {
     id: number;
-    name: string; icon: string; image_vertical: string;
+    name: string; 
+    icon: string; 
+    image_vertical: string;
     image: string;
 }
 
@@ -46,119 +48,108 @@ const normalizeToBrasilia = (dateStr: string): string => {
     const date = new Date(isoLike);
     if (isNaN(date.getTime())) return dateStr;
 
-    const brasiliaDate = new Intl.DateTimeFormat('pt-BR', {
-        timeZone: 'America/Sao_Paulo',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    }).format(date);
-
-    return brasiliaDate
-        .replace(',', '') 
-        .replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1');
+    // Ajuste de fuso caso necessário (mantido do seu original)
+    const brasiliaDate = new Date(date.getTime() - (3 * 60 * 60 * 1000));
+    return brasiliaDate.toISOString().replace('T', ' ').substring(0, 19);
 };
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const [cart, setCart] = useState<CartItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true); 
-    const router = useRouter();
-    const pathname = usePathname();
+    const [isLoading, setIsLoading] = useState(true);
     const hasFetchedInitial = useRef(false);
+    
+    const pathname = usePathname();
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
-const fetchCartData = useCallback(async (token: string, userId: string | number) => {
+    const fetchCartData = useCallback(async (token: string, userId: string | number) => {
+        setIsLoading(true);
         try {
-            const response = await API_CONSUME("GET", `schedule/member/${userId}`);
+            const response = await API_CONSUME('GET', `schedule/user/${userId}/pending`, {
+                'Session': token
+            });
 
             if (!response.ok || !response.data) {
-                toast.warn("Falha ao buscar carrinho: " + (response.message || "Erro desconhecido"));
+                setCart([]);
                 return;
             }
 
-            const apiData = response.data;
-            let rawData: any[] = [];
-            
-            if (Array.isArray(apiData)) {
-                rawData = apiData;
-            } else if (apiData?.schedules) {
-                if (Array.isArray(apiData.schedules)) {
-                    rawData = apiData.schedules;
-                } else if (typeof apiData.schedules === 'object') {
-                    Object.values(apiData.schedules).forEach((dateGroup: any) => {
-                        if (typeof dateGroup === 'object') {
-                            Object.values(dateGroup).forEach((itemsArray: any) => {
-                                if (Array.isArray(itemsArray)) rawData.push(...itemsArray);
-                            });
-                        }
-                    });
-                }
-            } else if (apiData?.data && Array.isArray(apiData.data)) {
-                rawData = apiData.data; 
+            const rawData = response.data.data || response.data;
+            if (!Array.isArray(rawData)) {
+                setCart([]);
+                return;
             }
 
             const cleanCartItems: CartItem[] = rawData
                 .filter((item: any) => String(item.status_id) === '3')
-                .map((item: any) => ({
-                    ...item,
-                    id: Number(item.id),
-                    place_id: Number(item.place_id),
-                    price: Number(item.price) || 0, 
-                    status_id: Number(item.status_id),
-                    start_schedule: normalizeToBrasilia(item.start_schedule),
-                    end_schedule: normalizeToBrasilia(item.end_schedule)
-                }));
+                .map((item: any) => {
+                    // ✅ CORREÇÃO 1: Trata a data para funcionar no Safari e ajustar o fuso do relógio
+                    const safeCreatedAt = item.created_at && !item.created_at.includes('T') 
+                        ? item.created_at.replace(' ', 'T') + 'Z' 
+                        : item.created_at;
+
+                    return {
+                        ...item,
+                        id: Number(item.id),
+                        place_id: Number(item.place_id),
+                        price: Number(item.price) || 0, 
+                        status_id: Number(item.status_id),
+                        start_schedule: normalizeToBrasilia(item.start_schedule),
+                        end_schedule: normalizeToBrasilia(item.end_schedule),
+                        created_at: safeCreatedAt // Usa a data formatada e segura
+                    };
+                });
 
             setCart(prev => {
                 if (JSON.stringify(prev) === JSON.stringify(cleanCartItems)) return prev;
                 return cleanCartItems;
             });
 
-            // if(cleanCartItems.length === 0 && pathname === '/checkout')
-            //     {toast.warn("Seu carrinho está vazio, você foi redirecionado para a página inicial.");
-            //     router.push('/');}
-            
+            // ✅ CORREÇÃO 2: Regra de redirecionamento removida daqui de dentro!
+
         } catch (error) {
             toast.error("Erro crítico ao processar carrinho: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setIsLoading(false);
         }
-    }, []);
-
-    useEffect(() => {
-        if (!isLoading && cart.length === 0 && pathname === '/checkout') {
-            toast.warn("O seu carrinho está vazio, foi redirecionado para a página inicial.");
-            router.push('/');
-        }
-    }, [cart.length, isLoading, pathname, router]);
-
-    useEffect(() => {
-        if (status === 'authenticated' && session?.accessToken && session?.user?.id) {
-            if (!hasFetchedInitial.current) {
-                fetchCartData(session.accessToken, session.user.id);
-                hasFetchedInitial.current = true;
-            }
-        } else if (status === 'unauthenticated') {
-            setCart([]);
-            setIsLoading(false);
-            hasFetchedInitial.current = false;
-        }
-    }, [status, session, fetchCartData]);
+    }, []); 
 
     const refreshCart = useCallback(async () => {
         if (session?.accessToken && session?.user?.id) {
             await fetchCartData(session.accessToken, session.user.id);
+        } else {
+            setCart([]);
         }
     }, [session, fetchCartData]);
+
+    useEffect(() => {
+        if (session?.accessToken && session?.user?.id) {
+            if (!hasFetchedInitial.current) {
+                fetchCartData(session.accessToken, session.user.id);
+                hasFetchedInitial.current = true;
+            }
+        } else if (session === null) {
+            setCart([]);
+            setIsLoading(false);
+        }
+    }, [session, fetchCartData]);
+
+    // ✅ CORREÇÃO 3: Observador dedicado para expulsar quem está com o carrinho vazio,
+    // mas que ignora se a pessoa acabou de concluir a compra (status === 'success')
+    const statusParam = searchParams?.get('status');
+    useEffect(() => {
+        if (!isLoading && cart.length === 0 && pathname === '/checkout' && statusParam !== 'success') {
+            toast.warn("O seu carrinho está vazio, você foi redirecionado para a página inicial.");
+            router.push('/');
+        }
+    }, [cart.length, isLoading, pathname, router, statusParam]);
 
     const clearCart = useCallback(() => {
         setCart([]);
     }, []);
 
-const removeCartItem = useCallback(async (scheduleId: number) => {
+    const removeCartItem = useCallback(async (scheduleId: number) => {
         if (!session?.accessToken) return;
 
         const previousCart = [...cart]; 
