@@ -227,8 +227,8 @@ const handlePayment = async () => {
 
             if (saveOrderRes.ok) {
                 setStatus({ type: 'success', msg: 'Pagamento confirmado!' });
-                clearCart();
-                router.refresh()
+                // clearCart();
+                // router.refresh()
                 router.push('/checkout?status=success');
             } 
             else if (saveOrderRes.status === 409 || saveResult.error === 'expired') {

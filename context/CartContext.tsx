@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useSession } from 'next-auth/react';
 import API_CONSUME from '@/services/api-consume';
 import { toast } from 'react-toastify';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export interface CartItem {
     id: number;
@@ -38,8 +38,8 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const normalizeToBrasilia = (dateStr: string): string => {
-    if (!dateStr) return "";
+const normalizeToBrasilia = (dateStr: any): string => {
+    if (!dateStr || typeof dateStr !== 'string') return dateStr || "";
 
     const isoLike = dateStr.includes('Z') || dateStr.includes('+') 
         ? dateStr 
@@ -48,7 +48,6 @@ const normalizeToBrasilia = (dateStr: string): string => {
     const date = new Date(isoLike);
     if (isNaN(date.getTime())) return dateStr;
 
-    // Ajuste de fuso caso necessário (mantido do seu original)
     const brasiliaDate = new Date(date.getTime() - (3 * 60 * 60 * 1000));
     return brasiliaDate.toISOString().replace('T', ' ').substring(0, 19);
 };
@@ -61,12 +60,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     
     const pathname = usePathname();
     const router = useRouter();
-    const searchParams = useSearchParams();
-
     const fetchCartData = useCallback(async (token: string, userId: string | number) => {
         setIsLoading(true);
         try {
-            const response = await API_CONSUME('GET', `schedule/user/${userId}/pending`, {
+            const response = await API_CONSUME('GET', `schedule/member/${userId}/`, {
                 'Session': token
             });
 
@@ -75,45 +72,55 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
                 return;
             }
 
-            const rawData = response.data.data || response.data;
+            // Tenta encontrar o array em qualquer lugar do objeto
+            let rawData = response.data;
             if (!Array.isArray(rawData)) {
-                setCart([]);
-                return;
+                if (rawData?.data && Array.isArray(rawData.data)) rawData = rawData.data;
+                else if (rawData?.pending && Array.isArray(rawData.pending)) rawData = rawData.pending;
+                else if (typeof rawData === 'object') {
+                    // Se estiver noutra propriedade desconhecida, procura o primeiro array que encontrar
+                    const possibleArray = Object.values(rawData).find(val => Array.isArray(val));
+                    rawData = possibleArray || [];
+                } else {
+                    rawData = [];
+                }
             }
 
-            const cleanCartItems: CartItem[] = rawData
-                .filter((item: any) => String(item.status_id) === '3')
-                .map((item: any) => {
-                    // ✅ CORREÇÃO 1: Trata a data para funcionar no Safari e ajustar o fuso do relógio
-                    const safeCreatedAt = item.created_at && !item.created_at.includes('T') 
-                        ? item.created_at.replace(' ', 'T') + 'Z' 
-                        : item.created_at;
+            // Filtro mais flexível (aceita '3', 3, ou propriedade 'status' em vez de 'status_id')
+            const filteredData = rawData.filter((item: any) => {
+                const status = String(item.status_id || item.status || '');
+                return status === '3';
+            });
 
-                    return {
-                        ...item,
-                        id: Number(item.id),
-                        place_id: Number(item.place_id),
-                        price: Number(item.price) || 0, 
-                        status_id: Number(item.status_id),
-                        start_schedule: normalizeToBrasilia(item.start_schedule),
-                        end_schedule: normalizeToBrasilia(item.end_schedule),
-                        created_at: safeCreatedAt // Usa a data formatada e segura
-                    };
-                });
+            const cleanCartItems: CartItem[] = filteredData.map((item: any) => {
+                let safeCreatedAt = item.created_at;
+                if (typeof item.created_at === 'string' && !item.created_at.includes('T')) {
+                    safeCreatedAt = item.created_at.replace(' ', 'T') + 'Z';
+                }
+
+                return {
+                    ...item,
+                    id: Number(item.id),
+                    place_id: Number(item.place_id),
+                    price: Number(item.price) || 0, 
+                    status_id: Number(item.status_id || item.status || 3),
+                    start_schedule: normalizeToBrasilia(item.start_schedule),
+                    end_schedule: normalizeToBrasilia(item.end_schedule),
+                    created_at: safeCreatedAt 
+                };
+            });
 
             setCart(prev => {
                 if (JSON.stringify(prev) === JSON.stringify(cleanCartItems)) return prev;
                 return cleanCartItems;
             });
 
-            // ✅ CORREÇÃO 2: Regra de redirecionamento removida daqui de dentro!
-
         } catch (error) {
-            toast.error("Erro crítico ao processar carrinho: " + (error instanceof Error ? error.message : String(error)));
+            toast.error("Erro ao processar carrinho.");
         } finally {
             setIsLoading(false);
         }
-    }, []); 
+    }, []);
 
     const refreshCart = useCallback(async () => {
         if (session?.accessToken && session?.user?.id) {
@@ -135,15 +142,21 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, [session, fetchCartData]);
 
-    // ✅ CORREÇÃO 3: Observador dedicado para expulsar quem está com o carrinho vazio,
-    // mas que ignora se a pessoa acabou de concluir a compra (status === 'success')
-    const statusParam = searchParams?.get('status');
     useEffect(() => {
-        if (!isLoading && cart.length === 0 && pathname === '/checkout' && statusParam !== 'success') {
-            toast.warn("O seu carrinho está vazio, você foi redirecionado para a página inicial.");
+        if (session?.accessToken && session?.user?.id) {
+            if (pathname === '/profile' || pathname === '/checkout' || pathname === '/cart') {
+                fetchCartData(session.accessToken, session.user.id);
+            }
+        }
+    }, [pathname, session, fetchCartData]);
+
+    useEffect(() => {
+        const isSuccessScreen = typeof window !== 'undefined' && window.location.search.includes('status=success');
+
+        if (!isLoading && cart.length === 0 && pathname === '/checkout' && !isSuccessScreen) {
             router.push('/');
         }
-    }, [cart.length, isLoading, pathname, router, statusParam]);
+    }, [cart.length, isLoading, pathname, router]);
 
     const clearCart = useCallback(() => {
         setCart([]);

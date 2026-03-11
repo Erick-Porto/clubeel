@@ -117,7 +117,7 @@ const config = {
 };
 
 const CheckoutComponent = () => {
-    const { cart, refreshCart} = useCart();
+    const { cart, refreshCart, clearCart} = useCart();
     const searchParams = useSearchParams();
     const router = useRouter();
     
@@ -150,6 +150,8 @@ const CheckoutComponent = () => {
 
                     if (isSuccess) {
                         setPaymentResult('success');
+                        clearCart();
+                        router.refresh();
                     } else if (isExpired) {
                         setPaymentResult('expired');
                     } else if (isConflict) {
@@ -162,7 +164,7 @@ const CheckoutComponent = () => {
                     setPaymentResult('error');
                 } finally {
                     setValidatingPayment(false);
-                    window.history.replaceState(null, '', '/checkout'); 
+                    // window.history.replaceState(null, '', '/checkout'); 
                 }
             };
 
