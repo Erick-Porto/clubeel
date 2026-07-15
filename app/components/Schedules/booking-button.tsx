@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import style from '@/styles/booking-button.module.css';
+import style from '../../../styles/booking-button.module.css';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 

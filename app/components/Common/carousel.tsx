@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import styles from "@/styles/carousel.module.css";
+import styles from "../../../styles/carousel.module.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight, faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';

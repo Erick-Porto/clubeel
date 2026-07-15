@@ -1,15 +1,15 @@
 "use client"
 
-import style from '@/styles/cart.module.css'
+import style from '../../../styles/cart.module.css'
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashAlt, faCartShopping, faCalendarAlt, faClock } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
-import { useCart, CartItem } from '@/context/CartContext';
+import { useCart, CartItem } from '../../../context/CartContext';
 import { useSession } from 'next-auth/react';
 import { useMemo } from 'react';
-import URIGen from '@/utils/uriGen';
+import URIGen from '../../../src/utils/uriGen';
 
 const Cart = () => {
     const { data: session } = useSession();

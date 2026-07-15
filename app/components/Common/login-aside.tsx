@@ -1,6 +1,6 @@
 "use client";
 
-import styles from "@/styles/login-side-bar.module.css";
+import styles from "../../../styles/login-side-bar.module.css";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from "next-auth/react";
@@ -9,7 +9,7 @@ import CryptoJS from "crypto-js";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlugCircleXmark, faRotateRight } from "@fortawesome/free-solid-svg-icons";
-import API_CONSUME from "@/services/api-consume";
+import API_CONSUME from "../../../services/api-consume";
 import Link from "next/link";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 

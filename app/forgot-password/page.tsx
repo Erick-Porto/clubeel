@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import style from '@/styles/forgot-password.module.css';
-import API_CONSUME from '@/services/api-consume';
+import style from '../../styles/forgot-password.module.css';
+import API_CONSUME from '../../services/api-consume';
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faSpinner, faArrowLeft, faLock, faUserCheck } from '@fortawesome/free-solid-svg-icons';

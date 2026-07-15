@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styles from '@/styles/map-banner.module.css';
+import styles from '../../../styles/map-banner.module.css';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {

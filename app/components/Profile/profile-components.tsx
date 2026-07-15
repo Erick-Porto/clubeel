@@ -1,11 +1,11 @@
 'use client'
 import { useState, useEffect } from "react";
-import style from "@/styles/profile.module.css";
+import style from "../../../styles/profile.module.css";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faTimes, faSpinner, faLock } from "@fortawesome/free-solid-svg-icons";
 import { useSession } from "next-auth/react"; 
-import API_CONSUME from "@/services/api-consume";
+import API_CONSUME from "../../../services/api-consume";
 import CryptoJS from "crypto-js";
 
 interface FormData {

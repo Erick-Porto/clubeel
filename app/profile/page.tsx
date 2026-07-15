@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useEffect, Suspense } from "react";
-import Footer from "@/components/Common/footer";
-import Banner from "@/components/Profile/banner";
+import Footer from "../components/Common/footer";
+import Banner from "../components/Profile/banner";
 import { useSession } from "next-auth/react";
-import { ProfileForm, PasswordForm } from "@/components/Profile/profile-components";
-import style from '@/styles/profile.module.css';
-import Appointments from "@/components/Profile/appointments";
+import { ProfileForm, PasswordForm } from "../components/Profile/profile-components";
+import style from '../../styles/profile.module.css';
+import Appointments from "../components/Profile/appointments";
 import Header from "../components/Common/header";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "../../context/CartContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faUser, faKey, faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
-import API_CONSUME from "@/services/api-consume";
+import API_CONSUME from "../../services/api-consume";
 import { useSearchParams } from "next/navigation"; 
 import { toast } from "react-toastify";
 

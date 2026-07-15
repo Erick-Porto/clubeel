@@ -1,4 +1,4 @@
-import styles from "@/styles/payment-selector.module.css";
+import styles from "../../styles/payment-selector.module.css";
 
 interface BankResult {
     name: string;

@@ -1,7 +1,9 @@
 // pages/api/register.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import API_CONSUME from '@/services/api-consume';
+import API_CONSUME from '../../../services/api-consume';
+import { rateLimit, getClientIp } from '../../utils/rate-limit';
+import { guardRequest } from '../../utils/sanitize';
 
 function IsValidCPF(cpf: string): boolean {
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
@@ -20,6 +22,14 @@ function IsValidCPF(cpf: string): boolean {
 
 export default async function RegisterHandler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
+        const rl = rateLimit(`register:${getClientIp(req)}`, 5, 60_000);
+        if (!rl.ok) {
+            res.setHeader('Retry-After', String(rl.retryAfter));
+            return res.status(429).json({ error: 'Muitas tentativas. Tente novamente em instantes.' });
+        }
+
+        if (!guardRequest(req, res)) return;
+
         const { cpf, title, birthDate, password } = req.body;
 
         if (!cpf || !title || !birthDate || !password) {

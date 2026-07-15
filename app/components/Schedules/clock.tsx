@@ -1,6 +1,6 @@
-import style from '@/styles/clock.module.css';
+import style from '../../../styles/clock.module.css';
 import React, { useEffect, useState, useMemo } from 'react';
-import { CartItem, useCart } from '@/context/CartContext';
+import { CartItem, useCart } from '../../../context/CartContext';
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHourglassStart, faHourglassEnd } from "@fortawesome/free-solid-svg-icons";

@@ -1,9 +1,15 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]";
+import { eredeAuth, eredeBaseUrl, eredeConfigured } from "../../../utils/erede";
+import { computeAmountInCents } from "../../../utils/lara";
+import { rateLimit, getClientIp } from "../../../utils/rate-limit";
+import { guardRequest } from "../../../utils/sanitize";
 
-const REDE_CLIENT_ID = process.env.INTERNAL_EREDE_CLIENT_ID;
-const REDE_CLIENT_SECRET = process.env.INTERNAL_EREDE_SECRET_ID;
-const BASE_URL = process.env.INTERNAL_EREDE_API_URL;
-const AUTH_URL = process.env.INTERNAL_EREDE_AUTH_URL;
+interface SessionWithToken {
+    accessToken?: string;
+    user?: { id?: string | number };
+}
 
 interface ERedePayload {
     capture: boolean;
@@ -28,38 +34,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
+    // 1. Exige sessão autenticada (impede uso como oráculo de carding).
+    const session = (await getServerSession(req, res, authOptions)) as unknown as SessionWithToken | null;
+    const accessToken = session?.accessToken;
+    const userId = session?.user?.id;
+    if (!session || !accessToken || !userId) {
+        return res.status(401).json({ error: "Sessão expirada." });
+    }
+
+    // 2. Rate limiting por IP.
+    const rl = rateLimit(`pay:${getClientIp(req)}`, 10, 60_000);
+    if (!rl.ok) {
+        res.setHeader('Retry-After', String(rl.retryAfter));
+        return res.status(429).json({ error: "Muitas tentativas. Tente novamente em instantes." });
+    }
+
+    if (!eredeConfigured()) {
+        return res.status(500).json({ error: "Credenciais não configuradas." });
+    }
+
+    if (!guardRequest(req, res)) return;
+
     try {
-        const { method, cardData, amount } = req.body;
+        const { method, cardData, scheduleIds } = req.body;
 
-        if (!REDE_CLIENT_ID || !REDE_CLIENT_SECRET || !AUTH_URL || !BASE_URL) {
-            return res.status(500).json({ error: "Credenciais não configuradas." });
-        }
+        // 3. O valor é SEMPRE recalculado no servidor — nunca vem do cliente.
+        const amount = await computeAmountInCents(scheduleIds, userId, accessToken);
 
-        const credentials = Buffer.from(`${REDE_CLIENT_ID}:${REDE_CLIENT_SECRET}`).toString('base64');
-        const params = new URLSearchParams();
-        params.append('grant_type', 'client_credentials');
-
-        const authResponse = await fetch(AUTH_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${credentials}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: params.toString()
-        });
-
-        if (!authResponse.ok) {
-            throw new Error(`Auth Error: ${authResponse.status}`);
-        }
-
-        const { access_token } = await authResponse.json();
+        const access_token = await eredeAuth();
 
         const reference = `ORD-${Date.now()}`;
-        
+
         const payload: ERedePayload = {
             capture: true,
             reference: reference,
-            amount: amount, 
+            amount: amount,
         };
 
         if (method === 'pix') {
@@ -74,21 +83,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             payload.kind = method === 'debit' ? 'debit' : 'credit';
             let expMonth = 0;
             let expYear = 0;
-            if (cardData.expiry?.includes('/')) {
+            if (cardData?.expiry?.includes('/')) {
                 const parts = cardData.expiry.split('/');
                 expMonth = parseInt(parts[0], 10);
                 expYear = parseInt(`20${parts[1]}`, 10);
             }
-            payload.cardNumber = cardData.number?.replace(/\s/g, '');
-            payload.cardHolderName = cardData.holder;
+            payload.cardNumber = cardData?.number?.replace(/\s/g, '');
+            payload.cardHolderName = cardData?.holder;
             payload.expirationMonth = expMonth;
             payload.expirationYear = expYear;
-            payload.securityCode = cardData.cvv;
+            payload.securityCode = cardData?.cvv;
             if (method === 'credit') payload.installments = 1;
-            payload.softDescriptor = "Espacos CFCSN"; 
+            payload.softDescriptor = "Espacos CFCSN";
         }
 
-        const transactionResponse = await fetch(`${BASE_URL}/transactions`, {
+        const transactionResponse = await fetch(`${eredeBaseUrl()}/transactions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -105,8 +114,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json(transactionData);
 
     } catch (error: unknown) {
-        console.error(error);
+        // Nunca logar cardData; apenas a mensagem do erro.
         const message = error instanceof Error ? error.message : 'Erro desconhecido';
+        console.error('[payment_methods] erro:', message);
         return res.status(500).json({ error: message });
     }
 }

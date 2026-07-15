@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'; // 1. Importar hooks
-import styles from '@/styles/horizontal-nav-bar.module.css'
+import styles from '../../../styles/horizontal-nav-bar.module.css'
 
 interface Option {
     text: string;

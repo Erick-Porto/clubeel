@@ -1,5 +1,5 @@
 import Image from "next/image";
-import style from "@/styles/banner.module.css";
+import style from "../../../styles/banner.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faIdBadge } from "@fortawesome/free-solid-svg-icons";
 import { useSession } from "next-auth/react";

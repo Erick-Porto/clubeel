@@ -24,7 +24,13 @@ npm run build
 echo "🔄  Reiniciando PM2..."
 pm2 restart espacos
 
-echo "🚦  Definindo permissões do diretório local (Linux)..."
-chmod -R 777 .
+echo "🔒  Aplicando permissões mínimas (Linux)..."
+# NUNCA usar 777: tornaria todo o diretório (código, build, .env) gravável por
+# qualquer processo do host — vetor de persistência de build adulterado.
+find . -type d -not -path './.git/*' -exec chmod 755 {} \;
+find . -type f -not -path './.git/*' -exec chmod 644 {} \;
+chmod +x deploy.sh
+# .env com segredos: somente o dono lê/escreve.
+[ -f .env ] && chmod 600 .env
 
 echo "✅  Atualização concluída!"

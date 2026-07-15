@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import style from '@/styles/latest-appointments.module.css';
-import API_CONSUME from '@/services/api-consume';
+import style from '../../../styles/latest-appointments.module.css';
+import API_CONSUME from '../../../services/api-consume';
 import { useSession } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faClock, faChevronDown, faChevronUp, faInfoCircle } from '@fortawesome/free-solid-svg-icons'; 

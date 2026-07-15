@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import styles from "@/styles/payment-selector.module.css";
+import styles from "../../../styles/payment-selector.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCreditCard, faBarcode, faQrcode, faWifi, faCheckCircle, faTimesCircle, faArrowLeft, faCopy, faClock } from "@fortawesome/free-solid-svg-icons";
-import { identifyBank } from "@/utils/bank-identifier";
+import { identifyBank } from "../../../src/utils/bank-identifier";
 // import { CreditCardBrand } from "./CreditCardBrand";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "../../../context/CartContext";
 import { toast } from "react-toastify";
 import Image from "next/image";
-import API_CONSUME from "@/services/api-consume";
+import API_CONSUME from "../../../services/api-consume";
 import { useSession, signOut } from 'next-auth/react';
 
 type PaymentMethod = "credit" | "debit" | "pix";
@@ -32,9 +32,7 @@ interface User {
     born_date?: string;
 }
 
-interface CPParams {
-  amount: number;
-}
+type CPParams = Record<string, never>;
 
 interface PixResponse {
   qrcode: string;
@@ -52,7 +50,7 @@ interface CustomSession {
     accessToken?: string;
 }
 
-export default function CheckoutPayment({ amount }: CPParams) {
+export default function CheckoutPayment({}: CPParams) {
     const { data: sessionData } = useSession();
     const session = sessionData as CustomSession | null;
   // 2. Instanciar o router  
@@ -182,7 +180,7 @@ const handlePayment = async () => {
     }
 
     try {
-      const amountInCents = Math.round(amount * 100);
+      const scheduleIds = cart.map(item => item.id);
       const response = await fetch('/api/erede/payment_methods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -192,7 +190,8 @@ const handlePayment = async () => {
              ...cardData,
              number: cardData.number.replace(/\s/g, ''),
           },
-          amount: amountInCents
+          // O valor é recalculado no servidor a partir destes agendamentos.
+          scheduleIds
         })
       });
 

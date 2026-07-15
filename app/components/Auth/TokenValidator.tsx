@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import API_CONSUME from '@/services/api-consume';
+import API_CONSUME from '../../../services/api-consume';
 import { usePathname } from 'next/navigation';
 
 export default function TokenValidator() {

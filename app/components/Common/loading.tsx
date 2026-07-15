@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Logo from "@/images/logo-cfcsn-horiz.png"; 
-import Style from "@/styles/loading.module.css";
+import Logo from "../../../public/images/logo-cfcsn-horiz.png"; 
+import Style from "../../../styles/loading.module.css";
 
 interface LoadingProps {
     small?: boolean;

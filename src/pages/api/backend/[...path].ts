@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/api/auth/[...nextauth]"; 
+import { authOptions } from "../auth/[...nextauth]";
+import { guardRequest } from "../../../utils/sanitize";
 
 interface SessionWithToken {
     accessToken?: string;
@@ -16,13 +17,58 @@ export const config = {
 
 const API_URL = process.env.INTERNAL_LARA_API_URL;
 
+// Endpoints que podem ser chamados SEM sessão (fluxos pré-login).
+const PUBLIC_ENDPOINTS: RegExp[] = [
+    /^login$/,
+    /^register$/,
+    /^check-member$/,
+    /^change-password$/,
+];
+
+// Endpoints que exigem sessão autenticada.
+const AUTHENTICATED_ENDPOINTS: RegExp[] = [
+    /^verify-token$/,
+    /^schedule(\/.*)?$/,
+    /^place\/[^/]+$/,
+    /^places(\/.*)?$/,
+    /^member\/update$/,
+];
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const appToken = process.env.INTERNAL_LARA_API_TOKEN;
 
     const { path } = req.query;
+    const segments = Array.isArray(path) ? path : path ? [String(path)] : [];
+
+    // Bloqueia path traversal e segmentos vazios.
+    if (segments.length === 0 || segments.some((s) => s === '' || s === '.' || s === '..' || s.includes('..') || s.includes('/') || s.includes('\\'))) {
+        return res.status(400).json({ error: "Path inválido." });
+    }
+
+    const pathString = segments.join('/');
+
+    // Allowlist: rejeita qualquer endpoint não previsto.
+    const isPublic = PUBLIC_ENDPOINTS.some((re) => re.test(pathString));
+    const isAuthenticated = AUTHENTICATED_ENDPOINTS.some((re) => re.test(pathString));
+    if (!isPublic && !isAuthenticated) {
+        return res.status(403).json({ error: "Endpoint não permitido." });
+    }
+
+    // Endpoints autenticados EXIGEM sessão válida — sem sessão, não repassa o
+    // token privilegiado da aplicação.
+    const session = await getServerSession(req, res, authOptions);
+    const accessToken = (session as unknown as SessionWithToken | null)?.accessToken;
+    if (isAuthenticated && !accessToken) {
+        return res.status(401).json({ error: "Não autorizado." });
+    }
+
+    // Barreira anti-injeção: rejeita prototype pollution, chaves de operador
+    // (NoSQL), bytes de controle/NUL e payloads absurdos antes de repassar.
+    if (!guardRequest(req, res)) return;
+
     const queryParams = { ...req.query };
     delete queryParams.path;
-    
+
     const searchParams = new URLSearchParams();
     Object.entries(queryParams).forEach(([key, value]) => {
         if (Array.isArray(value)) {
@@ -31,26 +77,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             searchParams.append(key, value);
         }
     });
-    
+
     const queryString = searchParams.toString();
-    const pathString = Array.isArray(path) ? path.join('/') : (path || '');
-    
     const destUrl = `${API_URL}/api/${pathString}${queryString ? `?${queryString}` : ''}`;
 
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
-    headers.set("Accept", "application/json"); 
+    headers.set("Accept", "application/json");
     headers.set("Authorization", `Bearer ${appToken}`);
 
-    try {
-        const session = await getServerSession(req, res, authOptions);
-        const sessionWithToken = session as unknown as SessionWithToken;
-
-        if (sessionWithToken && sessionWithToken.accessToken) {
-            headers.set("Session", sessionWithToken.accessToken);
-        }
-    } catch (error: unknown) {
-        console.error("Erro ao obter sessão:", error);
+    if (accessToken) {
+        headers.set("Session", accessToken);
     }
 
     let body: BodyInit | null = null;

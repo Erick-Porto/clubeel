@@ -1,12 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/api/auth/[...nextauth]";
-import API_CONSUME from "@/services/api-consume";
-
-const REDE_CLIENT_ID = process.env.INTERNAL_EREDE_CLIENT_ID as string;
-const REDE_CLIENT_SECRET = process.env.INTERNAL_EREDE_SECRET_ID as string;
-const BASE_URL = process.env.INTERNAL_EREDE_API_URL as string;
-const AUTH_URL = process.env.INTERNAL_EREDE_AUTH_URL as string;
+import { authOptions } from "./auth/[...nextauth]";
+import API_CONSUME from "../../../services/api-consume";
+import { eredeAuth, eredeBaseUrl, getEredeTransaction } from "../../utils/erede";
+import { computeAmountInCents } from "../../utils/lara";
+import { guardRequest } from "../../utils/sanitize";
 
 interface ApiErrorResponse {
     status?: number;
@@ -14,21 +12,14 @@ interface ApiErrorResponse {
     error?: string;
 }
 
-async function refundTransaction(tid: string, amount: number) {    
-    const credentials = Buffer.from(`${REDE_CLIENT_ID}:${REDE_CLIENT_SECRET}`).toString('base64');
-    const authRes = await fetch( AUTH_URL, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Basic ${credentials}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: 'grant_type=client_credentials'
-    });
-    
-    if (!authRes.ok) throw new Error("Falha ao autenticar para reembolso");
-    const { access_token } = await authRes.json();
+interface SessionWithToken {
+    accessToken?: string;
+    user?: { id?: string | number };
+}
 
-    const refundRes = await fetch(`${BASE_URL}/transactions/${tid}/refunds`, {
+async function refundTransaction(tid: string, amount: number) {
+    const access_token = await eredeAuth();
+    const refundRes = await fetch(`${eredeBaseUrl()}/transactions/${tid}/refunds`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -37,7 +28,7 @@ async function refundTransaction(tid: string, amount: number) {
         body: JSON.stringify({ amount: amount })
     });
     if (!refundRes.ok) {
-        const err = await refundRes.json();
+        const err = await refundRes.json().catch(() => ({}));
         console.error("ERRO FATAL: Falha ao estornar:", err);
         throw new Error("Falha no estorno automático");
     }
@@ -46,9 +37,10 @@ async function refundTransaction(tid: string, amount: number) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.accessToken) {
-        
+    const session = (await getServerSession(req, res, authOptions)) as unknown as SessionWithToken | null;
+    const accessToken = session?.accessToken;
+    const userId = session?.user?.id;
+    if (!session || !accessToken || !userId) {
         return res.status(401).json({ error: "Sessão expirada." });
     }
 
@@ -57,49 +49,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(405).json({ error: 'Método não permitido' });
     }
 
+    if (!guardRequest(req, res)) return;
+
     let currentTid = "";
     let currentAmount = 0;
 
     try {
         const { transactionData, scheduleIds, method } = req.body;
 
-        if (!transactionData || !scheduleIds) {
+        if (!transactionData?.tid || !scheduleIds) {
             return res.status(400).json({ error: "Dados incompletos." });
         }
 
-        currentTid = transactionData.tid;
-        currentAmount = transactionData.amount;
+        currentTid = String(transactionData.tid);
 
-        const isApproved = transactionData.returnCode === "00" || transactionData.capture === true;
+        // 1. VERIFICA a transação diretamente na eRede (não confia no corpo).
+        const eredeToken = await eredeAuth();
+        const tx = await getEredeTransaction(currentTid, eredeToken);
+        currentAmount = Number(tx.amount) || 0;
+
+        const isApproved = tx.returnCode === "00";
         if (!isApproved) {
             return res.status(400).json({ error: "Pagamento não autorizado." });
         }
 
+        // 2. Recalcula o valor esperado no servidor e confere com o cobrado.
+        const expectedCents = await computeAmountInCents(scheduleIds, userId, accessToken);
+        if (currentAmount !== expectedCents) {
+            console.warn(`Valor divergente (cobrado ${currentAmount} != esperado ${expectedCents}). Estornando...`);
+            await refundTransaction(currentTid, currentAmount);
+            return res.status(400).json({ error: "Valor divergente. Transação estornada." });
+        }
+
+        // 3. Persiste o pagamento usando os dados AUTORITATIVOS da eRede.
         const updatePayload = {
             schedule_ids: scheduleIds,
             status_id: 1,
-            payment_integration_id: transactionData.tid,
+            payment_integration_id: currentTid,
             payment_method: method,
-            paid_amount: transactionData.amount / 100, 
-            paid_at: transactionData.dateTime,
+            paid_amount: expectedCents / 100,
+            paid_at: tx.dateTime,
             metadata: {
-                last4: transactionData.last4,
-                authorization_code: transactionData.authorizationCode,
-                nsu: transactionData.nsu,
-                card_brand: transactionData.brandTid,
-                reference: transactionData.reference
+                last4: tx.last4,
+                authorization_code: tx.authorizationCode,
+                nsu: tx.nsu,
+                card_brand: tx.brandTid,
+                reference: tx.reference
             }
         };
 
         const response = await API_CONSUME("POST", `schedule/payment`, {
-            Session: `${session.accessToken}` 
+            Session: `${accessToken}`
         }, updatePayload);
 
         const apiRes = response as unknown as ApiErrorResponse;
-        const hasConflict = apiRes?.status === 409 || 
-                            apiRes?.message?.includes("conflito") || 
+        const hasConflict = apiRes?.status === 409 ||
+                            apiRes?.message?.includes("conflito") ||
                             apiRes?.error === "expired";
-        
+
         const hasHttpError = apiRes?.status !== undefined && apiRes.status !== 200 && apiRes.status !== 201;
         const hasGenericError = !!apiRes?.error;
 
@@ -107,21 +114,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             console.warn("Erro ao salvar agendamento. Iniciando estorno...");
             await refundTransaction(currentTid, currentAmount);
 
-            return res.status(409).json({ 
-                error: "error", 
-                message: apiRes?.message || "Erro ao confirmar agendamento. Valor estornado." 
+            return res.status(409).json({
+                error: "error",
+                message: apiRes?.message || "Erro ao confirmar agendamento. Valor estornado."
             });
         }
-        
+
         return res.status(200).json({ success: true });
 
     } catch (error: unknown) {
-        console.error("Erro crítico em success.ts:", error);
-        
-        if (currentTid) {
+        console.error("Erro crítico em success.ts:", error instanceof Error ? error.message : error);
+
+        if (currentTid && currentAmount > 0) {
             try {
                 await refundTransaction(currentTid, currentAmount);
-            } catch (_refundErr) { 
+            } catch (_refundErr) {
                 console.error("Falha no estorno de emergência.", _refundErr);
             }
         }
