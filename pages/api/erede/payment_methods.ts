@@ -5,6 +5,7 @@ import { eredeAuth, eredeBaseUrl, eredeConfigured } from "../../../utils/erede";
 import { computeAmountInCents } from "../../../utils/lara";
 import { rateLimit, getClientIp } from "../../../utils/rate-limit";
 import { guardRequest } from "../../../utils/sanitize";
+import { savePendingPayment } from "../../../utils/pending-payments";
 
 interface SessionWithToken {
     accessToken?: string;
@@ -63,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const access_token = await eredeAuth();
 
-        const reference = `ORD-${Date.now()}`;
+        const reference = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
         const payload: ERedePayload = {
             capture: true,
@@ -110,6 +111,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!transactionResponse.ok) {
             return res.status(400).json({ error: transactionData.returnMessage || 'Erro', details: transactionData });
         }
+
+        // Guarda o valor ja validado nesta requisicao, associado a reference
+        // que a eRede vai ecoar na transacao. success.ts reaproveita este
+        // registro em vez de recalcular tudo de novo na Lara.
+        savePendingPayment(reference, {
+            userId,
+            scheduleIds,
+            amountCents: amount,
+            method,
+            createdAt: Date.now(),
+        });
 
         return res.status(200).json(transactionData);
 

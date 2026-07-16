@@ -5,8 +5,10 @@ import API_CONSUME from "../../services/api-consume";
 import { eredeAuth, eredeBaseUrl, getEredeTransaction } from "../../utils/erede";
 import { computeAmountInCents } from "../../utils/lara";
 import { guardRequest } from "../../utils/sanitize";
+import { takePendingPayment } from "../../utils/pending-payments";
 
 interface ApiErrorResponse {
+    ok?: boolean;
     status?: number;
     message?: string;
     error?: string;
@@ -55,9 +57,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let currentAmount = 0;
 
     try {
-        const { transactionData, scheduleIds, method } = req.body;
+        const { transactionData, scheduleIds: clientScheduleIds, method: clientMethod } = req.body;
 
-        if (!transactionData?.tid || !scheduleIds) {
+        if (!transactionData?.tid || !clientScheduleIds) {
             return res.status(400).json({ error: "Dados incompletos." });
         }
 
@@ -67,14 +69,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const eredeToken = await eredeAuth();
         const tx = await getEredeTransaction(currentTid, eredeToken);
         currentAmount = Number(tx.amount) || 0;
+        // Log de diagnóstico: não contém dados sensíveis (sem PAN/CVV, só
+        // last4/nsu/authorization_code, que já são persistidos na Lara).
+        console.warn(`[success] eRede tx verificada (tid=${currentTid}):`, JSON.stringify(tx));
 
         const isApproved = tx.returnCode === "00";
         if (!isApproved) {
             return res.status(400).json({ error: "Pagamento não autorizado." });
         }
 
-        // 2. Recalcula o valor esperado no servidor e confere com o cobrado.
-        const expectedCents = await computeAmountInCents(scheduleIds, userId, accessToken);
+        // 2. Reaproveita o valor JÁ validado em payment_methods.ts (evita uma
+        // segunda consulta à Lara e a janela extra que isso abre para o hold
+        // do agendamento expirar). Só recalcula do zero se o registro não for
+        // encontrado (processo reiniciado, cache expirado) — fallback seguro
+        // que nunca confia no valor vindo do cliente.
+        const pending = takePendingPayment(tx.reference);
+        let expectedCents: number;
+        let scheduleIds: Array<number | string>;
+        let method: string;
+
+        if (pending && String(pending.userId) === String(userId)) {
+            expectedCents = pending.amountCents;
+            scheduleIds = pending.scheduleIds;
+            method = pending.method;
+        } else {
+            expectedCents = await computeAmountInCents(clientScheduleIds, userId, accessToken);
+            scheduleIds = clientScheduleIds;
+            method = clientMethod;
+        }
+
         if (currentAmount !== expectedCents) {
             console.warn(`Valor divergente (cobrado ${currentAmount} != esperado ${expectedCents}). Estornando...`);
             await refundTransaction(currentTid, currentAmount);
@@ -107,7 +130,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             apiRes?.message?.includes("conflito") ||
                             apiRes?.error === "expired";
 
-        const hasHttpError = apiRes?.status !== undefined && apiRes.status !== 200 && apiRes.status !== 201;
+        // Usa o "ok" já calculado por API_CONSUME (a partir do response.ok
+        // real do fetch) em vez de reimplementar a checagem por status —
+        // mais robusto contra qualquer status 2xx fora de 200/201.
+        const hasHttpError = apiRes?.ok === false;
         const hasGenericError = !!apiRes?.error;
 
         if (hasConflict || hasHttpError || hasGenericError) {
