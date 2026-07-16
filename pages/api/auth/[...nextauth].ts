@@ -1,6 +1,6 @@
 import NextAuth, { NextAuthOptions,  } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import API_CONSUME from "../../../../services/api-consume";
+import API_CONSUME from "../../../services/api-consume";
 
 export const authOptions: NextAuthOptions = {
   providers: [

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
-import API_CONSUME from "../../../services/api-consume";
+import API_CONSUME from "../../services/api-consume";
 import { eredeAuth, eredeBaseUrl, getEredeTransaction } from "../../utils/erede";
 import { computeAmountInCents } from "../../utils/lara";
 import { guardRequest } from "../../utils/sanitize";

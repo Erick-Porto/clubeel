@@ -25,11 +25,11 @@
       "@/components/*": ["./app/components/*"],
       "@/hooks/*": ["./app/hooks/*"],
       "@/pages/*": ["./app/*"],
-      "@/api/*": ["./src/pages/api/*"],
+      "@/api/*": ["./pages/api/*"],
       "@/images/*": ["./public/images/*"],
       "@/services/*": ["./services/*"],
       "@/context/*": ["./context/*"],
-      "@/utils/*": ["./src/utils/*"]
+      "@/utils/*": ["./utils/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

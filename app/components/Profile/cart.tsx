@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useCart, CartItem } from '../../../context/CartContext';
 import { useSession } from 'next-auth/react';
 import { useMemo } from 'react';
-import URIGen from '../../../src/utils/uriGen';
+import URIGen from '../../../utils/uriGen';
 
 const Cart = () => {
     const { data: session } = useSession();

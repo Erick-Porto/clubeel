@@ -14,7 +14,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "crypto-js": "^4.2.0",
-    "next": "15.2.0",
+    "next": "15.5.20",
     "next-auth": "^4.24.13",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
@@ -28,7 +28,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.2.0",
+    "eslint-config-next": "15.5.20",
     "typescript": "^5"
   }
 }

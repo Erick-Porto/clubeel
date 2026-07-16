@@ -1,7 +1,7 @@
 // pages/api/register.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import API_CONSUME from '../../../services/api-consume';
+import API_CONSUME from '../../services/api-consume';
 import { rateLimit, getClientIp } from '../../utils/rate-limit';
 import { guardRequest } from '../../utils/sanitize';
 

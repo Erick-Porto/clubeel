@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import styles from "../../../styles/payment-selector.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCreditCard, faBarcode, faQrcode, faWifi, faCheckCircle, faTimesCircle, faArrowLeft, faCopy, faClock } from "@fortawesome/free-solid-svg-icons";
-import { identifyBank } from "../../../src/utils/bank-identifier";
+import { identifyBank } from "../../../utils/bank-identifier";
 // import { CreditCardBrand } from "./CreditCardBrand";
 import { useRouter } from "next/navigation";
 import { useCart } from "../../../context/CartContext";
