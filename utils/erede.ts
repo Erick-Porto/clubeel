@@ -48,6 +48,29 @@ export async function eredeAuth(): Promise<string> {
   return access_token;
 }
 
+// Formato bruto de GET /transactions/{tid}: a eRede aninha os dados em
+// "authorization" (dados da autorização) e "capture" (dados da captura) —
+// diferente do formato usado na criação da transação (POST /transactions).
+interface EredeRawTransaction {
+  authorization?: {
+    dateTime?: string;
+    returnCode?: string;
+    returnMessage?: string;
+    reference?: string;
+    tid?: string;
+    nsu?: string;
+    authorizationCode?: string;
+    amount?: number;
+    last4?: string;
+  };
+  capture?: {
+    dateTime?: string;
+    nsu?: string;
+    amount?: number;
+    brandTid?: string;
+  };
+}
+
 /** Consulta o estado autoritativo de uma transação diretamente na eRede. */
 export async function getEredeTransaction(tid: string, token: string): Promise<EredeTransaction> {
   const res = await fetch(`${BASE_URL}/transactions/${encodeURIComponent(tid)}`, {
@@ -59,5 +82,22 @@ export async function getEredeTransaction(tid: string, token: string): Promise<E
   });
 
   if (!res.ok) throw new Error(`eRede consult error: ${res.status}`);
-  return (await res.json()) as EredeTransaction;
+  const raw = (await res.json()) as EredeRawTransaction;
+  const auth = raw.authorization;
+  const capture = raw.capture;
+
+  // Achata para o formato plano usado pelo resto do app. Prioriza os dados
+  // de "capture" para valor/data/nsu (é o que efetivamente foi cobrado).
+  return {
+    tid: auth?.tid,
+    returnCode: auth?.returnCode,
+    returnMessage: auth?.returnMessage,
+    amount: capture?.amount ?? auth?.amount,
+    dateTime: capture?.dateTime ?? auth?.dateTime,
+    authorizationCode: auth?.authorizationCode,
+    nsu: capture?.nsu ?? auth?.nsu,
+    brandTid: capture?.brandTid,
+    last4: auth?.last4,
+    reference: auth?.reference,
+  };
 }

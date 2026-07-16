@@ -43,12 +43,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const accessToken = session?.accessToken;
     const userId = session?.user?.id;
     if (!session || !accessToken || !userId) {
-        return res.status(401).json({ error: "Sessão expirada." });
+        return res.status(401).json({ error: "Sessão expirada.", message: "Sessão expirada." });
     }
 
     if (req.method !== 'POST') {
         res.setHeader('Allow', 'POST');
-        return res.status(405).json({ error: 'Método não permitido' });
+        return res.status(405).json({ error: 'Método não permitido', message: 'Método não permitido' });
     }
 
     if (!guardRequest(req, res)) return;
@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { transactionData, scheduleIds: clientScheduleIds, method: clientMethod } = req.body;
 
         if (!transactionData?.tid || !clientScheduleIds) {
-            return res.status(400).json({ error: "Dados incompletos." });
+            return res.status(400).json({ error: "Dados incompletos.", message: "Dados incompletos." });
         }
 
         currentTid = String(transactionData.tid);
@@ -75,7 +75,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const isApproved = tx.returnCode === "00";
         if (!isApproved) {
-            return res.status(400).json({ error: "Pagamento não autorizado." });
+            const detail = `Pagamento não autorizado (returnCode=${tx.returnCode ?? 'ausente'}).`;
+            return res.status(400).json({ error: detail, message: detail });
         }
 
         // 2. Reaproveita o valor JÁ validado em payment_methods.ts (evita uma
@@ -101,7 +102,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (currentAmount !== expectedCents) {
             console.warn(`Valor divergente (cobrado ${currentAmount} != esperado ${expectedCents}). Estornando...`);
             await refundTransaction(currentTid, currentAmount);
-            return res.status(400).json({ error: "Valor divergente. Transação estornada." });
+            const detail = `Valor divergente (cobrado ${currentAmount}, esperado ${expectedCents}). Transação estornada.`;
+            return res.status(400).json({ error: detail, message: detail });
         }
 
         // 3. Persiste o pagamento usando os dados AUTORITATIVOS da eRede.
@@ -137,13 +139,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const hasGenericError = !!apiRes?.error;
 
         if (hasConflict || hasHttpError || hasGenericError) {
-            console.warn("Erro ao salvar agendamento. Iniciando estorno...");
+            // Log detalhado do lado Lara: status HTTP, ok e corpo retornado —
+            // essencial para diferenciar "reserva expirada" de um problema
+            // genuíno na API Lara (fora do ar, payload rejeitado, erro 500).
+            console.warn(
+                `[success] Falha ao confirmar agendamento na API Lara ` +
+                `(status=${apiRes?.status}, ok=${apiRes?.ok}, error=${apiRes?.error}, message=${apiRes?.message}). Iniciando estorno...`
+            );
             await refundTransaction(currentTid, currentAmount);
 
-            return res.status(409).json({
-                error: "error",
-                message: apiRes?.message || "Erro ao confirmar agendamento. Valor estornado."
-            });
+            if (hasConflict) {
+                // Reserva expirada / conflito de horário — a Lara recusou
+                // porque o hold não existe mais; já tratado no client.
+                const detail = apiRes?.message || "Reserva expirada. O valor foi estornado.";
+                return res.status(409).json({ error: "expired", message: detail });
+            }
+
+            // Erro genuíno do lado da API Lara (fora do ar, payload
+            // rejeitado, erro interno) — 502 (Bad Gateway) para distinguir
+            // de "reserva expirada" e não mascarar um problema na Lara.
+            const detail = apiRes?.message
+                || `Falha ao confirmar o agendamento na API Lara (status ${apiRes?.status ?? 'desconhecido'}). Valor estornado.`;
+            return res.status(502).json({ error: detail, message: detail });
         }
 
         return res.status(200).json({ success: true });
@@ -160,6 +177,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         const message = error instanceof Error ? error.message : "Erro desconhecido";
-        return res.status(500).json({ error: message });
+        return res.status(500).json({ error: message, message: message });
     }
 }

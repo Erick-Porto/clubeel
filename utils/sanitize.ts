@@ -138,7 +138,7 @@ export function guardRequest(
     return true;
   } catch (err) {
     if (err instanceof InjectionError) {
-      res.status(400).json({ error: 'Entrada invalida.' });
+      res.status(400).json({ error: 'Entrada invalida.', message: 'Entrada invalida.' });
       return false;
     }
     throw err;
