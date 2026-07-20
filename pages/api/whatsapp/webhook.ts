@@ -2,42 +2,122 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import crypto from 'crypto';
 import API_CONSUME from '../../../services/api-consume';
 import { rateLimit, getClientIp } from '../../../utils/rate-limit';
-import { guardRequest } from '../../../utils/sanitize';
+import { assertNoInjection, InjectionError } from '../../../utils/sanitize';
 
 /**
  * Webhook de entrada da ferramenta de WhatsApp (Poli Digital).
  * Toda mensagem recebida no WhatsApp é enviada pelo Poli para esta rota,
  * que valida a origem e repassa para a API interna (Lara).
  *
- * Autenticação: Poli Digital é configurado para enviar um header fixo
- * (WHATSAPP_WEBHOOK_HEADER, default "x-webhook-secret") com um segredo
- * definido em WHATSAPP_WEBHOOK_SECRET. A comparação é feita via hash +
- * timingSafeEqual para não vazar o segredo por timing attack.
+ * Camadas de autenticação (com base num payload real capturado do Poli):
+ *
+ * 1) x-webhook-verify-token: token estático enviado em todo request,
+ *    comparado contra WHATSAPP_WEBHOOK_VERIFY_TOKEN (hash + timingSafeEqual).
+ *    Esta é a validação OBRIGATÓRIA e confirmada — sem ela, 401.
+ *
+ * 2) x-webhook-signature (formato "t=<timestamp>,v1=<hmac-sha256-hex>"):
+ *    camada extra, só é exigida se WHATSAPP_WEBHOOK_SIGNING_SECRET estiver
+ *    configurado. IMPORTANTE: não há documentação pública do Poli Digital
+ *    confirmando a string exata assinada; a implementação abaixo segue a
+ *    convenção mais comum (usada por Stripe e outros que adotam o mesmo
+ *    formato de header "t=,v1="): HMAC-SHA256("<timestamp>.<corpo bruto>").
+ *    Confirme com o suporte/painel do Poli antes de habilitar esta camada
+ *    em produção — enquanto não confirmado, deixe
+ *    WHATSAPP_WEBHOOK_SIGNING_SECRET vazio para não bloquear webhooks
+ *    legítimos por um algoritmo não verificado.
  */
 
+// bodyParser desligado: precisamos dos bytes brutos do corpo para calcular
+// o HMAC corretamente (reserializar o JSON quebraria a assinatura).
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
+    bodyParser: false,
   },
 };
 
-const WEBHOOK_HEADER = (process.env.WHATSAPP_WEBHOOK_HEADER || 'x-webhook-secret').toLowerCase();
-const WEBHOOK_SECRET = process.env.WHATSAPP_WEBHOOK_SECRET;
+const MAX_BODY_BYTES = 1_000_000; // 1MB
+const SIGNATURE_TOLERANCE_SECONDS = 5 * 60; // janela contra replay
+
+const VERIFY_TOKEN_HEADER = 'x-webhook-verify-token';
+const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+
+const SIGNATURE_HEADER = 'x-webhook-signature';
+const SIGNING_SECRET = process.env.WHATSAPP_WEBHOOK_SIGNING_SECRET;
+
 const INTERNAL_ENDPOINT = 'webhooks/whatsapp';
 
-function hash(value: string): Buffer {
+function sha256(value: string): Buffer {
   return crypto.createHash('sha256').update(value, 'utf8').digest();
 }
 
-function isValidSecret(received: unknown): boolean {
-  if (!WEBHOOK_SECRET || typeof received !== 'string' || received.length === 0) {
+function timingSafeStringEqual(a: string, b: string): boolean {
+  // Hash antes de comparar: normaliza o tamanho dos buffers e evita vazar
+  // o comprimento do valor esperado por timing.
+  return crypto.timingSafeEqual(sha256(a), sha256(b));
+}
+
+function readRawBody(req: NextApiRequest, maxBytes: number): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+
+    req.on('data', (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        reject(Object.assign(new Error('Payload excede o tamanho máximo.'), { statusCode: 413 }));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+function isValidVerifyToken(received: unknown): boolean {
+  if (!VERIFY_TOKEN || typeof received !== 'string' || received.length === 0) {
     return false;
   }
-  // Hash antes de comparar: normaliza o tamanho dos buffers e evita
-  // vazar o comprimento do segredo por timing.
-  return crypto.timingSafeEqual(hash(received), hash(WEBHOOK_SECRET));
+  return timingSafeStringEqual(received, VERIFY_TOKEN);
+}
+
+/**
+ * Retorna true se a assinatura for válida, false se inválida. Retorna
+ * "skip" se a verificação estiver desabilitada (sem SIGNING_SECRET
+ * configurado) — nesse caso o chamador segue sem essa camada extra.
+ */
+function verifySignature(header: unknown, rawBody: Buffer): 'ok' | 'invalid' | 'skip' {
+  if (!SIGNING_SECRET) return 'skip';
+  if (typeof header !== 'string' || header.length === 0) return 'invalid';
+
+  const parts = Object.fromEntries(
+    header.split(',').map((p) => {
+      const [k, v] = p.split('=');
+      return [k?.trim(), v?.trim()];
+    })
+  );
+
+  const timestamp = parts['t'];
+  const signature = parts['v1'];
+  if (!timestamp || !signature || !/^\d+$/.test(timestamp) || !/^[0-9a-f]{64}$/i.test(signature)) {
+    return 'invalid';
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (Math.abs(nowSeconds - Number(timestamp)) > SIGNATURE_TOLERANCE_SECONDS) {
+    return 'invalid';
+  }
+
+  const signedPayload = Buffer.concat([Buffer.from(`${timestamp}.`, 'utf8'), rawBody]);
+  const expected = crypto.createHmac('sha256', SIGNING_SECRET).update(signedPayload).digest('hex');
+
+  const a = Buffer.from(expected, 'hex');
+  const b = Buffer.from(signature.toLowerCase(), 'hex');
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return 'invalid';
+  }
+  return 'ok';
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -46,12 +126,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  if (!WEBHOOK_SECRET) {
-    console.error('[whatsapp/webhook] WHATSAPP_WEBHOOK_SECRET não configurado.');
+  if (!VERIFY_TOKEN) {
+    console.error('[whatsapp/webhook] WHATSAPP_WEBHOOK_VERIFY_TOKEN não configurado.');
     return res.status(503).json({ error: 'Webhook não configurado.' });
   }
 
-  // Limite por IP: contém tentativas de força bruta contra o segredo antes
+  // Limite por IP: contém tentativas de força bruta contra o token antes
   // mesmo de validá-lo.
   const ip = getClientIp(req);
   const rl = rateLimit(`whatsapp-webhook:${ip}`, 60, 60_000);
@@ -60,20 +140,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(429).json({ error: 'Muitas requisições.' });
   }
 
-  const receivedSecret = req.headers[WEBHOOK_HEADER];
-  if (!isValidSecret(receivedSecret)) {
+  if (!isValidVerifyToken(req.headers[VERIFY_TOKEN_HEADER])) {
     console.warn(`[whatsapp/webhook] Tentativa não autorizada de ${ip}.`);
     return res.status(401).json({ error: 'Não autorizado.' });
   }
 
-  if (!guardRequest(req, res)) return;
+  let rawBody: Buffer;
+  try {
+    rawBody = await readRawBody(req, MAX_BODY_BYTES);
+  } catch (error: unknown) {
+    const statusCode = (error as { statusCode?: number })?.statusCode ?? 400;
+    return res.status(statusCode).json({ error: 'Falha ao ler o corpo da requisição.' });
+  }
 
-  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+  const signatureResult = verifySignature(req.headers[SIGNATURE_HEADER], rawBody);
+  if (signatureResult === 'invalid') {
+    console.warn(`[whatsapp/webhook] Assinatura inválida de ${ip} (delivery-id: ${req.headers['x-webhook-delivery-id'] ?? 'n/a'}).`);
+    return res.status(401).json({ error: 'Assinatura inválida.' });
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(rawBody.toString('utf8'));
+  } catch {
+    return res.status(400).json({ error: 'JSON inválido.' });
+  }
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return res.status(400).json({ error: 'Payload inválido.' });
   }
 
   try {
-    const response = await API_CONSUME('POST', INTERNAL_ENDPOINT, {}, req.body);
+    assertNoInjection(payload);
+  } catch (error) {
+    if (error instanceof InjectionError) {
+      return res.status(400).json({ error: 'Entrada inválida.' });
+    }
+    throw error;
+  }
+
+  console.info(
+    `[whatsapp/webhook] evento=${req.headers['x-webhook-event'] ?? 'n/a'} delivery-id=${req.headers['x-webhook-delivery-id'] ?? 'n/a'} attempt=${req.headers['x-webhook-attempt'] ?? 'n/a'}`
+  );
+
+  try {
+    const response = await API_CONSUME('POST', INTERNAL_ENDPOINT, {}, payload);
 
     if (!response.ok) {
       console.error(`[whatsapp/webhook] API interna retornou ${response.status}: ${response.message || ''}`);
