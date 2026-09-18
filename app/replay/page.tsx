@@ -1,7 +1,11 @@
 "use client";
 
 /**
- * Entrada da área de Replay: as quadras que têm vídeo disponível agora.
+ * Entrada da área de Replay, organizada por esporte.
+ *
+ * O primeiro nível é o esporte; a escolha da quadra acontece dentro dele. Numa
+ * lista corrida, "Quadra 1", "Quadra 2" e "Quadra 3" não dizem de que jogo se
+ * trata — o esporte é o que a pessoa tem na cabeça quando vem procurar o lance.
  *
  * Página ABERTA — não exige login, por decisão de negócio: o replay é do jogo,
  * e o jogo aconteceu em espaço coletivo. Por isso `/replay` não entra no
@@ -13,6 +17,7 @@ import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faArrowRight,
+    faChevronDown,
     faCircleExclamation,
     faFilm,
     faRotateRight,
@@ -24,11 +29,18 @@ import Header from "../components/Common/header";
 import Footer from "../components/Common/footer";
 import { Loading } from "../components/Common/loading";
 import ReplayNotice from "../components/Replay/ReplayNotice";
-import { fetchReplayPlaces, type ReplayPlace } from "../../services/replay-api";
-import { formatRelative, placeSlug } from "../../utils/replay";
+import { fetchReplayPlaces } from "../../services/replay-api";
+import {
+    formatRelative,
+    groupPlacesBySport,
+    placeSlug,
+    sportImage,
+    type ReplayGroupedPlaces,
+} from "../../utils/replay";
 
 export default function ReplayPlacesPage() {
-    const [places, setPlaces] = useState<ReplayPlace[]>([]);
+    const [groups, setGroups] = useState<ReplayGroupedPlaces[]>([]);
+    const [openGroups, setOpenGroups] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +52,14 @@ export default function ReplayPlacesPage() {
 
         if (!result.ok) {
             setError(result.message);
-            setPlaces([]);
+            setGroups([]);
+            setOpenGroups([]);
         } else {
-            setPlaces(result.data);
+            const grouped = groupPlacesBySport(result.data);
+            setGroups(grouped);
+            // O esporte com gravação mais recente já vem aberto: quem chega
+            // aqui quase sempre quer o jogo que acabou de acontecer.
+            setOpenGroups(grouped.length > 0 ? [grouped[0].id] : []);
         }
 
         setIsLoading(false);
@@ -51,6 +68,12 @@ export default function ReplayPlacesPage() {
     useEffect(() => {
         load();
     }, [load]);
+
+    const toggleGroup = (id: number) => {
+        setOpenGroups((current) =>
+            current.includes(id) ? current.filter((openId) => openId !== id) : [...current, id]
+        );
+    };
 
     return (
         <div className={globalStyle.page}>
@@ -86,46 +109,103 @@ export default function ReplayPlacesPage() {
                             </button>
                         }
                     />
-                ) : places.length === 0 ? (
+                ) : groups.length === 0 ? (
                     <ReplayNotice
                         icon={faFilm}
                         title="Nenhum vídeo disponível no momento"
                         description="Assim que alguém apertar o botão de replay em uma quadra, o vídeo aparece aqui."
                     />
                 ) : (
-                    <div className={style.placeGrid}>
-                        {places.map((place) => (
-                            <Link
-                                key={place.id}
-                                href={`/replay/${placeSlug(place.name, place.id)}`}
-                                className={style.placeCard}
-                                referrerPolicy="no-referrer"
-                                rel="noopener noreferrer"
-                            >
-                                <div className={style.placeCardTop}>
-                                    <FontAwesomeIcon icon={faFilm} className={style.placeCardIcon} />
-                                    <div>
-                                        <h2 className={style.placeCardName}>{place.name}</h2>
-                                        {place.place_group?.name && (
-                                            <span className={style.placeCardGroup}>
-                                                {place.place_group.name}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
+                    <div className={style.groupList}>
+                        {groups.map((group) => {
+                            const isOpen = openGroups.includes(group.id);
+                            const panelId = `replay-grupo-${group.id}`;
+                            const image = sportImage(group.name);
 
-                                <div className={style.placeCardFooter}>
-                                    <span className={style.placeCardCount}>
-                                        {place.videos_count === 1
-                                            ? "1 vídeo"
-                                            : `${place.videos_count} vídeos`}
-                                    </span>
-                                    <span className={style.placeCardLast}>
-                                        último: {formatRelative(place.last_recorded_at)}
-                                    </span>
-                                </div>
-                            </Link>
-                        ))}
+                            return (
+                                <section
+                                    key={group.id}
+                                    className={`${style.groupSection} ${isOpen ? style.groupSectionOpen : ""}`}
+                                >
+                                    <button
+                                        type="button"
+                                        className={`${style.groupHeader} ${image ? "" : style.groupHeaderPlain}`}
+                                        style={
+                                            image ? { backgroundImage: `url(${image})` } : undefined
+                                        }
+                                        onClick={() => toggleGroup(group.id)}
+                                        aria-expanded={isOpen}
+                                        aria-controls={panelId}
+                                    >
+                                        <span className={style.groupHeaderMain}>
+                                            <span className={style.groupName}>{group.name}</span>
+                                            <span className={style.groupMeta}>
+                                                {group.places.length === 1
+                                                    ? "1 quadra"
+                                                    : `${group.places.length} quadras`}
+                                                {" · "}
+                                                {group.videosCount === 1
+                                                    ? "1 vídeo"
+                                                    : `${group.videosCount} vídeos`}
+                                                {" · último "}
+                                                {formatRelative(group.lastRecordedAt)}
+                                            </span>
+                                        </span>
+
+                                        <span className={style.groupToggle}>
+                                            <span className={style.groupToggleText}>
+                                                {isOpen ? "Fechar" : "Ver quadras"}
+                                            </span>
+                                            <FontAwesomeIcon
+                                                icon={faChevronDown}
+                                                className={`${style.groupChevron} ${
+                                                    isOpen ? style.groupChevronOpen : ""
+                                                }`}
+                                            />
+                                        </span>
+                                    </button>
+
+                                    <div id={panelId} className={style.groupBody} hidden={!isOpen}>
+                                        <div className={style.placeGrid}>
+                                            {group.places.map((place) => (
+                                                <Link
+                                                    key={place.id}
+                                                    href={`/replay/${placeSlug(place.name, place.id)}`}
+                                                    className={style.placeCard}
+                                                    referrerPolicy="no-referrer"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    {/* O número é o que a pessoa compara ao escolher a quadra. */}
+                                                    <span className={style.placeCardTally}>
+                                                        <strong>{place.videos_count}</strong>
+                                                        <small>
+                                                            {place.videos_count === 1
+                                                                ? "vídeo"
+                                                                : "vídeos"}
+                                                        </small>
+                                                    </span>
+
+                                                    <span className={style.placeCardBody}>
+                                                        {/* O esporte já está na banda acima. */}
+                                                        <span className={style.placeCardName}>
+                                                            {place.name}
+                                                        </span>
+                                                        <span className={style.placeCardLast}>
+                                                            último{" "}
+                                                            {formatRelative(place.last_recorded_at)}
+                                                        </span>
+                                                        <span className={style.placeCardAction}>
+                                                            Ver replays
+                                                            <FontAwesomeIcon icon={faArrowRight} />
+                                                        </span>
+                                                    </span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
+                            );
+                        })}
                     </div>
                 )}
             </section>

@@ -32,7 +32,7 @@ import {
     type ReplayPageMeta,
     type ReplayVideo,
 } from "../../../services/replay-api";
-import { placeIdFromSlug, toApiDate } from "../../../utils/replay";
+import { placeIdFromSlug, sportImage, toApiDate } from "../../../utils/replay";
 
 export default function ReplayPlaceGalleryPage() {
     const params = useParams();
@@ -110,20 +110,34 @@ export default function ReplayPlaceGalleryPage() {
         .join(" ")
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+    // Sem o esporte ainda carregado, o degradê cobre o intervalo sem piscar foto.
+    const bannerImage = groupName ? sportImage(groupName) : null;
+
     return (
         <div className={globalStyle.page}>
             <Header options={null} surgeIn={0} onlyScroll={false} />
 
             <section className={style.replaySection}>
-                <div className={style.replayHeader}>
-                    <Link href="/replay" className={style.replayBack}>
+                {/* Mesma banda de foto da tela de esportes, para não destoar. */}
+                <div
+                    className={`${style.galleryBanner} ${bannerImage ? "" : style.galleryBannerPlain}`}
+                    style={bannerImage ? { backgroundImage: `url(${bannerImage})` } : undefined}
+                >
+                    <Link href="/replay" className={style.galleryBannerBack}>
                         <FontAwesomeIcon icon={faArrowLeft} /> Todas as quadras
                     </Link>
-                    {groupName && <span className={style.replayKicker}>{groupName}</span>}
-                    <h1 className={style.replayTitle}>{placeName || fallbackName || "Replay"}</h1>
-                    <p className={style.replayLead}>
-                        Os lances gravados nesta quadra. Cada vídeo fica disponível por 7 dias.
-                    </p>
+
+                    <div className={style.galleryBannerContent}>
+                        {groupName && (
+                            <span className={style.galleryBannerSport}>{groupName}</span>
+                        )}
+                        <h1 className={style.galleryBannerTitle}>
+                            {placeName || fallbackName || "Replay"}
+                        </h1>
+                        <p className={style.galleryBannerLead}>
+                            Os lances gravados nesta quadra. Cada vídeo fica disponível por 7 dias.
+                        </p>
+                    </div>
                 </div>
 
                 <div className={style.filterBar}>

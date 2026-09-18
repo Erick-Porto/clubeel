@@ -7,7 +7,7 @@
  * ela vira 404 quando o arquivo é apagado.
  */
 
-import type { ReplayOrientation } from "../services/replay-api";
+import type { ReplayOrientation, ReplayPlace } from "../services/replay-api";
 
 /** A partir daqui o prazo vira aviso em destaque no card. */
 export const REPLAY_URGENT_DAYS = 2;
@@ -100,6 +100,114 @@ export function isExpired(video: { days_left: number; expires_at: string }): boo
  */
 export function aspectRatioFor(orientation: ReplayOrientation): string {
     return orientation === "vertical" ? "9 / 16" : "16 / 9";
+}
+
+/* -------------------------------------------------------------------------- */
+/* Agrupamento por esporte                                                    */
+/* -------------------------------------------------------------------------- */
+
+/** Um esporte e as quadras dele que têm vídeo agora. */
+export interface ReplayGroupedPlaces {
+    id: number;
+    name: string;
+    places: ReplayPlace[];
+    videosCount: number;
+    lastRecordedAt: string | null;
+}
+
+/** Quadra sem esporte cadastrado não pode sumir da tela por causa disso. */
+const UNGROUPED_NAME = "Outras quadras";
+
+function moreRecent(a: string | null, b: string | null): string | null {
+    if (!a) return b;
+    if (!b) return a;
+    return Date.parse(a) >= Date.parse(b) ? a : b;
+}
+
+/**
+ * Agrupa por `place_group`, mantendo `GET /replay/places` como única fonte —
+ * a lista continua sendo só de quadras que têm vídeo disponível agora, e
+ * nenhum esporte vazio aparece.
+ *
+ * Esportes e quadras saem ordenados pela gravação mais recente: quem abre a
+ * tela quer o jogo de hoje, não a ordem de cadastro.
+ */
+export function groupPlacesBySport(places: ReplayPlace[]): ReplayGroupedPlaces[] {
+    const groups = new Map<number, ReplayGroupedPlaces>();
+
+    for (const place of places) {
+        const id = place.place_group?.id ?? 0;
+        const name = place.place_group?.name || UNGROUPED_NAME;
+
+        const group = groups.get(id) ?? {
+            id,
+            name,
+            places: [],
+            videosCount: 0,
+            lastRecordedAt: null,
+        };
+
+        group.places.push(place);
+        group.videosCount += place.videos_count;
+        group.lastRecordedAt = moreRecent(group.lastRecordedAt, place.last_recorded_at);
+
+        groups.set(id, group);
+    }
+
+    const sortByRecency = <T extends { last_recorded_at?: string | null; lastRecordedAt?: string | null }>(
+        a: T,
+        b: T
+    ) => {
+        const aDate = Date.parse(a.last_recorded_at ?? a.lastRecordedAt ?? "") || 0;
+        const bDate = Date.parse(b.last_recorded_at ?? b.lastRecordedAt ?? "") || 0;
+        return bDate - aDate;
+    };
+
+    const result = Array.from(groups.values());
+    for (const group of result) group.places.sort(sortByRecency);
+    result.sort(sortByRecency);
+
+    // A vala comum das quadras sem esporte fica por último, sempre.
+    return result.sort((a, b) => (a.id === 0 ? 1 : 0) - (b.id === 0 ? 1 : 0));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Imagem do esporte                                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Fotos das quadras do próprio clube, já no repositório (as mesmas do
+ * carrossel do login).
+ *
+ * A API de replay devolve do esporte só `{id, name}` — sem imagem. E
+ * `places/group`, que tem as imagens que a home usa, é endpoint autenticado:
+ * a galeria de replay é aberta a visitante deslogado e não pode depender dele.
+ *
+ * Daí o casamento por nome. É um paliativo consciente: esporte novo cai no
+ * degradê e a tela continua de pé. A solução durável é a Lara mandar a imagem
+ * do grupo em `/replay/places`; quando mandar, troque isto pelo campo dela.
+ */
+const SPORT_IMAGES: Array<[RegExp, string]> = [
+    [/beach/, "bg-beach-tennis.jpg"],
+    [/padel/, "bg-padel.jpg"],
+    [/tenis/, "bg-tennis.jpg"],
+    [/futebol|futsal|society|campo/, "bg-futebol.jpg"],
+    [/areia/, "bg-volei-baixo.jpg"],
+    [/volei|volley/, "bg-volei-cima.jpg"],
+];
+
+/** Foto de fundo do esporte, ou `null` quando não houver — aí entra o degradê. */
+export function sportImage(groupName: string): string | null {
+    const normalized = groupName
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase();
+
+    for (const [pattern, file] of SPORT_IMAGES) {
+        if (pattern.test(normalized)) return `/images/carousel/${file}`;
+    }
+
+    return null;
 }
 
 /* -------------------------------------------------------------------------- */
