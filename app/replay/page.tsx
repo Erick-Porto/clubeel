@@ -54,11 +54,10 @@ export default function ReplayPlacesPage() {
             setGroups([]);
             setOpenGroups([]);
         } else {
-            const grouped = groupPlacesBySport(result.data);
-            setGroups(grouped);
-            // O esporte com gravação mais recente já vem aberto: quem chega
-            // aqui quase sempre quer o jogo que acabou de acontecer.
-            setOpenGroups(grouped.length > 0 ? [grouped[0].id] : []);
+            setGroups(groupPlacesBySport(result.data));
+            // Todos os esportes começam fechados: a tela abre mostrando a
+            // lista inteira de uma vez, e quem procura escolhe o seu.
+            setOpenGroups([]);
         }
 
         setIsLoading(false);

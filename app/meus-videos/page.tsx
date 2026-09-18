@@ -44,10 +44,10 @@ export default function MyVideosPage() {
 
     const [videos, setVideos] = useState<ReplayVideo[]>([]);
     const [groups, setGroups] = useState<ReplayGroupedVideos[]>([]);
-    // Aqui os esportes nascem TODOS abertos, ao contrário da galeria pública:
-    // estes vídeos são do próprio sócio e alguns estão a dias de sumir —
-    // esconder um atrás de uma seção fechada é esconder um prazo.
-    const [closedGroups, setClosedGroups] = useState<number[]>([]);
+    // Todos os esportes começam fechados, como na galeria pública. O prazo dos
+    // vídeos não fica escondido junto: o aviso do topo conta quantos estão a
+    // expirar, e a linha de resumo de cada esporte diz quantos são dele.
+    const [openGroups, setOpenGroups] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [sessionExpired, setSessionExpired] = useState(false);
@@ -71,13 +71,13 @@ export default function MyVideosPage() {
             setGroups(groupVideosBySport(result.data));
         }
 
-        setClosedGroups([]);
+        setOpenGroups([]);
         setIsLoading(false);
     }, []);
 
     const toggleGroup = (id: number) => {
-        setClosedGroups((current) =>
-            current.includes(id) ? current.filter((closedId) => closedId !== id) : [...current, id]
+        setOpenGroups((current) =>
+            current.includes(id) ? current.filter((openId) => openId !== id) : [...current, id]
         );
     };
 
@@ -159,7 +159,7 @@ export default function MyVideosPage() {
 
                         <div className={style.groupList}>
                             {groups.map((group) => {
-                                const isOpen = !closedGroups.includes(group.id);
+                                const isOpen = openGroups.includes(group.id);
                                 const urgent = group.videos.filter(
                                     (video) => video.days_left <= REPLAY_URGENT_DAYS
                                 ).length;
