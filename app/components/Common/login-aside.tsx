@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import CryptoJS from "crypto-js";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlugCircleXmark, faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight, faPlugCircleXmark, faRotateRight, faVideo } from "@fortawesome/free-solid-svg-icons";
 import API_CONSUME from "../../../services/api-consume";
 import Link from "next/link";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
@@ -320,6 +320,26 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                             </form>
                         </>
                     ) : null}
+
+                    {/*
+                      * Quem abre a raiz do site sem sessão é mandado para cá
+                      * pelo middleware. A galeria das quadras é aberta a
+                      * qualquer visitante, por decisão de negócio — sem este
+                      * caminho ela ficaria invisível para quem não tem conta.
+                      */}
+                    <div className={styles.replayEntry}>
+                        <span className={styles.replayEntryHint}>Não precisa de conta</span>
+                        <Link
+                            href="/replay"
+                            className={styles.replayEntryLink}
+                            referrerPolicy="no-referrer"
+                            rel="noopener noreferrer"
+                        >
+                            <FontAwesomeIcon icon={faVideo} />
+                            Ver os replays das quadras
+                            <FontAwesomeIcon icon={faArrowRight} />
+                        </Link>
+                    </div>
                 </>
             )}
         </aside>
