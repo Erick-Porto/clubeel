@@ -9,10 +9,11 @@
  *    põe o `Authorization: Bearer <appToken>` e, quando há sessão, o header
  *    `Session` com o JWT do sócio.
  *
- * 2. O ARQUIVO DE VÍDEO não passa por aqui nem pelo nosso servidor. A `url` que
- *    a Lara devolve é um arquivo estático servido por ela, e é usada direto no
- *    `<video src>`. É isso que preserva o range request (arrastar a barra do
- *    player em vez de assistir do começo) e evita torrar banda do Next.
+ * 2. O ARQUIVO DE VÍDEO não passa por aqui. A `url` que a Lara devolve é um
+ *    arquivo estático e vai inteira para `resolveMediaUrl` (utils/replay), que
+ *    decide entre apontar direto para ele ou para a rota que repassa o `Range`
+ *    — necessária enquanto a Lara não for alcançável pelo navegador. Em nenhum
+ *    dos casos a URL é guardada: ela vira 404 em 7 dias.
  *
  * Nenhuma chamada daqui usa o interceptor de signOut automático do API_CONSUME
  * (`skipAuthCheck: true`): a galeria pública é aberta a visitante deslogado, e
@@ -69,10 +70,15 @@ export interface ReplayPageMeta {
     total?: number;
 }
 
+/** `place` da galeria vem com o esporte junto (docs/replay-api.md, §7). */
+export interface ReplayGalleryPlace extends ReplayPlaceRef {
+    place_group: ReplayPlaceRef | null;
+}
+
 export interface ReplayVideoPage {
     videos: ReplayVideo[];
     meta: ReplayPageMeta;
-    place: ReplayPlaceRef | null;
+    place: ReplayGalleryPlace | null;
 }
 
 /** Resultado de uma chamada: ou deu certo, ou tem um motivo legível. */
@@ -87,16 +93,20 @@ export type ReplayFailure = "unauthorized" | "not_found" | "network" | "server";
 /* -------------------------------------------------------------------------- */
 
 /**
- * A Lara às vezes devolve a coleção na raiz, às vezes aninhada em `data`.
- * Mesma tolerância já usada em `utils/lara.ts` e no CartContext.
+ * Extrai a coleção da resposta.
+ *
+ * O contrato é explícito: `{"places": [...]}`, `{"videos": [...]}`, sem
+ * envelope `data` (`JsonResource::withoutWrapping()` está ativo na Lara). A
+ * chave documentada é tentada primeiro; o resto é rede de segurança para não
+ * deixar a tela em branco se a resposta mudar de forma.
  */
-function extractArray(raw: unknown): unknown[] {
+function extractArray(raw: unknown, key: "places" | "videos"): unknown[] {
     if (Array.isArray(raw)) return raw;
     if (raw && typeof raw === "object") {
         const obj = raw as Record<string, unknown>;
-        for (const key of ["data", "videos", "places"]) {
-            if (Array.isArray(obj[key])) return obj[key] as unknown[];
-        }
+        if (Array.isArray(obj[key])) return obj[key] as unknown[];
+        if (Array.isArray(obj.data)) return obj.data as unknown[];
+
         const found = Object.values(obj).find((v) => Array.isArray(v));
         if (Array.isArray(found)) return found;
     }
@@ -146,6 +156,26 @@ function toPlace(raw: unknown): ReplayPlace {
     };
 }
 
+/**
+ * Cabeçalho da galeria. Se a resposta não trouxer `place` (não deveria
+ * acontecer), o primeiro vídeo já carrega quadra e esporte.
+ */
+function toGalleryPlace(raw: unknown, firstVideo?: ReplayVideo): ReplayGalleryPlace | null {
+    if (raw && typeof raw === "object") {
+        const obj = raw as Record<string, unknown>;
+        return {
+            ...toPlaceRef(obj),
+            place_group: obj.place_group ? toPlaceRef(obj.place_group) : null,
+        };
+    }
+
+    if (firstVideo) {
+        return { ...firstVideo.place, place_group: firstVideo.place_group };
+    }
+
+    return null;
+}
+
 function toMeta(raw: unknown, fallbackCount: number): ReplayPageMeta {
     const root = (raw ?? {}) as Record<string, unknown>;
     const meta = (root.meta ?? root) as Record<string, unknown>;
@@ -193,7 +223,7 @@ export async function fetchReplayPlaces(): Promise<ReplayResult<ReplayPlace[]>> 
 
     if (!response.ok) return failure(response.status, response.message);
 
-    return { ok: true, data: extractArray(response.data).map(toPlace) };
+    return { ok: true, data: extractArray(response.data, "places").map(toPlace) };
 }
 
 /** Galeria pública de uma quadra, paginada (24 por página na Lara). */
@@ -216,7 +246,7 @@ export async function fetchPlaceVideos(
 
     if (!response.ok) return failure(response.status, response.message);
 
-    const videos = extractArray(response.data).map(toVideo);
+    const videos = extractArray(response.data, "videos").map(toVideo);
     const root = (response.data ?? {}) as Record<string, unknown>;
 
     return {
@@ -224,7 +254,7 @@ export async function fetchPlaceVideos(
         data: {
             videos,
             meta: toMeta(root, videos.length),
-            place: root.place ? toPlaceRef(root.place) : (videos[0]?.place ?? null),
+            place: toGalleryPlace(root.place, videos[0]),
         },
     };
 }
@@ -243,7 +273,7 @@ export async function fetchMyVideos(): Promise<ReplayResult<ReplayVideo[]>> {
 
     if (!response.ok) return failure(response.status, response.message);
 
-    const videos = extractArray(response.data).map(toVideo);
+    const videos = extractArray(response.data, "videos").map(toVideo);
     videos.sort((a, b) => Date.parse(b.recorded_at) - Date.parse(a.recorded_at));
 
     return { ok: true, data: videos };

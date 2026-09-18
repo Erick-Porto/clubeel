@@ -102,6 +102,47 @@ export function aspectRatioFor(orientation: ReplayOrientation): string {
     return orientation === "vertical" ? "9 / 16" : "16 / 9";
 }
 
+/* -------------------------------------------------------------------------- */
+/* Entrega do arquivo de vídeo                                                */
+/* -------------------------------------------------------------------------- */
+
+/** Diretório da Lara onde os clipes ficam (docs/replay-api.md, §7). */
+const MEDIA_MARKER = "/storage/replay/videos/";
+
+/**
+ * `direct` usa a `url` da Lara como ela vem — é o modo que o contrato descreve
+ * e o melhor: o arquivo estático serve range request sozinho, sem custo para o
+ * Next. Só funciona quando esse diretório está publicado num host que o
+ * navegador do sócio alcança.
+ *
+ * `proxy` (padrão) passa pela rota `/api/replay/media`, que repassa o `Range`
+ * para a Lara. É o que funciona hoje, com a Lara fechada para a internet.
+ *
+ * Trocar de um para o outro é mudar esta variável — nada mais no site muda.
+ */
+const MEDIA_MODE = process.env.NEXT_PUBLIC_REPLAY_MEDIA_MODE === "direct" ? "direct" : "proxy";
+
+/**
+ * Endereço que o `<video src>` e o botão de baixar devem usar.
+ *
+ * `download: true` só tem efeito no modo proxy, onde a resposta ganha
+ * `Content-Disposition: attachment` — entre origens diferentes o atributo
+ * `download` do `<a>` é ignorado pelo navegador.
+ */
+export function resolveMediaUrl(rawUrl: string, options: { download?: boolean } = {}): string {
+    if (!rawUrl) return rawUrl;
+    if (MEDIA_MODE === "direct") return rawUrl;
+
+    const markerAt = rawUrl.indexOf(MEDIA_MARKER);
+    // Formato inesperado: devolve a URL original em vez de quebrar o player.
+    if (markerAt === -1) return rawUrl;
+
+    const filePath = rawUrl.slice(markerAt + MEDIA_MARKER.length).replace(/^\/+/, "");
+    if (!filePath) return rawUrl;
+
+    return `/api/replay/media/${filePath}${options.download ? "?download=1" : ""}`;
+}
+
 /** `YYYY-MM-DD` no fuso local — formato que o filtro `?date=` da Lara espera. */
 export function toApiDate(date: Date): string {
     const year = date.getFullYear();

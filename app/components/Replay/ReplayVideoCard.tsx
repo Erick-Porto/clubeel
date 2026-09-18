@@ -20,6 +20,7 @@ import {
     formatSize,
     isExpired,
     isUrgent,
+    resolveMediaUrl,
 } from "../../../utils/replay";
 
 interface ReplayVideoCardProps {
@@ -51,6 +52,13 @@ export default function ReplayVideoCard({
     const urgent = isUrgent(video.days_left);
     const size = formatSize(video.size_bytes);
 
+    // A Lara não é publicada na internet; `resolveMediaUrl` decide entre o
+    // arquivo estático (quando houver host público) e a rota que repassa o
+    // Range. Em nenhum dos dois casos a URL é guardada: ela expira em 7 dias.
+    const playbackUrl = resolveMediaUrl(video.url);
+    const downloadUrl = resolveMediaUrl(video.url, { download: true });
+    const isSameOrigin = downloadUrl.startsWith("/");
+
     const handlePlayClick = () => {
         setStarted(true);
         videoRef.current?.play().catch(() => {
@@ -76,7 +84,7 @@ export default function ReplayVideoCard({
                         <video
                             ref={videoRef}
                             className={style.videoPlayer}
-                            src={video.url}
+                            src={playbackUrl}
                             controls
                             playsInline
                             /*
@@ -142,15 +150,17 @@ export default function ReplayVideoCard({
                 </ul>
 
                 {/*
-                 * Link direto para o arquivo na Lara. Sem proxy pelo Next: é o
-                 * arquivo estático que suporta range request, e é isso que deixa
-                 * o visitante arrastar a barra do player.
+                 * Na mesma origem (modo proxy) a resposta vem com
+                 * Content-Disposition: attachment e o arquivo é salvo sem sair
+                 * da página. Em origem diferente (modo direct) o atributo
+                 * `download` é ignorado pelo navegador, então abrir em outra aba
+                 * é o comportamento menos ruim — pelo menos não perde a galeria.
                  */}
                 <a
                     className={`${style.videoDownload} ${gone ? style.videoDownloadDisabled : ""}`}
-                    href={gone ? undefined : video.url}
+                    href={gone ? undefined : downloadUrl}
                     download
-                    target="_blank"
+                    target={isSameOrigin ? undefined : "_blank"}
                     rel="noopener noreferrer"
                     referrerPolicy="no-referrer"
                     aria-disabled={gone}

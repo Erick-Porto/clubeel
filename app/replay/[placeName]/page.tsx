@@ -42,6 +42,7 @@ export default function ReplayPlaceGalleryPage() {
     const [videos, setVideos] = useState<ReplayVideo[]>([]);
     const [meta, setMeta] = useState<ReplayPageMeta>({ current_page: 1, last_page: 1 });
     const [placeName, setPlaceName] = useState("");
+    const [groupName, setGroupName] = useState("");
     const [date, setDate] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -83,6 +84,9 @@ export default function ReplayPlaceGalleryPage() {
                 );
                 setMeta(result.data.meta);
                 if (result.data.place?.name) setPlaceName(result.data.place.name);
+                if (result.data.place?.place_group?.name) {
+                    setGroupName(result.data.place.place_group.name);
+                }
                 setError(null);
             }
 
@@ -115,6 +119,7 @@ export default function ReplayPlaceGalleryPage() {
                     <Link href="/replay" className={style.replayBack}>
                         <FontAwesomeIcon icon={faArrowLeft} /> Todas as quadras
                     </Link>
+                    {groupName && <span className={style.replayKicker}>{groupName}</span>}
                     <h1 className={style.replayTitle}>{placeName || fallbackName || "Replay"}</h1>
                     <p className={style.replayLead}>
                         Os lances gravados nesta quadra. Cada vídeo fica disponível por 7 dias.
