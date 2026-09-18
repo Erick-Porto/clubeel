@@ -164,6 +164,9 @@ export default function Header({
                     {pathname !== '/profile' && (
                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/profile'} style={{ width: '100%' }}><li> Meu Perfil</li></Link>
                     )}
+                    {pathname !== '/meus-videos' && (
+                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/meus-videos'} style={{ width: '100%' }}><li>Meus Vídeos</li></Link>
+                    )}
                     {pathname !== '/' && (
                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}><li>Início</li></Link>
                     )}

@@ -12,6 +12,7 @@ import { faPlugCircleXmark, faRotateRight } from "@fortawesome/free-solid-svg-ic
 import API_CONSUME from "../../../services/api-consume";
 import Link from "next/link";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
+import { safeCallbackUrl } from "../../../utils/callback-url";
 
 export default function AuthSidebar({ useInterface }: { useInterface: string }) {
     const [cpf, setCPF] = useState("");
@@ -49,6 +50,11 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
 
     const router = useRouter();
     const searchParams = useSearchParams();
+
+    // Para onde ir depois de autenticar. Sem `callbackUrl` na URL continua
+    // sendo a home, como antes; com ele (middleware ou link de e-mail, caso do
+    // /meus-videos) o sócio cai direto na página que pediu.
+    const callbackUrl = safeCallbackUrl(searchParams?.get('callbackUrl'));
 
     useEffect(() => {
         const maintenanceMode = searchParams?.get('maintenance');
@@ -113,7 +119,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 toast.error("Falha ao entrar: " + result.error);
             } else if (result?.ok) {
                 toast.success("Bem-vindo de volta!");
-                router.push('/');
+                router.push(callbackUrl);
                 router.refresh();
             }
         } catch (error) {
@@ -171,7 +177,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
             });
 
             if (loginResult?.ok) {
-                router.push('/');
+                router.push(callbackUrl);
                 router.refresh();
             }
         } catch (error) {

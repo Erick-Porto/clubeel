@@ -23,6 +23,11 @@ const PUBLIC_ENDPOINTS: RegExp[] = [
     /^register$/,
     /^check-member$/,
     /^change-password$/,
+    // Replay: a galeria da quadra é aberta a qualquer visitante, por decisão de
+    // negócio (o replay é do jogo, e o jogo aconteceu em espaço coletivo). A
+    // Lara não devolve identificação de sócio nesses dois endpoints.
+    /^replay\/places$/,
+    /^replay\/places\/\d+\/videos$/,
 ];
 
 // Endpoints que exigem sessão autenticada.
@@ -32,6 +37,9 @@ const AUTHENTICATED_ENDPOINTS: RegExp[] = [
     /^place\/[^/]+$/,
     /^places(\/.*)?$/,
     /^member\/update$/,
+    // "Meus vídeos" é do sócio logado: exige o header Session, que só sai daqui
+    // com sessão válida.
+    /^replay\/my-videos$/,
 ];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
