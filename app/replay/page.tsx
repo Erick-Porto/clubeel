@@ -17,7 +17,6 @@ import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faArrowRight,
-    faChevronDown,
     faCircleExclamation,
     faFilm,
     faRotateRight,
@@ -29,12 +28,12 @@ import Header from "../components/Common/header";
 import Footer from "../components/Common/footer";
 import { Loading } from "../components/Common/loading";
 import ReplayNotice from "../components/Replay/ReplayNotice";
+import ReplaySportSection from "../components/Replay/ReplaySportSection";
 import { fetchReplayPlaces } from "../../services/replay-api";
 import {
     formatRelative,
     groupPlacesBySport,
     placeSlug,
-    sportImage,
     type ReplayGroupedPlaces,
 } from "../../utils/replay";
 
@@ -120,53 +119,28 @@ export default function ReplayPlacesPage() {
                         {groups.map((group) => {
                             const isOpen = openGroups.includes(group.id);
                             const panelId = `replay-grupo-${group.id}`;
-                            const image = sportImage(group.name);
 
                             return (
-                                <section
+                                <ReplaySportSection
                                     key={group.id}
-                                    className={`${style.groupSection} ${isOpen ? style.groupSectionOpen : ""}`}
+                                    name={group.name}
+                                    meta={
+                                        `${
+                                            group.places.length === 1
+                                                ? "1 quadra"
+                                                : `${group.places.length} quadras`
+                                        } · ${
+                                            group.videosCount === 1
+                                                ? "1 vídeo"
+                                                : `${group.videosCount} vídeos`
+                                        } · último ${formatRelative(group.lastRecordedAt)}`
+                                    }
+                                    openLabel="Ver quadras"
+                                    isOpen={isOpen}
+                                    onToggle={() => toggleGroup(group.id)}
+                                    panelId={panelId}
                                 >
-                                    <button
-                                        type="button"
-                                        className={`${style.groupHeader} ${image ? "" : style.groupHeaderPlain}`}
-                                        style={
-                                            image ? { backgroundImage: `url(${image})` } : undefined
-                                        }
-                                        onClick={() => toggleGroup(group.id)}
-                                        aria-expanded={isOpen}
-                                        aria-controls={panelId}
-                                    >
-                                        <span className={style.groupHeaderMain}>
-                                            <span className={style.groupName}>{group.name}</span>
-                                            <span className={style.groupMeta}>
-                                                {group.places.length === 1
-                                                    ? "1 quadra"
-                                                    : `${group.places.length} quadras`}
-                                                {" · "}
-                                                {group.videosCount === 1
-                                                    ? "1 vídeo"
-                                                    : `${group.videosCount} vídeos`}
-                                                {" · último "}
-                                                {formatRelative(group.lastRecordedAt)}
-                                            </span>
-                                        </span>
-
-                                        <span className={style.groupToggle}>
-                                            <span className={style.groupToggleText}>
-                                                {isOpen ? "Fechar" : "Ver quadras"}
-                                            </span>
-                                            <FontAwesomeIcon
-                                                icon={faChevronDown}
-                                                className={`${style.groupChevron} ${
-                                                    isOpen ? style.groupChevronOpen : ""
-                                                }`}
-                                            />
-                                        </span>
-                                    </button>
-
-                                    <div id={panelId} className={style.groupBody} hidden={!isOpen}>
-                                        <div className={style.placeGrid}>
+                                    <div className={style.placeGrid}>
                                             {group.places.map((place) => (
                                                 <Link
                                                     key={place.id}
@@ -201,9 +175,8 @@ export default function ReplayPlacesPage() {
                                                     </span>
                                                 </Link>
                                             ))}
-                                        </div>
                                     </div>
-                                </section>
+                                </ReplaySportSection>
                             );
                         })}
                     </div>

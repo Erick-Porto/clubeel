@@ -7,7 +7,7 @@
  * ela vira 404 quando o arquivo é apagado.
  */
 
-import type { ReplayOrientation, ReplayPlace } from "../services/replay-api";
+import type { ReplayOrientation, ReplayPlace, ReplayVideo } from "../services/replay-api";
 
 /** A partir daqui o prazo vira aviso em destaque no card. */
 export const REPLAY_URGENT_DAYS = 2;
@@ -168,6 +168,44 @@ export function groupPlacesBySport(places: ReplayPlace[]): ReplayGroupedPlaces[]
     result.sort(sortByRecency);
 
     // A vala comum das quadras sem esporte fica por último, sempre.
+    return result.sort((a, b) => (a.id === 0 ? 1 : 0) - (b.id === 0 ? 1 : 0));
+}
+
+/** Um esporte e os vídeos do sócio naquele esporte. */
+export interface ReplayGroupedVideos {
+    id: number;
+    name: string;
+    videos: ReplayVideo[];
+    lastRecordedAt: string | null;
+}
+
+/**
+ * Mesmo agrupamento de `groupPlacesBySport`, agora sobre os vídeos do sócio.
+ *
+ * A ordem dos vídeos dentro do esporte é preservada — `fetchMyVideos` já os
+ * entrega do mais recente para o mais antigo, que é a ordem que a tela promete.
+ */
+export function groupVideosBySport(videos: ReplayVideo[]): ReplayGroupedVideos[] {
+    const groups = new Map<number, ReplayGroupedVideos>();
+
+    for (const video of videos) {
+        const id = video.place_group?.id || 0;
+        const name = video.place_group?.name || UNGROUPED_NAME;
+
+        const group = groups.get(id) ?? { id, name, videos: [], lastRecordedAt: null };
+
+        group.videos.push(video);
+        group.lastRecordedAt = moreRecent(group.lastRecordedAt, video.recorded_at);
+
+        groups.set(id, group);
+    }
+
+    const result = Array.from(groups.values());
+    result.sort(
+        (a, b) => (Date.parse(b.lastRecordedAt ?? "") || 0) - (Date.parse(a.lastRecordedAt ?? "") || 0)
+    );
+
+    // Vídeo sem esporte cadastrado não some da tela, mas também não abre a fila.
     return result.sort((a, b) => (a.id === 0 ? 1 : 0) - (b.id === 0 ? 1 : 0));
 }
 

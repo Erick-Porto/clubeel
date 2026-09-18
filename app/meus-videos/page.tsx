@@ -27,9 +27,15 @@ import Header from "../components/Common/header";
 import Footer from "../components/Common/footer";
 import { Loading, LoadingScreen } from "../components/Common/loading";
 import ReplayNotice from "../components/Replay/ReplayNotice";
+import ReplaySportSection from "../components/Replay/ReplaySportSection";
 import ReplayVideoGrid from "../components/Replay/ReplayVideoGrid";
 import { fetchMyVideos, type ReplayVideo } from "../../services/replay-api";
-import { REPLAY_URGENT_DAYS } from "../../utils/replay";
+import {
+    formatRelative,
+    groupVideosBySport,
+    REPLAY_URGENT_DAYS,
+    type ReplayGroupedVideos,
+} from "../../utils/replay";
 
 const LOGIN_HREF = "/login?callbackUrl=%2Fmeus-videos";
 
@@ -37,6 +43,11 @@ export default function MyVideosPage() {
     const { status } = useSession();
 
     const [videos, setVideos] = useState<ReplayVideo[]>([]);
+    const [groups, setGroups] = useState<ReplayGroupedVideos[]>([]);
+    // Aqui os esportes nascem TODOS abertos, ao contrário da galeria pública:
+    // estes vídeos são do próprio sócio e alguns estão a dias de sumir —
+    // esconder um atrás de uma seção fechada é esconder um prazo.
+    const [closedGroups, setClosedGroups] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [sessionExpired, setSessionExpired] = useState(false);
@@ -54,12 +65,21 @@ export default function MyVideosPage() {
             if (result.reason === "unauthorized") setSessionExpired(true);
             else setError(result.message);
             setVideos([]);
+            setGroups([]);
         } else {
             setVideos(result.data);
+            setGroups(groupVideosBySport(result.data));
         }
 
+        setClosedGroups([]);
         setIsLoading(false);
     }, []);
+
+    const toggleGroup = (id: number) => {
+        setClosedGroups((current) =>
+            current.includes(id) ? current.filter((closedId) => closedId !== id) : [...current, id]
+        );
+    };
 
     useEffect(() => {
         if (status === "authenticated") load();
@@ -137,7 +157,42 @@ export default function MyVideosPage() {
                             </div>
                         )}
 
-                        <ReplayVideoGrid videos={videos} showPlaceName />
+                        <div className={style.groupList}>
+                            {groups.map((group) => {
+                                const isOpen = !closedGroups.includes(group.id);
+                                const urgent = group.videos.filter(
+                                    (video) => video.days_left <= REPLAY_URGENT_DAYS
+                                ).length;
+
+                                return (
+                                    <ReplaySportSection
+                                        key={group.id}
+                                        name={group.name}
+                                        meta={
+                                            `${
+                                                group.videos.length === 1
+                                                    ? "1 vídeo"
+                                                    : `${group.videos.length} vídeos`
+                                            } · último ${formatRelative(group.lastRecordedAt)}` +
+                                            (urgent > 0
+                                                ? ` · ${urgent} a expirar`
+                                                : "")
+                                        }
+                                        openLabel="Ver vídeos"
+                                        isOpen={isOpen}
+                                        onToggle={() => toggleGroup(group.id)}
+                                        panelId={`meus-videos-grupo-${group.id}`}
+                                    >
+                                        {/*
+                                          * O nome da quadra continua no card: dentro de um
+                                          * esporte ainda há mais de uma quadra, e o sócio
+                                          * precisa saber em qual jogou.
+                                          */}
+                                        <ReplayVideoGrid videos={group.videos} showPlaceName />
+                                    </ReplaySportSection>
+                                );
+                            })}
+                        </div>
                     </>
                 )}
             </section>
