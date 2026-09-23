@@ -1,0 +1,990 @@
+/*
+ * Área de aprovação de ordens de compra.
+ *
+ * Usa os tokens do projeto (--grena e variações, --background, --foreground de
+ * styles/globals.css) e a tipografia herdada do body (Nunito). Nenhuma
+ * biblioteca nova: os componentes daqui espelham os padrões de botão, input e
+ * card que login-side-bar.module.css e profile.module.css já estabelecem.
+ *
+ * Os rgba() de grena são literais porque --grena-rgb não existe em globals.css
+ * (é usada em login-side-bar.module.css sem estar definida — dívida registrada
+ * do agendamento, que esta área não toca).
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Casca                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.area {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.conteudo {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  flex: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Cabeçalho da área                                                          */
+/* -------------------------------------------------------------------------- */
+
+.cabecalho {
+  background: var(--background);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.cabecalhoInterno {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.logoImagem {
+  width: 140px;
+  height: auto;
+  object-fit: contain;
+}
+
+.marcaTexto {
+  border-left: 1px solid #e2e8f0;
+  padding-left: 16px;
+  min-width: 0;
+}
+
+.marcaTitulo {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--grena);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.marcaSubtitulo {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.sessao {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sessaoUsuario {
+  text-align: right;
+  min-width: 0;
+}
+
+.sessaoNome {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #333;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.sessaoMatricula {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.botaoSair {
+  border: 1px solid #e2e8f0;
+  background: var(--background);
+  color: #666;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.botaoSair:hover {
+  border-color: var(--grena);
+  color: var(--grena);
+  background: #fff5f5;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Login                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.paginaLogin {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: #f8fafc;
+}
+
+.cartaoLogin {
+  width: 100%;
+  max-width: 420px;
+  background: var(--background);
+  border-radius: 16px;
+  padding: 44px 40px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eef2f6;
+}
+
+.loginTopo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.loginTitulo {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--grena);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.loginMensagem {
+  text-align: center;
+  color: #666;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rotulo {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #555;
+}
+
+.formulario input[type='text'],
+.formulario input[type='password'] {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
+  background-color: #f8fafc;
+  color: #333;
+}
+
+.formulario input:focus {
+  border-color: var(--grena);
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(125, 4, 0, 0.1);
+}
+
+.formulario input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.botaoPrincipal {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--grena);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  margin-top: 10px;
+  box-shadow: 0 4px 12px rgba(125, 4, 0, 0.2);
+}
+
+.botaoPrincipal:hover:not(:disabled) {
+  background-color: var(--grena-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(125, 4, 0, 0.3);
+}
+
+.botaoPrincipal:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Mensagens vindas da API. Não são decoradas nem reescritas. */
+.erro {
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-left: 4px solid var(--grena);
+  color: #7d0400;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.aviso {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #d97706;
+  color: #92400e;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Fila                                                                       */
+/* -------------------------------------------------------------------------- */
+
+.tituloPagina {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #2b2b2b;
+  margin-bottom: 4px;
+}
+
+.subtituloPagina {
+  font-size: 0.92rem;
+  color: #777;
+  margin-bottom: 28px;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cartaoOrdem {
+  background: var(--background);
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: inherit;
+}
+
+.cartaoOrdem:hover {
+  border-color: var(--grena);
+  box-shadow: 0 6px 18px rgba(125, 4, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.cartaoOrdem:focus-visible {
+  outline: 3px solid rgba(125, 4, 0, 0.35);
+  outline-offset: 2px;
+}
+
+.ordemTopo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.ordemIdentificacao {
+  min-width: 0;
+}
+
+.ordemNumero {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--grena);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+
+.ordemFornecedor {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #2b2b2b;
+  line-height: 1.3;
+}
+
+.ordemValor {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #2b2b2b;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.ordemItens {
+  font-size: 0.76rem;
+  color: #888;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ordemCampos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 20px;
+  border-top: 1px solid #f1f4f7;
+  padding-top: 16px;
+}
+
+.campoRotulo {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #9aa4b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+
+.campoValor {
+  font-size: 0.9rem;
+  color: #3c3c3c;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ordemRodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.espera {
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 600;
+}
+
+.esperaRelativo {
+  color: var(--grena);
+  font-weight: 800;
+}
+
+/* `escolhido_por` é informação de contexto, não destaque. */
+.indicacao {
+  font-size: 0.72rem;
+  color: #9aa4b0;
+  font-weight: 600;
+}
+
+.selo {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Estados: vazio e erro temporário                                           */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Fila vazia é o estado normal e frequente de um aprovador, não uma falha —
+ * daí o tom neutro, sem ícone de alerta e sem cor de erro.
+ */
+.estado {
+  background: var(--background);
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
+  padding: 56px 32px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.estadoIcone {
+  font-size: 2.2rem;
+  color: #c7d0da;
+  margin-bottom: 18px;
+}
+
+.estadoIconeAtencao {
+  color: var(--grena);
+}
+
+.estadoTitulo {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #3c3c3c;
+  margin-bottom: 8px;
+}
+
+.estadoTexto {
+  font-size: 0.92rem;
+  color: #777;
+  line-height: 1.6;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.botaoSecundario {
+  margin-top: 24px;
+  border: 1px solid var(--grena);
+  background: var(--background);
+  color: var(--grena);
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+}
+
+.botaoSecundario:hover:not(:disabled) {
+  background: var(--grena);
+  color: #fff;
+}
+
+.botaoSecundario:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Detalhe da ordem                                                           */
+/* -------------------------------------------------------------------------- */
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #777;
+  margin-bottom: 20px;
+}
+
+.voltar:hover {
+  color: var(--grena);
+}
+
+.detalheTopo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.detalheFornecedor {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #2b2b2b;
+  line-height: 1.25;
+}
+
+.detalheRazao {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+.detalheValor {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #2b2b2b;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.bloco {
+  background: var(--background);
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 16px;
+}
+
+.blocoTitulo {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--grena);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f4f7;
+}
+
+.textoVazio {
+  font-size: 0.9rem;
+  color: #999;
+  font-style: italic;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tabela de itens                                                            */
+/* -------------------------------------------------------------------------- */
+
+/* Tabela larga rola dentro do próprio container; a página nunca rola na horizontal. */
+.tabelaRolagem {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  min-width: 640px;
+}
+
+.tabela th {
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #9aa4b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 10px 10px;
+  border-bottom: 1px solid #e8edf2;
+  white-space: nowrap;
+}
+
+.tabela td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f4f7fa;
+  color: #3c3c3c;
+  vertical-align: top;
+}
+
+.tabela tbody tr:hover td {
+  background: #fafbfd;
+}
+
+.colunaNumero {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.celulaMaterial {
+  font-weight: 600;
+  min-width: 220px;
+  overflow-wrap: anywhere;
+}
+
+.tabela tfoot td {
+  padding-top: 14px;
+  font-weight: 800;
+  color: #2b2b2b;
+  border-bottom: none;
+  text-align: right;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Andamento                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.passos {
+  list-style: none;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.passos li {
+  border-left: 4px solid #dfe5ec;
+  background: #fafbfd;
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+}
+
+.passoAprovado {
+  border-left-color: #16a34a;
+}
+
+.passoReprovado {
+  border-left-color: var(--grena);
+}
+
+.passoPendente {
+  border-left-color: #d97706;
+  border-left-style: dashed;
+}
+
+.passoCabecalho {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.passoNivel {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #9aa4b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.passoDecisao {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #2b2b2b;
+}
+
+.passoResponsavel {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #3c3c3c;
+}
+
+.passoMeta {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 3px;
+}
+
+.passoObservacao {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--background);
+  border: 1px solid #eef2f6;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #555;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Decisão                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.formDecisao {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  background-color: #f8fafc;
+  color: #333;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.textarea:focus {
+  border-color: var(--grena);
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(125, 4, 0, 0.1);
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.contador {
+  align-self: flex-end;
+  font-size: 0.72rem;
+  color: #9aa4b0;
+  font-weight: 600;
+}
+
+.acoes {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.botaoAprovar,
+.botaoReprovar,
+.botaoCancelar {
+  border-radius: 8px;
+  padding: 14px 26px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.botaoAprovar {
+  background-color: #15803d;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.2);
+}
+
+.botaoAprovar:hover:not(:disabled) {
+  background-color: #166534;
+  transform: translateY(-2px);
+}
+
+.botaoReprovar {
+  background-color: var(--grena);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(125, 4, 0, 0.2);
+}
+
+.botaoReprovar:hover:not(:disabled) {
+  background-color: var(--grena-dark);
+  transform: translateY(-2px);
+}
+
+.botaoCancelar {
+  background: var(--background);
+  border-color: #e2e8f0;
+  color: #666;
+}
+
+.botaoCancelar:hover:not(:disabled) {
+  border-color: #999;
+  color: #333;
+}
+
+.botaoAprovar:disabled,
+.botaoReprovar:disabled,
+.botaoCancelar:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/*
+ * Confirmação: o número e o valor da ordem aparecem aqui, e o aviso diz o que a
+ * ação faz de irreversível antes do clique.
+ */
+.confirmacao {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.confirmacaoReprovar {
+  border-color: #f5c6c6;
+  background: #fff5f5;
+}
+
+.confirmacaoTexto {
+  font-size: 0.98rem;
+  color: #2b2b2b;
+  line-height: 1.5;
+}
+
+.confirmacaoTexto strong {
+  font-weight: 800;
+}
+
+.confirmacaoAviso {
+  font-size: 0.88rem;
+  color: #555;
+  line-height: 1.5;
+  font-weight: 600;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Resultado da decisão                                                       */
+/* -------------------------------------------------------------------------- */
+
+.resultado {
+  border-radius: 12px;
+  padding: 28px 26px;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+  border-left-width: 5px;
+}
+
+.resultadoTitulo {
+  font-size: 1.22rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.resultadoTexto {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* "Fiz a minha parte" — deliberadamente NÃO é verde de conclusão. */
+.resultadoRegistrada {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  border-left-color: #2563eb;
+}
+
+.resultadoRegistrada .resultadoTitulo {
+  color: #1d4ed8;
+}
+
+/* "A compra está liberada" — o único verde da tela. */
+.resultadoAprovada {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  border-left-color: #15803d;
+}
+
+.resultadoAprovada .resultadoTitulo {
+  color: #15803d;
+}
+
+.resultadoAnomala {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left-color: #d97706;
+}
+
+.resultadoAnomala .resultadoTitulo {
+  color: #92400e;
+}
+
+.resultadoReprovada {
+  background: #fff5f5;
+  border-color: #f5c6c6;
+  border-left-color: var(--grena);
+}
+
+.resultadoReprovada .resultadoTitulo {
+  color: var(--grena);
+}
+
+.resultado .botaoSecundario {
+  display: inline-block;
+  text-decoration: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsivo                                                                 */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .detalheTopo {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .detalheValor {
+    text-align: left;
+  }
+
+  .acoes {
+    flex-direction: column;
+  }
+
+  .botaoAprovar,
+  .botaoReprovar,
+  .botaoCancelar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .cabecalhoInterno {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .sessao {
+    justify-content: space-between;
+  }
+
+  .sessaoUsuario {
+    text-align: left;
+  }
+
+  .sessaoNome {
+    max-width: none;
+  }
+
+  .conteudo {
+    padding: 24px 16px 48px;
+  }
+
+  .ordemTopo {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ordemValor,
+  .ordemItens {
+    text-align: left;
+  }
+
+  .cartaoLogin {
+    padding: 32px 24px;
+  }
+
+  .marcaTexto {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  .marca {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
