@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import styles from '@/styles/header.module.css';
+import styles from '../../../styles/header.module.css';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signOut, useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faUserCircle } from '@fortawesome/free-solid-svg-icons';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 export interface HeaderOption {
     text: string;
@@ -163,6 +163,9 @@ export default function Header({
                 <ul className={`${styles.userOptions} ${userOptions ? styles.userOptionsActive : ''}`}>
                     {pathname !== '/profile' && (
                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/profile'} style={{ width: '100%' }}><li> Meu Perfil</li></Link>
+                    )}
+                    {pathname !== '/meus-videos' && (
+                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/meus-videos'} style={{ width: '100%' }}><li>Meus Vídeos</li></Link>
                     )}
                     {pathname !== '/' && (
                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}><li>Início</li></Link>

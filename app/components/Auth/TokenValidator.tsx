@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import API_CONSUME from '@/services/api-consume';
+import API_CONSUME from '../../../services/api-consume';
 import { usePathname } from 'next/navigation';
 
 export default function TokenValidator() {
@@ -24,6 +24,13 @@ export default function TokenValidator() {
   }, [status, session]);
 
   useEffect(() => {
+    // A área de aprovação de compras (/aprovacao) tem sessão própria, sem
+    // relação com a de sócio. Sem este guard, um sócio com token vencido no
+    // mesmo navegador arrastaria o aprovador para /login no meio do trabalho,
+    // porque validateBackendToken chama signOut({ callbackUrl: '/login' }).
+    // Não altera nada no fluxo de agendamento: só desliga o validador fora dele.
+    if (pathname?.startsWith('/aprovacao')) return;
+
     if (status === 'authenticated') {
       validateBackendToken();
 

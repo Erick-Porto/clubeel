@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import API_CONSUME from '@/services/api-consume';
+import API_CONSUME from '../services/api-consume';
 import { toast } from 'react-toastify';
 import { usePathname, useRouter } from 'next/navigation';
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '@/styles/mobile-nav-bar.module.css';
+import styles from '../../../styles/mobile-nav-bar.module.css';
 
 export interface MobileNavOptions {
     onNavigate: (sectionName: 'sociais' | 'mapa' | 'esportivas') => void;

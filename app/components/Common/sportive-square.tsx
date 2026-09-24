@@ -1,5 +1,5 @@
 "use client"
-import Style from '@/styles/sportive-square.module.css';
+import Style from '../../../styles/sportive-square.module.css';
 import Link from 'next/link';
 import Image from 'next/image'; 
 

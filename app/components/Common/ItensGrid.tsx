@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image'; 
 import Link from 'next/link';
-import Style from '@/styles/itens-grid.module.css';
+import Style from '../../../styles/itens-grid.module.css';
 
 interface dataType {
     id: number;

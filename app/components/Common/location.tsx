@@ -1,4 +1,4 @@
-import styles from '@/styles/map-location.module.css'
+import styles from '../../../styles/map-location.module.css'
 
 const GOOGLE_MAPS_DIRECTIONS_URL = 'https://www.google.com/maps/dir//Clube+dos+Funcion%C3%A1rios+da+CSN+Rua+Hiroshi+Matsuda+Filho,+S%2FN+-+Vila+Santa+Cec%C3%ADlia+Volta+Redonda+-+RJ+27261-260/@-22.5287877,-44.1097089,18z/data=!4m5!4m4!1m0!1m2!1m1!1s0x9e986e0605bb79:0x84c8b48f044ac024';
 const GOOGLE_MAPS_EMBED_BASE_URL = 'https://www.google.com/maps/embed/v1/place?q=Clube+dos+Funcionários+da+CSN+-+Rua+Hiroshi+Matsuda+Filho+-+Vila+Santa+Cecília,+Volta+Redonda+-+RJ,+Brasil';

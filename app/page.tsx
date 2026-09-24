@@ -1,20 +1,20 @@
 'use client'
 
 import { useEffect, useState, useRef } from "react";
-import style from "@/styles/page.module.css";
-import Footer from "@/components/Common/footer";
-import Header, { HeaderOption } from "@/components/Common/header";
-// import MobileNavBar from "@/components/mobileNavBar";
-import SportiveSquare from "@/components/Common/sportive-square";
-// import MapBanner from "@/components/map-banner";
-import API_CONSUME from "@/services/api-consume";
+import style from "../styles/page.module.css";
+import Footer from "./components/Common/footer";
+import Header, { HeaderOption } from "./components/Common/header";
+// import MobileNavBar from "./components/mobileNavBar";
+import SportiveSquare from "./components/Common/sportive-square";
+// import MapBanner from "./components/map-banner";
+import API_CONSUME from "../services/api-consume";
 import { useSession } from "next-auth/react";
 import { useIsMobile } from "./hooks/useIsMobile";
-// import TutorialOverlay, { TutorialStep } from "@/components/tutorial-overlay";
+// import TutorialOverlay, { TutorialStep } from "./components/tutorial-overlay";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-import ItensGrid from "@/components/Common/ItensGrid";
+import ItensGrid from "./components/Common/ItensGrid";
 interface Point { x: number; y: number; }
 interface Place {
     id: number;

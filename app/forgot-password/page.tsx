@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import style from '@/styles/forgot-password.module.css';
-import API_CONSUME from '@/services/api-consume';
+import style from '../../styles/forgot-password.module.css';
+import API_CONSUME from '../../services/api-consume';
 import { toast } from 'react-toastify';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faSpinner, faArrowLeft, faLock, faUserCheck } from '@fortawesome/free-solid-svg-icons';
@@ -165,7 +165,9 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
             const encryptedPassword = CryptoJs.SHA256(passwords.new1).toString();
             
             const response = await API_CONSUME('PUT', 'change-password', {}, {
-                cpf: userData.cpf.replace(/\D/g, ''), 
+                cpf: userData.cpf.replace(/\D/g, ''),
+                title: userData.matricula,
+                birth_date: userData.birthDate,
                 new_password: encryptedPassword
             });
 

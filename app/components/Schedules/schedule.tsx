@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import styles from '@/styles/schedule.module.css';
+import styles from '../../../styles/schedule.module.css';
 import BookingButton from './booking-button';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
 import { useSession } from 'next-auth/react';
-import { useCart } from '@/context/CartContext';
-import API_CONSUME from '@/services/api-consume';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useCart } from '../../../context/CartContext';
+import API_CONSUME from '../../../services/api-consume';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import Clock from './clock';
 
 interface ReservationPayload {

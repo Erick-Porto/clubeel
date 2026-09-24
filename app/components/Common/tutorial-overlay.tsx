@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import styles from '@/styles/tutorial-overlay.module.css';
+import styles from '../../../styles/tutorial-overlay.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight, faCheck, faHandPointer } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';

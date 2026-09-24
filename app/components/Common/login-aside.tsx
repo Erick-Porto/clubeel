@@ -1,6 +1,6 @@
 "use client";
 
-import styles from "@/styles/login-side-bar.module.css";
+import styles from "../../../styles/login-side-bar.module.css";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from "next-auth/react";
@@ -8,10 +8,11 @@ import { toast } from "react-toastify";
 import CryptoJS from "crypto-js";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlugCircleXmark, faRotateRight } from "@fortawesome/free-solid-svg-icons";
-import API_CONSUME from "@/services/api-consume";
+import { faArrowRight, faPlugCircleXmark, faRotateRight, faVideo } from "@fortawesome/free-solid-svg-icons";
+import API_CONSUME from "../../../services/api-consume";
 import Link from "next/link";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
+import { safeCallbackUrl } from "../../../utils/callback-url";
 
 export default function AuthSidebar({ useInterface }: { useInterface: string }) {
     const [cpf, setCPF] = useState("");
@@ -49,6 +50,11 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
 
     const router = useRouter();
     const searchParams = useSearchParams();
+
+    // Para onde ir depois de autenticar. Sem `callbackUrl` na URL continua
+    // sendo a home, como antes; com ele (middleware ou link de e-mail, caso do
+    // /meus-videos) o sócio cai direto na página que pediu.
+    const callbackUrl = safeCallbackUrl(searchParams?.get('callbackUrl'));
 
     useEffect(() => {
         const maintenanceMode = searchParams?.get('maintenance');
@@ -113,7 +119,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                 toast.error("Falha ao entrar: " + result.error);
             } else if (result?.ok) {
                 toast.success("Bem-vindo de volta!");
-                router.push('/');
+                router.push(callbackUrl);
                 router.refresh();
             }
         } catch (error) {
@@ -171,7 +177,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
             });
 
             if (loginResult?.ok) {
-                router.push('/');
+                router.push(callbackUrl);
                 router.refresh();
             }
         } catch (error) {
@@ -314,6 +320,26 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                             </form>
                         </>
                     ) : null}
+
+                    {/*
+                      * Quem abre a raiz do site sem sessão é mandado para cá
+                      * pelo middleware. A galeria das quadras é aberta a
+                      * qualquer visitante, por decisão de negócio — sem este
+                      * caminho ela ficaria invisível para quem não tem conta.
+                      */}
+                    <div className={styles.replayEntry}>
+                        <span className={styles.replayEntryHint}>Não precisa de conta</span>
+                        <Link
+                            href="/replay"
+                            className={styles.replayEntryLink}
+                            referrerPolicy="no-referrer"
+                            rel="noopener noreferrer"
+                        >
+                            <FontAwesomeIcon icon={faVideo} />
+                            Ver os replays das quadras
+                            <FontAwesomeIcon icon={faArrowRight} />
+                        </Link>
+                    </div>
                 </>
             )}
         </aside>

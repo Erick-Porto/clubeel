@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import "@/styles/globals.css";
+import "../styles/globals.css";
 import { config } from '@fortawesome/fontawesome-svg-core'
-import TokenValidator from "@/components/Auth/TokenValidator";
+import TokenValidator from "./components/Auth/TokenValidator";
 import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 
-import { NextAuthProvider } from '@/components/provider';
+import { NextAuthProvider } from './components/provider';
 import { ToastContainer } from "react-toastify";
-import { CartProvider } from "@/context/CartContext"; 
+import { CartProvider } from "../context/CartContext"; 
 
 export const metadata: Metadata = {
   title: "Clube dos Funcionários",

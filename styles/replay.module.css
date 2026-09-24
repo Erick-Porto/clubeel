@@ -1,0 +1,815 @@
+/* ==========================================================================
+   Área de Replay — galeria pública das quadras e "meus vídeos".
+   Pensada para o celular primeiro: o sócio abre isso na beira da quadra.
+   ========================================================================== */
+
+.replaySection {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  flex: 1;
+}
+
+/* -------------------------------------------------------------- Cabeçalho */
+
+.replayHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.replayKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  background: var(--grena);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+
+.replayTitle {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 800;
+  color: var(--grena-dark);
+  line-height: 1.15;
+}
+
+.replayLead {
+  color: #555;
+  font-size: 1rem;
+  max-width: 70ch;
+  line-height: 1.5;
+}
+
+.replayLead strong {
+  color: var(--grena);
+}
+
+.replayLinkInline {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--grena);
+  font-weight: 700;
+  border-bottom: 2px solid transparent;
+}
+
+.replayLinkInline:hover {
+  border-bottom-color: var(--grena);
+}
+
+.replayButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--grena);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.replayButton:hover:not(:disabled) {
+  background: var(--grena-light);
+}
+
+.replayButton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* ------------------------------------------- Esportes (primeiro nível, /replay) */
+
+.groupList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.groupSection {
+  border: 1px solid #eee;
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.groupSectionOpen {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.1);
+}
+
+/*
+ * A banda do esporte é o seletor do primeiro nível; a escolha da quadra só
+ * existe dentro dela. É um <button> de verdade para funcionar por teclado e
+ * anunciar o estado aberto/fechado a leitores de tela.
+ *
+ * A foto vem inline (fotos das quadras do clube, em public/images/carousel);
+ * sem foto, entra o degradê grena de `.groupHeaderPlain`.
+ */
+.groupHeader {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 180px;
+  padding: 22px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  color: #fff;
+  background-color: var(--grena-dark);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Mesma gramática do overlay da home: escurece de cima para baixo. */
+.groupHeader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    165deg,
+    rgba(0, 0, 0, 0.1) 30%,
+    rgba(0, 0, 0, 0.62) 76%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+}
+
+.groupHeader:hover::after {
+  background: linear-gradient(
+    165deg,
+    rgba(125, 4, 0, 0.35) 20%,
+    rgba(0, 0, 0, 0.72) 74%,
+    rgba(0, 0, 0, 0.92) 100%
+  );
+}
+
+.groupHeaderPlain {
+  background-image: linear-gradient(135deg, var(--grena-light), var(--grena-darker));
+}
+
+.groupHeaderMain {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.groupName {
+  font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+}
+
+.groupMeta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.groupToggle {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(6px);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.groupHeader:hover .groupToggle {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #fff;
+}
+
+.groupToggleText {
+  white-space: nowrap;
+}
+
+.groupChevron {
+  font-size: 0.8rem;
+}
+
+.groupChevronOpen {
+  transform: rotate(180deg);
+}
+
+.groupBody {
+  padding: 20px;
+  background: #fcfcfc;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* ------------------------------------------------- Quadras dentro do esporte */
+
+.placeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.placeCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.placeCard:hover {
+  border-color: var(--grena);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(125, 4, 0, 0.12);
+}
+
+/* O número é o que se compara de relance ao escolher entre as quadras. */
+.placeCardTally {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 66px;
+  height: 66px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--grena-light), var(--grena-dark));
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(125, 4, 0, 0.25);
+}
+
+.placeCardTally strong {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.placeCardTally small {
+  margin-top: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+.placeCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.placeCardName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #222;
+}
+
+.placeCardLast {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.placeCardAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--grena);
+}
+
+.placeCard:hover .placeCardAction svg {
+  transform: translateX(4px);
+}
+
+/* ------------------------------------- Banner da galeria (/replay/[quadra]) */
+
+/*
+ * Mesma banda do esporte, agora como cabeçalho da quadra — para a galeria não
+ * destoar da tela que levou até ela.
+ */
+.galleryBanner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 200px;
+  padding: 24px;
+  border-radius: 18px;
+  overflow: hidden;
+  color: #fff;
+  background-color: var(--grena-dark);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.galleryBannerPlain {
+  background-image: linear-gradient(135deg, var(--grena-light), var(--grena-darker));
+}
+
+.galleryBanner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    165deg,
+    rgba(0, 0, 0, 0.12) 28%,
+    rgba(0, 0, 0, 0.62) 74%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+}
+
+.galleryBannerContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.galleryBannerSport {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(6px);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.galleryBannerTitle {
+  font-size: clamp(1.7rem, 5vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.5);
+}
+
+.galleryBannerLead {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 60ch;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.galleryBannerBack {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: auto;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.galleryBannerBack:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #fff;
+}
+
+/* ------------------------------------------------------------------ Filtro */
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  background: #fafafa;
+}
+
+.filterField {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--grena);
+  font-weight: 700;
+}
+
+.filterLabel {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Sobrescreve o `input { width: 100% }` do globals.css. */
+.filterInput {
+  width: auto;
+  min-width: 160px;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  border-radius: 10px;
+}
+
+.filterClear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  padding: 7px 14px;
+  color: #666;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.filterClear:hover {
+  border-color: var(--grena);
+  color: var(--grena);
+}
+
+.filterCount {
+  margin-left: auto;
+  color: #777;
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------------ Grade de vídeos */
+
+.videoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-items: start;
+  gap: 20px;
+}
+
+.videoCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.videoCard:hover {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
+}
+
+/*
+ * A proporção vem do campo `orientation` (inline no componente): vídeo
+ * vertical numa moldura 16:9 viraria duas tarjas pretas com um filete de jogo
+ * no meio.
+ */
+.videoFrame {
+  position: relative;
+  width: 100%;
+  background: #111;
+  overflow: hidden;
+}
+
+.videoPlayer {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  background: #111;
+}
+
+/* Capa clicável: com preload="none" o player nasce preto até o primeiro play. */
+.videoPoster {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: linear-gradient(160deg, rgba(125, 4, 0, 0.55), rgba(0, 0, 0, 0.8));
+}
+
+.videoPoster svg {
+  font-size: 3rem;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+}
+
+.videoPoster:hover svg {
+  transform: scale(1.08);
+}
+
+.videoGone {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  color: #ddd;
+  background: #1c1c1c;
+}
+
+.videoGone svg {
+  font-size: 2rem;
+  color: #888;
+}
+
+.videoGone strong {
+  font-size: 1rem;
+  color: #fff;
+}
+
+.videoGone span {
+  font-size: 0.82rem;
+  color: #aaa;
+}
+
+.videoBadges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
+}
+
+/*
+ * Diz que o vídeo foi gravado durante uma reserva — e só isso. A API não manda
+ * quem reservou, de propósito.
+ */
+.badgeReserved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+.videoInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+}
+
+.videoMetaTop {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.videoTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #222;
+}
+
+.videoSubtitle {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.videoMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  list-style: none;
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.videoMeta li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.videoExpiry {
+  font-weight: 700;
+  color: #777;
+}
+
+/* Prazo curto: quem quiser guardar precisa baixar antes de o arquivo sumir. */
+.videoExpiryUrgent {
+  color: var(--grena);
+  background: var(--grena-lightest);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.videoDownload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 10px 16px;
+  border: 1px solid var(--grena);
+  border-radius: 10px;
+  color: var(--grena);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.videoDownload:hover {
+  background: var(--grena);
+  color: #fff;
+}
+
+.videoDownloadDisabled {
+  border-color: #ddd;
+  color: #aaa;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------- Paginação */
+
+.pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 0;
+}
+
+.paginationInfo {
+  font-size: 0.82rem;
+  color: #888;
+}
+
+/* ------------------------------------------------------- Avisos e vazios */
+
+.expiryWarning {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(125, 4, 0, 0.25);
+  background: var(--grena-lightest);
+  color: var(--grena-dark);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.expiryWarning svg {
+  font-size: 1.2rem;
+  color: var(--grena);
+  flex-shrink: 0;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 48px 24px;
+  border: 1px dashed #ddd;
+  border-radius: 16px;
+  background: #fafafa;
+}
+
+.noticeAlert {
+  border-color: rgba(125, 4, 0, 0.3);
+  background: var(--grena-lightest);
+}
+
+.noticeIcon {
+  font-size: 2.2rem;
+  color: var(--grena);
+  opacity: 0.8;
+}
+
+.noticeTitle {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #333;
+}
+
+.noticeText {
+  color: #666;
+  max-width: 52ch;
+  line-height: 1.5;
+}
+
+.noticeAction {
+  margin-top: 6px;
+}
+
+/* ------------------------------------------------------------- Responsivo */
+
+@media (max-width: 768px) {
+  .replaySection {
+    padding: 20px 14px 60px;
+    gap: 22px;
+  }
+
+  .videoGrid,
+  .placeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .groupHeader {
+    min-height: 150px;
+    padding: 16px;
+    /* No celular o rótulo "Ver quadras" não cabe ao lado do nome do esporte. */
+    align-items: flex-end;
+  }
+
+  .groupToggle {
+    padding: 8px 12px;
+  }
+
+  .groupToggleText {
+    display: none;
+  }
+
+  .groupBody {
+    padding: 14px;
+  }
+
+  .filterBar {
+    padding: 12px;
+  }
+
+  .filterField {
+    flex: 1;
+  }
+
+  .filterInput {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .filterCount {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .videoDownload {
+    padding: 12px 16px;
+  }
+}
