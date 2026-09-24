@@ -40,6 +40,14 @@ const AUTHENTICATED_ENDPOINTS: RegExp[] = [
     // "Meus vídeos" é do sócio logado: exige o header Session, que só sai daqui
     // com sessão válida.
     /^replay\/my-videos$/,
+    // Luz da quadra: o sócio é sempre o dono do Session — nenhum desses
+    // endpoints recebe id de sócio. Lista fechada, um caminho por regex.
+    /^lighting\/availability$/,
+    /^lighting\/groups$/,
+    /^lighting\/groups\/\d+\/places$/,
+    /^lighting\/places\/\d+\/activate$/,
+    /^lighting\/release$/,
+    /^lighting\/activations$/,
 ];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

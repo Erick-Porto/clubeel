@@ -167,6 +167,9 @@ export default function Header({
                     {pathname !== '/meus-videos' && (
                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/meus-videos'} style={{ width: '100%' }}><li>Meus Vídeos</li></Link>
                     )}
+                    {pathname !== '/luz' && (
+                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/luz'} style={{ width: '100%' }}><li>Luz da Quadra</li></Link>
+                    )}
                     {pathname !== '/' && (
                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}><li>Início</li></Link>
                     )}

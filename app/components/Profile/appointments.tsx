@@ -4,6 +4,7 @@ import { useCart } from "../../../context/CartContext";
 import style from '../../../styles/appointments.module.css'
 import { Loading } from "../Common/loading";
 import Link from "next/link";
+import LightingStatusCard from "../Lighting/LightingStatusCard";
 
 const Appointments = () => {
     const { cart, isLoading } = useCart();
@@ -20,6 +21,7 @@ const Appointments = () => {
         
     return (
         <div className={style.appointmentsContainer}>
+            <LightingStatusCard />
             <div className={style.appointmentsItem}>
                 <h1 className={style.appointmentsTitle}>Agendamentos a finalizar</h1>
                 {isLoading ? (

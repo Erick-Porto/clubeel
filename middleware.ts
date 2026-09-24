@@ -15,5 +15,7 @@ export const config = {
     // /replay (galeria das quadras) fica FORA do matcher de propósito: é
     // aberta a qualquer visitante, por decisão de negócio.
     "/meus-videos",
+    // Luz da quadra: acender é ação de sócio.
+    "/luz",
   ]
 }
