@@ -327,7 +327,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                       * qualquer visitante, por decisão de negócio — sem este
                       * caminho ela ficaria invisível para quem não tem conta.
                       */}
-                    <div className={styles.replayEntry}>
+                    {/* <div className={styles.replayEntry}>
                         <span className={styles.replayEntryHint}>Não precisa de conta</span>
                         <Link
                             href="/replay"
@@ -339,7 +339,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                             Ver os replays das quadras
                             <FontAwesomeIcon icon={faArrowRight} />
                         </Link>
-                    </div>
+                    </div> */}
                 </>
             )}
         </aside>

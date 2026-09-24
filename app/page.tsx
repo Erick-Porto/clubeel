@@ -15,6 +15,7 @@ import { useIsMobile } from "./hooks/useIsMobile";
 // import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 import ItensGrid from "./components/Common/ItensGrid";
+import HomeLightingBanner from "./components/Lighting/HomeLightingBanner";
 interface Point { x: number; y: number; }
 interface Place {
     id: number;
@@ -199,6 +200,7 @@ useEffect(() => {
                 <section style={isMobile ? {padding: '75px 0px 0px', scrollbarWidth: 'none', minHeight: 'auto'} : {}} className={`${style.Section} ${style.sectionSports}`} ref={sportsRef} id="esportes">
                     <div className={style.contentWrapper}>
                         {!isMobile && <h1 className={style.sectionTitle}>Áreas Esportivas</h1>}
+                        <HomeLightingBanner />
                         {
                             isMobile ?
                             (<ItensGrid data={places.filter(p => p.category === "esportiva")}/>):
