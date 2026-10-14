@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 import { eredeAuth, eredeBaseUrl, eredeConfigured } from "../../../utils/erede";
-import { computeAmountInCents } from "../../../utils/lara";
+import { computeAmountInCents, computeSocialBookingCharge } from "../../../utils/lara";
 import { rateLimit, getClientIp } from "../../../utils/rate-limit";
 import { guardRequest } from "../../../utils/sanitize";
 import { savePendingPayment } from "../../../utils/pending-payments";
@@ -57,10 +57,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!guardRequest(req, res)) return;
 
     try {
-        const { method, cardData, scheduleIds } = req.body;
+        const { method, cardData, socialBookingId } = req.body;
+        let { scheduleIds } = req.body;
 
         // 3. O valor é SEMPRE recalculado no servidor — nunca vem do cliente.
-        const amount = await computeAmountInCents(scheduleIds, userId, accessToken);
+        // Reserva de espaço social: o valor é o `total` da reserva lida na
+        // Lara, e o agendamento cobrado é só o `schedule_id` dela (os
+        // `scheduleIds` do corpo são ignorados — sem misturar com quadras).
+        let amount: number;
+        let social: number | undefined;
+        if (socialBookingId !== undefined && socialBookingId !== null) {
+            let charge;
+            try {
+                charge = await computeSocialBookingCharge(socialBookingId, accessToken);
+            } catch (chargeError: unknown) {
+                // Nada foi cobrado ainda. A tela relê a reserva ao receber o
+                // `reason`, como faria com a recusa da própria Lara.
+                const message = chargeError instanceof Error ? chargeError.message : 'Reserva indisponível para pagamento.';
+                return res.status(409).json({ error: message, reason: 'payment_mismatch' });
+            }
+            amount = charge.amountCents;
+            scheduleIds = [charge.scheduleId];
+            social = charge.bookingId;
+        } else {
+            amount = await computeAmountInCents(scheduleIds, userId, accessToken);
+        }
 
         const access_token = await eredeAuth();
 
@@ -121,6 +142,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             amountCents: amount,
             method,
             createdAt: Date.now(),
+            socialBookingId: social,
         });
 
         return res.status(200).json(transactionData);

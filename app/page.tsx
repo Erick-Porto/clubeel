@@ -5,7 +5,7 @@ import style from "../styles/page.module.css";
 import Footer from "./components/Common/footer";
 import Header, { HeaderOption } from "./components/Common/header";
 // import MobileNavBar from "./components/mobileNavBar";
-import SportiveSquare from "./components/Common/sportive-square";
+import SportiveSquare, { type CarouselItem } from "./components/Common/sportive-square";
 // import MapBanner from "./components/map-banner";
 import API_CONSUME from "../services/api-consume";
 import { useSession } from "next-auth/react";
@@ -16,6 +16,8 @@ import { useIsMobile } from "./hooks/useIsMobile";
 import { toast } from "react-toastify";
 import ItensGrid from "./components/Common/ItensGrid";
 import HomeLightingBanner from "./components/Lighting/HomeLightingBanner";
+import { fetchSocialGroups } from "../services/social-api";
+import { placeImageUrl } from "../utils/lighting";
 interface Point { x: number; y: number; }
 interface Place {
     id: number;
@@ -65,6 +67,9 @@ const NAV_OPTIONS: HeaderOption[] = [
 const Home = () => {
     const [activeSection, setActiveSection] = useState<'mapa' | 'esportivas' | 'sociais'>('mapa');
     const [places, setPlaces] = useState<Place[]>([]);
+    // Espaços sociais entram no fim do mesmo carrossel, um card por grupo
+    // (Churrasqueiras, Salões...), levando à vitrine deles.
+    const [socialItems, setSocialItems] = useState<CarouselItem[]>([]);
     const isClicking = useRef(false);
     
     const { data: session, status } = useSession();
@@ -119,6 +124,28 @@ useEffect(() => {
         };
         fetchPlaces();
     }, [session, status]);
+
+    useEffect(() => {
+        if (status !== 'authenticated') return;
+        // Os grupos sociais vêm de outro endpoint (social/groups — as rotas de
+        // quadra não listam espaço social). Falha aqui não atrapalha a home:
+        // o carrossel segue só com os esportes.
+        fetchSocialGroups().then((result) => {
+            if (!result.ok) return;
+            setSocialItems(
+                result.data.map((group) => ({
+                    id: group.id,
+                    name: group.name,
+                    image_vertical:
+                        placeImageUrl(group.image_vertical) ??
+                        placeImageUrl(group.image_horizontal) ??
+                        '/images/default-card.png',
+                    href: '/espacos-sociais',
+                    tag: 'Espaço social',
+                }))
+            );
+        });
+    }, [status]);
 
     useEffect(() => {
         const container = isMobile ? mainContainerRef.current : pageContainerRef.current;
@@ -199,12 +226,12 @@ useEffect(() => {
                 
                 <section style={isMobile ? {padding: '75px 0px 0px', scrollbarWidth: 'none', minHeight: 'auto'} : {}} className={`${style.Section} ${style.sectionSports}`} ref={sportsRef} id="esportes">
                     <div className={style.contentWrapper}>
-                        {!isMobile && <h1 className={style.sectionTitle}>Áreas Esportivas</h1>}
+                        {!isMobile && <h1 className={style.sectionTitle}>{socialItems.length > 0 ? "Áreas Esportivas e Sociais" : "Áreas Esportivas"}</h1>}
                         <HomeLightingBanner />
                         {
                             isMobile ?
-                            (<ItensGrid data={places.filter(p => p.category === "esportiva")}/>):
-                            (<SportiveSquare places={places.filter(p => p.category === "esportiva")}/>)
+                            (<ItensGrid data={[...places.filter(p => p.category === "esportiva"), ...socialItems]}/>):
+                            (<SportiveSquare places={[...places.filter(p => p.category === "esportiva"), ...socialItems]}/>)
                         }
                     </div>
                 </section>

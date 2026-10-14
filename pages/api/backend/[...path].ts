@@ -48,6 +48,18 @@ const AUTHENTICATED_ENDPOINTS: RegExp[] = [
     /^lighting\/places\/\d+\/activate$/,
     /^lighting\/release$/,
     /^lighting\/activations$/,
+    // Espaços sociais (churrasqueiras, salões): o dono da reserva é sempre o
+    // Session — nenhum endpoint recebe id/CPF de sócio, e reserva de outro
+    // sócio responde 404. A query (`place_id`, `month`, `place_group_id`) não
+    // entra no teste da regex: ela fica fora do `path`.
+    /^social\/groups$/,
+    /^social\/groups\/\d+\/places$/,
+    /^social\/availability$/,
+    /^social\/beverages$/,
+    /^social\/limits$/,
+    /^social\/bookings$/,
+    /^social\/bookings\/\d+$/,
+    /^social\/bookings\/\d+\/guests$/,
 ];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

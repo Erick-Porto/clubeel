@@ -43,6 +43,21 @@ const Appointments = () => {
                 <h1 className={style.appointmentsTitle}>Agendamentos Anteriores</h1>
                 <LatestAppointments appointmentStatus={10} initialLimit={4} />
             </div>
+            {/* Espaços sociais têm fluxo próprio (análise da secretaria, prazo de
+                pagamento, lista de convidados): só um atalho para a tela deles. */}
+            <div className={style.appointmentsItem}>
+                <h1 className={style.appointmentsTitle}>Espaços Sociais</h1>
+                <p className={style.emptyMessage}>
+                    Churrasqueiras e salões têm acompanhamento próprio.{" "}
+                    <Link href="/espacos-sociais/reservas" style={{ color: 'var(--grena)', fontWeight: 700 }}>
+                        Ver minhas reservas sociais
+                    </Link>
+                    {" · "}
+                    <Link href="/espacos-sociais" style={{ color: 'var(--grena)', fontWeight: 700 }}>
+                        Reservar um espaço
+                    </Link>
+                </p>
+            </div>
         </div>
     );
 };

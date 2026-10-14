@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
 import API_CONSUME from "../../services/api-consume";
 import { eredeAuth, eredeBaseUrl, getEredeTransaction } from "../../utils/erede";
-import { computeAmountInCents } from "../../utils/lara";
+import { computeAmountInCents, computeSocialBookingCharge } from "../../utils/lara";
 import { guardRequest } from "../../utils/sanitize";
 import { takePendingPayment } from "../../utils/pending-payments";
 
@@ -57,9 +57,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let currentAmount = 0;
 
     try {
-        const { transactionData, scheduleIds: clientScheduleIds, method: clientMethod } = req.body;
+        const {
+            transactionData,
+            scheduleIds: clientScheduleIds,
+            method: clientMethod,
+            socialBookingId: clientSocialBookingId,
+        } = req.body;
+        const clientIsSocial = clientSocialBookingId !== undefined && clientSocialBookingId !== null;
 
-        if (!transactionData?.tid || !clientScheduleIds) {
+        if (!transactionData?.tid || (!clientScheduleIds && !clientIsSocial)) {
             return res.status(400).json({ error: "Dados incompletos.", message: "Dados incompletos." });
         }
 
@@ -88,11 +94,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         let expectedCents: number;
         let scheduleIds: Array<number | string>;
         let method: string;
+        // Reserva de espaço social: o agendamento cobrado é só o `schedule_id`
+        // dela e o valor é o `total` lido na Lara (ver computeSocialBookingCharge).
+        let socialBookingId: number | undefined;
 
         if (pending && String(pending.userId) === String(userId)) {
             expectedCents = pending.amountCents;
             scheduleIds = pending.scheduleIds;
             method = pending.method;
+            socialBookingId = pending.socialBookingId;
+        } else if (clientIsSocial) {
+            const charge = await computeSocialBookingCharge(clientSocialBookingId, accessToken);
+            expectedCents = charge.amountCents;
+            scheduleIds = [charge.scheduleId];
+            method = clientMethod;
+            socialBookingId = charge.bookingId;
         } else {
             expectedCents = await computeAmountInCents(clientScheduleIds, userId, accessToken);
             scheduleIds = clientScheduleIds;
@@ -147,6 +163,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 `(status=${apiRes?.status}, ok=${apiRes?.ok}, error=${apiRes?.error}, message=${apiRes?.message}). Iniciando estorno...`
             );
             await refundTransaction(currentTid, currentAmount);
+
+            if (socialBookingId !== undefined) {
+                // Espaço social: a Lara recusa com `reason` estável (ex.:
+                // `payment_mismatch` — fora do estágio, prazo vencido ou valor
+                // diferente do total). Repassa o código para a tela reler a
+                // reserva; não há "hold expirado" aqui.
+                const reason = (response.data as { reason?: unknown } | null)?.reason;
+                const detail = apiRes?.message || "Não foi possível confirmar o pagamento da reserva. Valor estornado.";
+                return res.status(409).json({
+                    error: typeof reason === "string" ? reason : "payment_failed",
+                    reason: typeof reason === "string" ? reason : null,
+                    message: detail,
+                });
+            }
 
             if (hasConflict) {
                 // Reserva expirada / conflito de horário — a Lara recusou

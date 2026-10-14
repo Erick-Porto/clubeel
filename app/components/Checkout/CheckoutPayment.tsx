@@ -32,7 +32,23 @@ interface User {
     born_date?: string;
 }
 
-type CPParams = Record<string, never>;
+/** Desfecho do pagamento de uma reserva de espaço social, entregue à tela da reserva. */
+export type SocialPaymentOutcome =
+    | { type: "success" }
+    /** Recusa com código (ex.: `payment_mismatch`): a tela relê a reserva. */
+    | { type: "refused"; reason: string | null; message: string }
+    | { type: "error"; message: string };
+
+interface CPParams {
+    /**
+     * Quando presente, o formulário paga ESTA reserva de espaço social em vez
+     * do carrinho de quadras: não revalida horários, manda só o id da reserva
+     * (o servidor relê o `total` e o `schedule_id` na Lara) e entrega o
+     * resultado em `onSocialResult` em vez de navegar para /checkout.
+     */
+    socialBookingId?: number;
+    onSocialResult?: (outcome: SocialPaymentOutcome) => void;
+}
 
 interface PixResponse {
   qrcode: string;
@@ -50,7 +66,8 @@ interface CustomSession {
     accessToken?: string;
 }
 
-export default function CheckoutPayment({}: CPParams) {
+export default function CheckoutPayment({ socialBookingId, onSocialResult }: CPParams) {
+    const isSocial = socialBookingId !== undefined;
     const { data: sessionData } = useSession();
     const session = sessionData as CustomSession | null;
   // 2. Instanciar o router  
@@ -129,6 +146,62 @@ export default function CheckoutPayment({}: CPParams) {
     setCardData(prev => ({ ...prev, [name]: formattedValue }));
   };
 
+/**
+ * Pagamento de uma reserva de espaço social. Mesmo caminho de servidor das
+ * quadras (payment_methods → success), mas sem revalidar horários — o prazo é
+ * o `payment_due_at`, conferido no servidor — e sem `scheduleIds`: só o id da
+ * reserva vai, e o servidor descobre quanto cobrar e qual agendamento pagar.
+ */
+const handleSocialPayment = async () => {
+    const finish = (outcome: SocialPaymentOutcome) => {
+        setStatus({ type: outcome.type === "success" ? 'success' : 'error', msg: outcome.type === "success" ? 'Pagamento confirmado!' : outcome.message });
+        onSocialResult?.(outcome);
+    };
+
+    try {
+        const response = await fetch('/api/erede/payment_methods', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                method,
+                cardData: {
+                    ...cardData,
+                    number: cardData.number.replace(/\s/g, ''),
+                },
+                socialBookingId,
+            })
+        });
+        const transactionData = await response.json();
+
+        if (!response.ok) {
+            const message = transactionData.error || transactionData.returnMessage || 'Erro na transação.';
+            if (transactionData.reason) finish({ type: 'refused', reason: transactionData.reason, message });
+            else setStatus({ type: 'error', msg: message });
+            return;
+        }
+
+        const saveOrderRes = await fetch('/api/success', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transactionData, socialBookingId, method })
+        });
+        const saveResult = await saveOrderRes.json();
+
+        if (saveOrderRes.ok) {
+            finish({ type: 'success' });
+        } else if (saveOrderRes.status === 409) {
+            finish({ type: 'refused', reason: saveResult.reason ?? null, message: saveResult.message || 'Pagamento não confirmado. O valor foi estornado.' });
+        } else {
+            finish({ type: 'error', message: saveResult.message || 'Não foi possível confirmar o pagamento.' });
+        }
+    } catch (error) {
+        console.error("Erro no pagamento da reserva social:", error instanceof Error ? error.message : error);
+        setStatus({ type: 'error', msg: 'Erro de comunicação.' });
+    } finally {
+        setLoading(false);
+    }
+};
+
 const handlePayment = async () => {
     if (!session?.accessToken || !session?.user?.id) {
         toast.error("Sessão expirada ou dados incompletos. Por favor, faça login novamente.");
@@ -138,6 +211,11 @@ const handlePayment = async () => {
 
     setLoading(true);
     setStatus(null);
+
+    if (isSocial) {
+        await handleSocialPayment();
+        return;
+    }
 
     try {
         await Promise.all(cart.map(

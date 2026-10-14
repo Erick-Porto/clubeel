@@ -170,6 +170,12 @@ export default function Header({
                     {pathname !== '/luz' && (
                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/luz'} style={{ width: '100%' }}><li>Luz da Quadra</li></Link>
                     )}
+                    {!pathname?.startsWith('/espacos-sociais') && (
+                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/espacos-sociais'} style={{ width: '100%' }}><li>Espaços Sociais</li></Link>
+                    )}
+                    {pathname !== '/espacos-sociais/reservas' && (
+                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/espacos-sociais/reservas'} style={{ width: '100%' }}><li>Minhas Reservas Sociais</li></Link>
+                    )}
                     {pathname !== '/' && (
                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}><li>Início</li></Link>
                     )}
