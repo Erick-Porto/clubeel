@@ -17,6 +17,7 @@ import {
   type OrdemNaFila,
 } from '../../services/aprovacao-api';
 import BotaoRecarregar from './components/botao-recarregar';
+import FiltroOrdens from './components/filtro-ordens';
 import Cabecalho from './components/cabecalho';
 import { dataHora, moeda, ouTraco, plural, tempoDecorrido } from './formato';
 import { lerToken } from './sessao';
@@ -124,11 +125,21 @@ export default async function FilaAprovacaoPage() {
         )}
 
         {estado.tipo === 'ok' && estado.ordens.length > 0 && (
-          <div className={styles.lista}>
-            {estado.ordens.map((ordem) => (
-              <CartaoOrdem key={ordem.cd_ordem_compra} ordem={ordem} />
-            ))}
-          </div>
+          <FiltroOrdens
+            itens={estado.ordens.map((ordem) => ({
+              chave: String(ordem.cd_ordem_compra),
+              busca: [
+                ordem.cd_ordem_compra,
+                nomeFornecedor(ordem.fornecedor),
+                ordem.departamento,
+                ordem.solicitante,
+                ordem.processo_id,
+              ]
+                .filter((parte) => parte !== null && parte !== undefined)
+                .join(' '),
+              conteudo: <CartaoOrdem ordem={ordem} />,
+            }))}
+          />
         )}
       </main>
     </>

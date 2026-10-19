@@ -1,446 +1,336 @@
-.checkoutPageContainer {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    min-height: 80vh;
-}
-
-.checkoutTitle {
-    font-size: 2rem;
-    color: var(--grena);
-    margin-bottom: 30px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-}
+/* Checkout (/checkout): resumo do pedido, pagamento e tela de resultado. */
 
 .checkoutLayout {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 40px;
-    align-items: start;
-}
-
-.cartSection {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.cartList {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.cartItem {
-    display: flex;
-    background: white;
-    border-radius: 16px;
-    padding: 0; 
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-    border: 1px solid #f0f0f0;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    position: relative;
-}
-
-.cartItem:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-}
-
-.cartItemContent {
-    display: flex;
-    gap: 20px;
-    flex-grow: 1;
-    text-decoration: none;
-    color: inherit;
-    padding: 16px;
-    padding-right: 50px; 
-    align-items: center;
-}
-
-.cartItemActions{
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 5px;
-    position: absolute;
-    right: 0;
-    top: 0;
-    z-index: 2;
-}
-
-.itemCancelling {
-    opacity: 0.5;
-    pointer-events: none;
-    filter: grayscale(1);
-}
-
-.scheduleImage {
-    width: 100px;
-    height: 100px;
-    border-radius: 10px;
-    object-fit: cover;
-    flex-shrink: 0;
-}
-
-.scheduleInfo {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    flex-grow: 1;
-}
-
-.scheduleInfo h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #333;
-    margin: 0;
-}
-
-.scheduleInfo h3 {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #666;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.priceTag {
-    font-weight: 700;
-    color: var(--grena);
-    font-size: 1rem;
-    margin-top: 4px;
-}
-
-.cancelScheduleButton {
-    background: #f9f9f9;
-    border: 1px solid #eee;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #999;
-    transition: all .2s;
-}
-
-.cancelScheduleButton:hover {
-    background-color: #fee;
-    color: #d32f2f;
-    border-color: #fdd;
-}
-
-.emptyCheckoutContent {
-    text-align: center;
-    padding: 60px 20px;
-    background: #f9f9f9;
-    border-radius: 16px;
-    color: #777;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-areas: 'payment summary';
+  gap: 22px;
+  align-items: start;
 }
 
 .paymentSection {
-    position: sticky;
-    top: 100px;
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-    border: 1px solid #eee;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+  grid-area: payment;
+  min-width: 0;
 }
 
-.summaryHeader {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 15px;
-    margin-bottom: 10px;
+.cartSection {
+  grid-area: summary;
+  position: sticky;
+  top: calc(var(--header-height) + 20px);
+  min-width: 0;
 }
 
-.summaryHeader h2 {
-    font-size: 1.2rem;
-    color: var(--grena);
-    margin: 0;
+.paymentPanel,
+.summaryPanel {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgb(var(--line-rgb) / .6);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.summaryGroup {
-    margin-bottom: 15px;
+.checkoutTitle {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.01em;
 }
 
-.summaryGroupTitle {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #444;
-    margin-bottom: 8px;
-    display: block;
+.emptyCheckoutContent {
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.summaryRow {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 6px;
+.emptyCheckoutContent h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------ Itens */
+
+.cartList {
+  display: flex;
+  flex-direction: column;
+}
+
+.cartItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  transition: opacity .2s;
+}
+
+.cartItem:last-child {
+  border-bottom: 0;
+}
+
+.itemCancelling {
+  opacity: .45;
+  pointer-events: none;
+}
+
+.cartItemContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+}
+
+.scheduleImage {
+  width: 56px !important;
+  flex: none;
+  border-radius: 12px;
+}
+
+.scheduleInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.scheduleInfo h3 {
+  font-size: 14.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheduleInfo span {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scheduleInfo svg {
+  color: var(--ink-3);
+  width: 12px;
+}
+
+.cartItemActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.priceTag {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cancelScheduleButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.cancelScheduleButton:hover:not(:disabled) {
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .summaryTotal {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 20px;
-    border-top: 2px dashed #eee;
-    margin-top: 10px;
-    margin-bottom: 20px;
-}
-
-.summaryTotal span:first-child {
-    font-size: 1.1rem;
-    color: #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
 }
 
 .summaryTotalValue {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--grena);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.buyerInfo {
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    color: #555;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
+/* ------------------------------------------------- Resumo recolhível (celular) */
 
-.buyerInfo strong {
-    color: #333;
-    margin-bottom: 5px;
-    display: block;
-}
-
-.statusWrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-    width: 100%;
-}
-
-.statusCard {
-    background: white;
-    padding: 50px 40px;
-    border-radius: 24px;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.08);
-    text-align: center;
-    max-width: 500px;
-    width: 90%;
-    border: 1px solid #f0f0f0;
-    animation: slideUpFade 0.6s ease-out;
-}
-
-.statusIcon {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 24px auto; 
-}
-
-.statusSuccess { 
-    background-color: #e6f4ea; 
-    color: #1e8e3e; 
-    animation: pulseIcon 2s infinite;
-}
-
-.statusError { 
-    background-color: #fce8e6; 
-    color: #d93025; 
-    animation: shakeIcon 0.5s ease-in-out;
-}
-
-.statusExpired {
-    background-color: #fff8e1;
-    color: #fbc02d;
-    border: 1px solid #fff3cd;
-    animation: fadePulse 2s infinite ease-in-out;
-}
-
-.statusCard h2 { 
-    font-size: 1.8rem; 
-    margin-bottom: 15px; 
-    color: #333; 
-    font-weight: 800;
-}
-
-.statusCard p { 
-    font-size: 1.05rem; 
-    color: #666; 
-    margin-bottom: 30px; 
-    line-height: 1.6; 
-}
-
-.redirectTimer {
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: #888;
-    background: #f9f9f9;
-    padding: 10px 20px;
-    border-radius: 50px;
-    display: inline-block;
-}
-
-.redirectTimer span {
-    color: var(--grena);
-    font-weight: 700;
-}
-
-.statusButton {
-    background-color: var(--grena);
-    color: white;
-    border: none;
-    padding: 16px 40px;
-    border-radius: 50px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 15px rgba(128, 0, 0, 0.2);
-}
-
-.statusButton:hover { 
-    background-color: #800000; 
-    transform: translateY(-2px); 
-    box-shadow: 0 6px 20px rgba(128, 0, 0, 0.3);
-}
-
-@keyframes slideUpFade { 
-    from { opacity: 0; transform: translateY(20px); } 
-    to { opacity: 1; transform: translateY(0); } 
-}
-
-@keyframes pulseIcon {
-    0% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0.4); }
-    70% { box-shadow: 0 0 0 15px rgba(30, 142, 62, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
-}
-
-@keyframes shakeIcon {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-    20%, 40%, 60%, 80% { transform: translateX(4px); }
-}
-
-@keyframes fadePulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(0.95); }
-    100% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-.mobileSummaryToggle { display: none; }
 .mobileSummaryToggle {
-    display: none;
+  display: none;
 }
 
 .chevronIcon {
-    transition: transform 0.3s ease;
+  font-size: 11px;
+  transition: transform .2s;
 }
+
 .chevronRotated {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 @media (max-width: 900px) {
-    .checkoutLayout {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
+  .checkoutLayout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'summary'
+      'payment';
+    gap: 14px;
+  }
 
-    .checkoutTitle {
-        font-size: 1.5rem;
-        text-align: center;
-        margin-bottom: 20px;
-    }
+  .cartSection {
+    position: static;
+  }
 
-    .mobileSummaryToggle {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #f5f5f5;
-        padding: 16px 20px;
-        border-radius: 12px 12px 0 0;
-        border: 1px solid #eee;
-        cursor: pointer;
-        color: var(--grena);
-        font-weight: 600;
-        font-size: 0.95rem;
-        user-select: none;
-        transition: background-color 0.2s;
-    }
+  .mobileSummaryToggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
 
-    .mobileSummaryToggle:hover {
-        background-color: #eee;
-    }
+  .mobileSummaryLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
 
-    .summaryTotalLabel {
-        color: #333;
-        font-weight: 800;
-        margin-left: 10px;
-    }
+  .summaryTotalLabel {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
 
-    .cartSection {
-        order: 1;
-        background: white;
-        border: 1px solid #eee;
-        border-top: none;
-        border-radius: 0 0 12px 12px;
-        padding: 0 15px;
-        overflow: hidden;
-        max-height: 0;
-        opacity: 0;
-        visibility: hidden;
-        transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s;
-    }
+  .cartContent {
+    display: none;
+    margin-top: 10px;
+  }
 
-    .cartSectionExpanded {
-        max-height: 1000px;
-        opacity: 1;
-        visibility: visible;
-        padding: 20px 15px; 
-        margin-bottom: 20px;
-    }
+  .cartSectionExpanded {
+    display: block;
+  }
 
-    .paymentSection {
-        order: 2;
-        position: static;
-        padding: 20px;
-    }
-    .cartItemContent {
-        padding: 12px;
-        padding-right: 50px; 
-    }
+  .paymentPanel,
+  .summaryPanel {
+    padding: 16px;
+  }
+}
 
-    .scheduleImage {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .cancelScheduleButton {
-        width: 36px;
-        height: 36px;
-    }
+/* --------------------------------------------------------------- Resultado */
+
+.statusWrapper {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.statusCard {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgb(var(--line-rgb) / .6);
+  padding: 36px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.statusCard h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+.statusCard p {
+  color: var(--ink-2);
+  max-width: 52ch;
+}
+
+.statusIcon {
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+}
+
+.statusSuccess {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.statusExpired {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.statusError {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.statusButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--grena);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.statusButton:hover {
+  background: var(--grena-hover);
+}
+
+.redirectTimer {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.redirectTimer span {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--ink-2);
 }

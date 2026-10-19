@@ -1,184 +1,220 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from '../../../styles/header.module.css';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signOut, useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown, faUserCircle } from '@fortawesome/free-solid-svg-icons';
-import { useIsMobile } from '../../hooks/useIsMobile';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {
+    faBagShopping,
+    faCalendarCheck,
+    faChampagneGlasses,
+    faChevronDown,
+    faHouse,
+    faLightbulb,
+    faRightFromBracket,
+    faRightToBracket,
+    faUser,
+    faVideo,
+} from '@fortawesome/free-solid-svg-icons';
+import { useCart } from '../../../context/CartContext';
+import { ThemeSwitch } from './theme';
+import { initialsOf } from '../UI/ui';
 
-export interface HeaderOption {
-    text: string;
-    id?: string;   
-    page?: string; 
-    to?: number;
+type ModuleKey = 'inicio' | 'social' | 'replay' | 'luz' | 'perfil';
+
+interface NavItem {
+    key: ModuleKey;
+    href: string;
+    label: string;
+    short: string;
+    icon: IconDefinition;
 }
 
-interface ProfileOption {
-    text: string;
-    onClick: () => void;
-    active: boolean;
+/**
+ * Módulos do app (decisão de navegação do rebrand v4): os mesmos no topo
+ * (desktop) e na barra inferior (celular). As quadras são a própria home.
+ */
+const NAV: NavItem[] = [
+    { key: 'inicio', href: '/', label: 'Início', short: 'Início', icon: faHouse },
+    { key: 'social', href: '/espacos-sociais', label: 'Espaços sociais', short: 'Espaços', icon: faChampagneGlasses },
+    { key: 'replay', href: '/replay', label: 'Replay', short: 'Replay', icon: faVideo },
+    { key: 'luz', href: '/luz', label: 'Luz da quadra', short: 'Luz', icon: faLightbulb },
+    { key: 'perfil', href: '/profile', label: 'Meu perfil', short: 'Perfil', icon: faUser },
+];
+
+function moduleOf(pathname: string): ModuleKey | null {
+    if (pathname === '/' || pathname.startsWith('/places') || pathname.startsWith('/place/') || pathname.startsWith('/checkout')) return 'inicio';
+    if (pathname.startsWith('/espacos-sociais')) return 'social';
+    if (pathname.startsWith('/replay') || pathname.startsWith('/meus-videos')) return 'replay';
+    if (pathname.startsWith('/luz')) return 'luz';
+    if (pathname.startsWith('/profile')) return 'perfil';
+    return null;
 }
 
-interface HeaderProps {
-    surgeIn: number;
-    options: Array<HeaderOption> | null;
-    onlyScroll: boolean;
-    profileOptions?: Array<ProfileOption> | null;
-    activeSection?: string; 
-    onNavigate?: (id: string) => void;
-}
-
-export default function Header({ 
-    options, 
-    surgeIn, 
-    onlyScroll, 
-    profileOptions, 
-    activeSection, 
-    onNavigate 
-}: HeaderProps) {
-    
-    const [scrollY, setScrollY] = useState(0);
-    const [userOptions, setUserOptions] = useState(false);
+export default function Header() {
+    const [menuOpen, setMenuOpen] = useState(false);
     const { data: session } = useSession();
-    const pathname = usePathname();
-    const isMobile = useIsMobile();
-    const profileMenuRef = useRef<HTMLDivElement>(null);
+    const { cart } = useCart();
+    const pathname = usePathname() ?? '';
+    const menuRef = useRef<HTMLDivElement>(null);
+    const current = moduleOf(pathname);
 
     useEffect(() => {
-        const handleScroll = () => {
-            window.requestAnimationFrame(() => setScrollY(window.scrollY));
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    useEffect(() => {
+        if (!menuOpen) return;
         const handleClickOutside = (event: MouseEvent) => {
-            if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-                setUserOptions(false);
-            }
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
         };
-        if (userOptions) document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [userOptions]);
+        const handleKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setMenuOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKey);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKey);
+        };
+    }, [menuOpen]);
 
-    const isHeaderActive = scrollY >= surgeIn - 5 || userOptions;
+    // Fecha o menu ao trocar de página.
+    useEffect(() => {
+        setMenuOpen(false);
+    }, [pathname]);
+
+    const firstName = session?.user?.name?.split(' ')[0] ?? '';
+    const cartCount = cart?.length ?? 0;
 
     return (
-        <header className={`${styles.header} ${isHeaderActive ? styles.headerActive : ''}`}>
-             <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} aria-label="Ir para Home" style={{zIndex: 10001}}>
-                <div className={styles.headerLogo}>
-                    <Image 
-                        src="/images/logo-cfcsn-horiz.png" 
-                        alt="Logo CFCSN" 
-                        fill
-                        priority={true}
-                        quality={100}
-                        style={{ objectFit: 'contain', objectPosition: 'left' }}
-                    />
-                </div>
-            </Link>
-
-            {!isMobile && (
-                <nav className={styles.desktopNav}>
-                    <ul className={styles.navigateOptions}>
-                                                {options === null && profileOptions && (
-                            profileOptions.map((opt, index) => (
-                                <li key={index} className={opt.active ? styles.activePage : ''}>
-                                    <button 
-                                        className={styles.navButton}
-                                        onClick={() => { opt.onClick(); setUserOptions(false); }}
-                                        type="button"
-                                    >
-                                        {opt.text}
-                                    </button>
-                                </li>
-                            ))
-                        )}
-                        {options && options.length > 0 && (
-                            onlyScroll ? (
-                                options.map((item, index) => {
-                                    const isActive = activeSection === item.id;
-                                    return (
-                                        <li key={index} className={isActive ? styles.activePage : ""}>
-                                            <button 
-                                                className={styles.navButton}
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    if (onNavigate && item.id) {
-                                                        onNavigate(item.id);
-                                                    } 
-                                                }}
-                                                type="button"
-                                            >
-                                                {item.text}
-                                            </button>
-                                        </li>
-                                    );
-                                })
-                            ) : (
-                                options.map((item, index) => (
-                                    <li key={index}>
-                                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={`/${item.page}`} className={styles.navLink}>
-                                            {item.text}
-                                        </Link>
-                                    </li>
-                                ))
-                            )
-                        )}
-                    </ul>
-                </nav>
-            )}
-
-            <div className={styles.profileOptions} ref={profileMenuRef}>
-                {session?.user ? (
-                    <button 
-                        className={styles.profileButton} 
-                        onClick={() => setUserOptions(!userOptions)}
-                    >
-                        {isMobile &&(<span>{session.user.name?.split(' ')[0].toLowerCase()}</span>)}
-                        <FontAwesomeIcon icon={faUserCircle} style={{ fontSize: 22, color: '#555' }} />
-                        
-                        {!isMobile && (
-                            <>
-                                <span>{session.user.name?.split(' ')[0].toLowerCase()}</span>
-                                <FontAwesomeIcon
-                                    className={userOptions ? styles.optionsChevronActive : ''}
-                                    icon={faChevronDown}
-                                    style={{ fontSize: 12 }}
-                                />
-                            </>
-                        )}
-                    </button>
-                ) : (
-                     <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href="/login" className={styles.profileButton}>
-                        <span>Acessar</span>
+        <>
+            <header className={styles.header}>
+                <div className={styles.inner}>
+                    <Link href="/" aria-label="Início" className={styles.logo}>
+                        <Image
+                            src="/images/logo-cfcsn-horiz.png"
+                            alt="Clube dos Funcionários CSN"
+                            width={220}
+                            height={88}
+                            priority
+                            quality={100}
+                            className={styles.logoLight}
+                        />
+                        <Image
+                            src="/images/logo-cfcsn-w-horiz.png"
+                            alt="Clube dos Funcionários CSN"
+                            width={220}
+                            height={88}
+                            priority
+                            quality={100}
+                            className={styles.logoDark}
+                        />
                     </Link>
-                )}
 
-                <ul className={`${styles.userOptions} ${userOptions ? styles.userOptionsActive : ''}`}>
-                    {pathname !== '/profile' && (
-                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/profile'} style={{ width: '100%' }}><li> Meu Perfil</li></Link>
-                    )}
-                    {pathname !== '/meus-videos' && (
-                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/meus-videos'} style={{ width: '100%' }}><li>Meus Vídeos</li></Link>
-                    )}
-                    {pathname !== '/luz' && (
-                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/luz'} style={{ width: '100%' }}><li>Luz da Quadra</li></Link>
-                    )}
-                    {pathname !== '/' && (
-                        <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={'/'} style={{ width: '100%' }}><li>Início</li></Link>
-                    )}
-                    <hr />
-                    <li onClick={() => signOut({ callbackUrl: '/login' })} style={{ color: '#d32f2f' }}>
-                        Sair
-                    </li>
-                </ul>
-            </div>
-        </header>
+                    <nav className={styles.desktopNav} aria-label="Módulos">
+                        {NAV.filter((item) => item.key !== 'perfil').map((item) => (
+                            <Link
+                                key={item.key}
+                                href={item.href}
+                                className={`${styles.navLink} ${current === item.key ? styles.navLinkActive : ''}`}
+                                aria-current={current === item.key ? 'page' : undefined}
+                            >
+                                <FontAwesomeIcon icon={item.icon} />
+                                {item.label}
+                            </Link>
+                        ))}
+                    </nav>
+
+                    <div className={styles.actions}>
+                        {/* O checkout com carrinho vazio volta para a home, então o atalho só aparece com itens. */}
+                        {session?.user && cartCount > 0 && (
+                            <Link href="/checkout" className={styles.iconButton} aria-label={`Carrinho: ${cartCount} ${cartCount === 1 ? 'horário' : 'horários'}`}>
+                                <FontAwesomeIcon icon={faBagShopping} />
+                                <span className={styles.badge}>{cartCount}</span>
+                            </Link>
+                        )}
+
+                        {session?.user ? (
+                            <div className={styles.userMenu} ref={menuRef}>
+                                <button
+                                    type="button"
+                                    className={`${styles.userButton} ${current === 'perfil' ? styles.userButtonActive : ''}`}
+                                    onClick={() => setMenuOpen((open) => !open)}
+                                    aria-expanded={menuOpen}
+                                    aria-haspopup="menu"
+                                    aria-label="Menu do usuário"
+                                >
+                                    <span className={styles.avatar}>{initialsOf(session.user.name)}</span>
+                                    <span className={styles.userName}>{firstName}</span>
+                                    <FontAwesomeIcon
+                                        icon={faChevronDown}
+                                        className={`${styles.chevron} ${menuOpen ? styles.chevronOpen : ''}`}
+                                    />
+                                </button>
+
+                                {menuOpen && (
+                                    <div className={styles.menu} role="menu">
+                                        <div className={styles.menuHead}>
+                                            <strong>{session.user.name}</strong>
+                                            {session.user.title && (
+                                                <span>
+                                                    Matrícula <span className={styles.mono}>{session.user.title}</span>
+                                                </span>
+                                            )}
+                                        </div>
+                                        <Link href="/profile" className={styles.menuItem} role="menuitem">
+                                            <FontAwesomeIcon icon={faUser} /> Meu perfil
+                                        </Link>
+                                        <Link href="/profile?tab=schedules" className={styles.menuItem} role="menuitem">
+                                            <FontAwesomeIcon icon={faCalendarCheck} /> Meus agendamentos
+                                        </Link>
+                                        <Link href="/meus-videos" className={styles.menuItem} role="menuitem">
+                                            <FontAwesomeIcon icon={faVideo} /> Meus vídeos
+                                        </Link>
+                                        <Link href="/espacos-sociais/reservas" className={styles.menuItem} role="menuitem">
+                                            <FontAwesomeIcon icon={faChampagneGlasses} /> Minhas reservas sociais
+                                        </Link>
+                                        <div className={styles.menuSection}>
+                                            <span className={styles.menuLabel}>Tema</span>
+                                            <ThemeSwitch />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={`${styles.menuItem} ${styles.menuDanger}`}
+                                            role="menuitem"
+                                            onClick={() => signOut({ callbackUrl: '/login' })}
+                                        >
+                                            <FontAwesomeIcon icon={faRightFromBracket} /> Sair
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link href="/login" className={styles.loginButton}>
+                                <FontAwesomeIcon icon={faRightToBracket} /> Entrar
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            </header>
+
+            {/* Barra inferior de módulos (só no celular). `data-bottom-nav` reserva o espaço dela no body. */}
+            <nav className={styles.bottomNav} aria-label="Módulos" data-bottom-nav>
+                {NAV.map((item) => (
+                    <Link
+                        key={item.key}
+                        href={item.href}
+                        className={`${styles.bottomItem} ${current === item.key ? styles.bottomItemActive : ''}`}
+                        aria-current={current === item.key ? 'page' : undefined}
+                    >
+                        <span className={styles.bottomIcon}>
+                            <FontAwesomeIcon icon={item.icon} />
+                        </span>
+                        {item.short}
+                    </Link>
+                ))}
+            </nav>
+        </>
     );
 }

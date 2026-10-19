@@ -112,3 +112,19 @@
         animation-duration: 60s; 
     }
 }
+/* Selo dos itens que não são esporte (espaços sociais). O overlay empilha
+   selo e nome; com só o nome, fica igual ao que era. */
+.squareInfo {
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tag {
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--grena);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}

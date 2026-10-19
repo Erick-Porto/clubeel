@@ -5,8 +5,8 @@ import CheckoutPayment from './CheckoutPayment'
 
 const CheckoutView: React.FC<{ total: number}> = () => {
     return (
-        <div>
-            <p style={{marginBottom: '20px', fontSize: '28px', fontWeight: 'bold'}} className={style.checkoutTitle} >PAGAMENTO</p>
+        <div className={style.paymentPanel}>
+            <h2 className={style.checkoutTitle}>Pagamento</h2>
             <CheckoutPayment />
         </div>
     )

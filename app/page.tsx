@@ -1,21 +1,35 @@
 'use client'
 
-import { useEffect, useState, useRef } from "react";
-import style from "../styles/page.module.css";
-import Footer from "./components/Common/footer";
-import Header, { HeaderOption } from "./components/Common/header";
-// import MobileNavBar from "./components/mobileNavBar";
-import SportiveSquare from "./components/Common/sportive-square";
-// import MapBanner from "./components/map-banner";
-import API_CONSUME from "../services/api-consume";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useIsMobile } from "./hooks/useIsMobile";
-// import TutorialOverlay, { TutorialStep } from "./components/tutorial-overlay";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-import ItensGrid from "./components/Common/ItensGrid";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    faArrowRight,
+    faCalendarCheck,
+    faChampagneGlasses,
+    faChevronRight,
+    faMagnifyingGlass,
+    faTableTennisPaddleBall,
+    faVideo,
+} from "@fortawesome/free-solid-svg-icons";
+import globalStyle from "../styles/page.module.css";
+import ui from "../styles/ui.module.css";
+import style from "../styles/home.module.css";
+import Footer from "./components/Common/footer";
+import Header from "./components/Common/header";
+import { LoadingScreen } from "./components/Common/loading";
+import API_CONSUME from "../services/api-consume";
 import HomeLightingBanner from "./components/Lighting/HomeLightingBanner";
+import ReplayNotice from "./components/Replay/ReplayNotice";
+import { Media, MediaTag, PageHeader, SearchBar, areaStyle, matchesSearch, type Area } from "./components/UI/ui";
+import { fetchSocialGroups } from "../services/social-api";
+import { placeImageUrl } from "../utils/lighting";
+
+// O mapa interativo (MapBanner), a seção "Social" antiga e o tutorial da home
+// continuam desligados (ver docs/resumo-modulos/04-agendamento-quadras.md).
+
 interface Point { x: number; y: number; }
 interface Place {
     id: number;
@@ -29,208 +43,194 @@ interface ApiPlaceData {
     [key: string]: unknown;
 }
 
-const NAV_OPTIONS: HeaderOption[] = [
-    // { text: "Mapa", id: "mapa" },
-    // { text: "Esportes", id: "esportivas" },
-    // { text: "Social", id: "sociais" }
+/** Um cartão da home: um esporte (leva às quadras) ou um grupo de espaço social. */
+interface HomeItem {
+    key: string;
+    name: string;
+    image: string | null;
+    href: string;
+    social: boolean;
+}
+
+const SHORTCUTS: { href: string; title: string; text: string; icon: typeof faVideo; area: Area }[] = [
+    { href: '/profile?tab=schedules', title: 'Meus agendamentos', text: 'Carrinho, horários confirmados e anteriores', icon: faCalendarCheck, area: 'perfil' },
+    { href: '/meus-videos', title: 'Meus vídeos', text: 'Replays gravados nas suas reservas', icon: faVideo, area: 'replay' },
+    { href: '/espacos-sociais/reservas', title: 'Minhas reservas sociais', text: 'Análise, pagamento e convidados', icon: faChampagneGlasses, area: 'social' },
 ];
 
-// const TUTORIAL_STEPS: TutorialStep[] = [
-//     {
-//         targetId: 'map-section',
-//         title: 'Explore o Clube',
-//         description: ( <p><FontAwesomeIcon icon={faHandPointer} /> Use o zoom para navegar pelo mapa.</p> ),
-//         offset: -700,
-//         mOffset: -450
-//     },
-//     {
-//         targetId: 'hotspot-0',
-//         title: 'Encontre Disponibilidade',
-//         description: ( <p> Ícones piscantes indicam quadras disponíveis. Clique em um para ver o local.</p> ),
-//         offset: -50,
-//         mOffset: -30,
-//         waitForAction: true
-//     },
-//     {
-//         targetId: 'popup-places',
-//         title: 'Inicie a Reserva',
-//         description: 'Clique em "Ver Detalhes e Reservar" no popup da quadra para avançar para a próxima etapa.',
-//         offset: 150,
-//         mOffset: 5,
-//         targetClickableItem: 'reserve-button',
-//         waitForAction: true
-//     }
-// ];
-
 const Home = () => {
-    const [activeSection, setActiveSection] = useState<'mapa' | 'esportivas' | 'sociais'>('mapa');
     const [places, setPlaces] = useState<Place[]>([]);
-    const isClicking = useRef(false);
-    
+    const [placesLoaded, setPlacesLoaded] = useState(false);
+    // Espaços sociais entram no fim da mesma grade, um cartão por grupo
+    // (Churrasqueiras, Salões...), levando à vitrine deles.
+    const [socialItems, setSocialItems] = useState<HomeItem[]>([]);
+    const [query, setQuery] = useState("");
+
     const { data: session, status } = useSession();
-    const isMobile = useIsMobile();
 
-    const pageContainerRef = useRef<HTMLDivElement>(null);
-    const mainContainerRef = useRef<HTMLDivElement>(null);
-    // const mapRef = useRef<HTMLDivElement>(null);
-    const sportsRef = useRef<HTMLDivElement>(null);
-    // const socialRef = useRef<HTMLDivElement>(null);
-
-useEffect(() => {
+    useEffect(() => {
         const fetchPlaces = async () => {
             if (status !== 'authenticated' || !session?.accessToken) {
                 toast.error("Sessão inválida. Por favor, faça login novamente.");
                 return;
             }
-            
-            
+
             try {
                 const response = await API_CONSUME("GET", "places/group");
 
-                // 1. Verificação de segurança (Novo padrão)
                 if (!response.ok || !response.data) {
                     toast.error("Erro ao buscar locais: " + response.message);
-                    
                 }
 
                 const rawPlacesArray = Object.values(response.data) as ApiPlaceData[];
-                
+
                 const transformedPlaces = rawPlacesArray.map((apiPlace): Place => {
                     let parsedVertices: number[][] = [];
-                    
+
                     if (typeof apiPlace.vertices === 'string') {
-                        try { 
-                            parsedVertices = JSON.parse(apiPlace.vertices) as number[][]; 
+                        try {
+                            parsedVertices = JSON.parse(apiPlace.vertices) as number[][];
                         } catch {}
                     } else if (Array.isArray(apiPlace.vertices)) {
                         parsedVertices = apiPlace.vertices as number[][];
                     }
-                    
-                    return { 
-                        ...(apiPlace as unknown as Place), 
-                        id: Number(apiPlace.id), 
-                        vertices: parsedVertices.map(v => ({ x: v[0], y: v[1] })) 
+
+                    return {
+                        ...(apiPlace as unknown as Place),
+                        id: Number(apiPlace.id),
+                        vertices: parsedVertices.map(v => ({ x: v[0], y: v[1] }))
                     };
                 });
                 setPlaces(transformedPlaces);
-            } catch (error) { 
+            } catch (error) {
                 toast.error("Erro ao processar locais: " + (error instanceof Error ? error.message : String(error)));
+            } finally {
+                setPlacesLoaded(true);
             }
         };
-        fetchPlaces();
+        if (status === 'authenticated') fetchPlaces();
     }, [session, status]);
 
     useEffect(() => {
-        const container = isMobile ? mainContainerRef.current : pageContainerRef.current;
-        const target = isMobile ? mainContainerRef.current : null; 
+        if (status !== 'authenticated') return;
+        // Os grupos sociais vêm de outro endpoint (social/groups — as rotas de
+        // quadra não listam espaço social). Falha aqui não atrapalha a home:
+        // a grade segue só com os esportes.
+        fetchSocialGroups().then((result) => {
+            if (!result.ok) return;
+            setSocialItems(
+                result.data.map((group) => ({
+                    key: `social-${group.id}`,
+                    name: group.name,
+                    image: placeImageUrl(group.image_horizontal) ?? placeImageUrl(group.image_vertical),
+                    href: '/espacos-sociais',
+                    social: true,
+                }))
+            );
+        });
+    }, [status]);
 
-        if (!container) return;
+    const items = useMemo<HomeItem[]>(() => {
+        const sports = places
+            .filter((place) => place.category === "esportiva")
+            .map((place) => ({
+                key: `sport-${place.id}`,
+                name: place.name,
+                image: place.image_horizontal || place.image_vertical || null,
+                href: `/places/${place.name.replace(/\s+/g, '-').toLowerCase()}-${place.id}`,
+                social: false,
+            }));
+        return [...sports, ...socialItems];
+    }, [places, socialItems]);
 
-        const options = {
-            root: target, 
-            threshold: 0.4
-        };
+    const visible = items.filter((item) => matchesSearch(query, item.name, item.social ? 'espaço social' : 'esporte quadra'));
 
-        const observer = new IntersectionObserver((entries) => {
-            if (isClicking.current) return;
+    if (status === "loading") return <LoadingScreen />;
 
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    const id = entry.target.id;
-                    // if (id === 'mapa') setActiveSection('mapa');
-                    if (id === 'esportes') setActiveSection('esportivas');
-                    // if (id === 'social') setActiveSection('sociais');
-                }
-            });
-        }, options);
-
-        // if (mapRef.current) observer.observe(mapRef.current);
-        if (sportsRef.current) observer.observe(sportsRef.current);
-        // if (socialRef.current) observer.observe(socialRef.current);
-
-        return () => observer.disconnect();
-    }, [isMobile, places]);
-
-    const handleNavigation = (id: string) => {
-        isClicking.current = true;
-        setActiveSection(id as 'mapa' | 'esportivas' | 'sociais');
-
-        let targetRef = null;
-        // if (id === 'mapa') targetRef = mapRef;
-        if (id === 'esportivas') targetRef = sportsRef;
-        // if (id === 'sociais') targetRef = socialRef;
-
-        if (targetRef?.current) {
-            targetRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-                inline: 'start'
-            });
-        }
-
-        setTimeout(() => { isClicking.current = false; }, 1000);
-    };
-
-    if (status === "loading") return <div>Carregando...</div>;
+    const firstName = session?.user?.name?.split(' ')[0];
 
     return (
-        <div className={`${style.page} ${isMobile ? style.homePage : ''}`} ref={pageContainerRef}> 
-            
-            {/*<TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Página inicial" />*/}
+        <div className={globalStyle.page}>
+            <Header />
 
-            <Header 
-                options={NAV_OPTIONS} 
-                surgeIn={0} 
-                onlyScroll={true}
-                activeSection={activeSection}
-                onNavigate={handleNavigation}
-            />
+            <main className={`${globalStyle.main} ${ui.page}`}>
+                <PageHeader
+                    title={firstName ? <>Olá, <span className={style.name}>{firstName.toLowerCase()}</span></> : "Início"}
+                    lead={socialItems.length > 0
+                        ? "Escolha um esporte para reservar horário ou um espaço social para o seu evento."
+                        : "Escolha um esporte para ver as quadras e os horários livres."}
+                />
 
-            <div className={style.main} ref={mainContainerRef}>
-                
-                {/* <section className={`${style.Section} ${style.sectionMap}`} ref={mapRef} id="mapa">
-                    <div id="map-section" style={{width: '100%', height: '100%', display:'flex', flexDirection:'column', alignItems:'center'}}>
-                         {!isMobile && <h1 className={style.sectionTitle}>Mapa do Clube</h1>}
-                        <div className={style.contentWrapper}>
-                            <MapBanner places={places.filter(p => p.vertices && p.vertices.length > 0).map(p => ({ ...p, id: String(p.id) }))} />
+                <HomeLightingBanner />
+
+                <section className={ui.section} aria-labelledby="home-areas">
+                    <div className={style.searchRow}>
+                        <SearchBar id="busca-home" value={query} onChange={setQuery} placeholder="Buscar esporte ou espaço" />
+                        <span className={ui.label} id="home-areas">
+                            {socialItems.length > 0 ? "Áreas esportivas e sociais" : "Áreas esportivas"}
+                        </span>
+                    </div>
+
+                    {placesLoaded && items.length === 0 ? (
+                        <ReplayNotice
+                            icon={faTableTennisPaddleBall}
+                            title="Nenhum local para exibir"
+                            description="Não há esportes disponíveis para reserva no momento."
+                        />
+                    ) : visible.length === 0 && query ? (
+                        <ReplayNotice
+                            icon={faMagnifyingGlass}
+                            title={`Nada encontrado para “${query}”`}
+                            description="Confira a grafia ou limpe a busca."
+                        />
+                    ) : (
+                        <div className={ui.grid}>
+                            {visible.map((item) => (
+                                <Link key={item.key} href={item.href} className={`${ui.card} ${style.spotCard}`}>
+                                    <Media
+                                        src={item.image}
+                                        alt={`Foto de ${item.name}`}
+                                        area={item.social ? 'social' : 'quadras'}
+                                        icon={item.social ? faChampagneGlasses : faTableTennisPaddleBall}
+                                    >
+                                        {item.social && <MediaTag icon={faChampagneGlasses}>Espaço social</MediaTag>}
+                                    </Media>
+                                    <div className={ui.cardBody}>
+                                        <h3 className={ui.cardTitle}>{item.name}</h3>
+                                    </div>
+                                    <div className={ui.cardFoot}>
+                                        <span className={style.cardAction}>
+                                            {item.social ? "Ver espaços" : "Ver quadras e horários"}
+                                        </span>
+                                        <span className={ui.spacer} />
+                                        <FontAwesomeIcon icon={faArrowRight} className={ui.muted} />
+                                    </div>
+                                </Link>
+                            ))}
                         </div>
-                    </div>
-                </section>*/}
-                
-                <section style={isMobile ? {padding: '75px 0px 0px', scrollbarWidth: 'none', minHeight: 'auto'} : {}} className={`${style.Section} ${style.sectionSports}`} ref={sportsRef} id="esportes">
-                    <div className={style.contentWrapper}>
-                        {!isMobile && <h1 className={style.sectionTitle}>Áreas Esportivas</h1>}
-                        <HomeLightingBanner />
-                        {
-                            isMobile ?
-                            (<ItensGrid data={places.filter(p => p.category === "esportiva")}/>):
-                            (<SportiveSquare places={places.filter(p => p.category === "esportiva")}/>)
-                        }
-                    </div>
+                    )}
                 </section>
 
-                {/* <section className={`${style.Section} ${style.sectionSocial}`} ref={socialRef} id="social">
-                    <div className={style.contentWrapper}>
-                        <h1 className={style.sectionTitle}>Áreas Sociais</h1>
-                        <SportiveSquare places={places.filter(p => p.category === "social")}/>
-                        {places.filter(p => p.category === "social").length === 0 && (
-                            <div style={{opacity: 0.5, marginTop: 20}}>Áreas sociais em breve</div>
-                        )}
+                <section className={ui.section} aria-labelledby="home-atalhos">
+                    <h2 className={ui.sectionTitle} id="home-atalhos">Atalhos</h2>
+                    <div className={ui.grid}>
+                        {SHORTCUTS.map((shortcut) => (
+                            <Link key={shortcut.href} href={shortcut.href} className={`${ui.card} ${style.shortcut}`} style={areaStyle(shortcut.area)}>
+                                <span className={style.shortcutGlyph}>
+                                    <FontAwesomeIcon icon={shortcut.icon} />
+                                </span>
+                                <span className={style.shortcutText}>
+                                    <strong>{shortcut.title}</strong>
+                                    <span>{shortcut.text}</span>
+                                </span>
+                                <FontAwesomeIcon icon={faChevronRight} className={ui.muted} />
+                            </Link>
+                        ))}
                     </div>
-                </section> */}
+                </section>
+            </main>
 
-                <div className={style.footerContainer}>
-                    <Footer/>
-                </div>
-
-            </div>
-            
-            {/* {isMobile && (
-                <MobileNavBar 
-                    onNavigate={(id) => handleNavigation(id)} 
-                    activeSection={activeSection} 
-                />
-            )} */}
+            <Footer />
         </div>
     );
 }

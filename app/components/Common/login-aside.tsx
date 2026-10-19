@@ -196,13 +196,22 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     return (
         <aside className={styles.sidebar}>
             <div className={styles.sidebarHeader}>
-                <Image 
-                    src="/images/logo-cfcsn-horiz.png" 
-                    alt="Logo CFCSN" 
-                    width={200} 
-                    height={80} 
+                <Image
+                    src="/images/logo-cfcsn-horiz.png"
+                    alt="Logo CFCSN"
+                    width={200}
+                    height={80}
                     quality={100}
-                    className={styles.logoImage}
+                    className={`${styles.logoImage} ${styles.logoLight}`}
+                    priority
+                />
+                <Image
+                    src="/images/logo-cfcsn-w-horiz.png"
+                    alt="Logo CFCSN"
+                    width={200}
+                    height={80}
+                    quality={100}
+                    className={`${styles.logoImage} ${styles.logoDark}`}
                     priority
                 />
             </div>
@@ -327,19 +336,17 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                       * qualquer visitante, por decisão de negócio — sem este
                       * caminho ela ficaria invisível para quem não tem conta.
                       */}
-                    {/* <div className={styles.replayEntry}>
-                        <span className={styles.replayEntryHint}>Não precisa de conta</span>
-                        <Link
-                            href="/replay"
-                            className={styles.replayEntryLink}
-                            referrerPolicy="no-referrer"
-                            rel="noopener noreferrer"
-                        >
+                    <Link href="/replay" className={styles.replayEntry}>
+                        <span className={styles.replayEntryIcon} aria-hidden="true">
                             <FontAwesomeIcon icon={faVideo} />
-                            Ver os replays das quadras
-                            <FontAwesomeIcon icon={faArrowRight} />
-                        </Link>
-                    </div> */}
+                        </span>
+                        <span className={styles.replayEntryText}>
+                            <span className={styles.replayEntryHint}>Não precisa de conta</span>
+                            <strong className={styles.replayEntryTitle}>RePET</strong>
+                            <span className={styles.replayEntryLead}>Assista aos replays das quadras</span>
+                        </span>
+                        <FontAwesomeIcon icon={faArrowRight} className={styles.replayEntryArrow} />
+                    </Link>
                 </>
             )}
         </aside>

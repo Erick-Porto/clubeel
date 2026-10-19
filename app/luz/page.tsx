@@ -20,8 +20,10 @@ import { useCallback, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleExclamation, faRotateRight, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCircleExclamation, faLightbulb, faRotateRight, faXmark } from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../../styles/page.module.css";
+import ui from "../../styles/ui.module.css";
+import { PageHeader } from "../components/UI/ui";
 import replayStyle from "../../styles/replay.module.css";
 import style from "../../styles/lighting.module.css";
 import Header from "../components/Common/header";
@@ -277,23 +279,26 @@ export default function LightingPage() {
 
     return (
         <div className={globalStyle.page}>
-            <Header options={null} surgeIn={0} onlyScroll={false} />
+            <Header />
 
-            <section className={replayStyle.replaySection}>
-                <div className={replayStyle.replayHeader}>
-                    <h1 className={replayStyle.replayTitle}>Luz da quadra</h1>
-                    <p className={replayStyle.replayLead}>
-                        No uso livre, como nos finais de semana e feriados, não há reserva de quadras: quem chega joga. Por aqui você consegue acionar a luz de qualquer quadra por até 2h.{" "}
-                        <strong>Acender não reserva a quadra para uso individual</strong>.
+            <main className={`${globalStyle.main} ${ui.page}`}>
+                <PageHeader
+                    kicker={<><FontAwesomeIcon icon={faLightbulb} /> Uso livre</>}
+                    title="Luz da quadra"
+                    lead={
+                        <>
+                            No uso livre, como nos finais de semana e feriados, não há reserva de quadras: quem chega joga. Por aqui você consegue acionar a luz de qualquer quadra por até 2h.{" "}
+                            <strong>Acender não reserva a quadra para uso individual</strong>.
+                        </>
+                    }
+                />
+                {data?.open && !data.activation && (
+                    <p className={style.openNow}>
+                        <span className={style.openDot} aria-hidden /> Há quadras liberadas agora — cada uma
+                        com o seu horário
+                        {occasion ? <> · <strong>{occasion}</strong></> : null}
                     </p>
-                    {data?.open && !data.activation && (
-                        <p className={style.openNow}>
-                            <span className={style.openDot} aria-hidden /> Há quadras liberadas agora — cada uma
-                            com o seu horário
-                            {occasion ? <> · <strong>{occasion}</strong></> : null}
-                        </p>
-                    )}
-                </div>
+                )}
 
                 {flash && (
                     <div className={`${style.flash} ${flash.tone === "alert" ? style.flashAlert : ""}`} role="status">
@@ -314,7 +319,7 @@ export default function LightingPage() {
                 )}
 
                 {body}
-            </section>
+            </main>
 
             <Footer />
         </div>
