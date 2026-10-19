@@ -39,7 +39,7 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 
 **Públicos** (sem sessão): `login`, `register`, `check-member`, `change-password`, `replay/places`, `replay/places/{id}/videos`.
 
-**Autenticados**: `verify-token`, `schedule(/*)`, `place/{x}`, `places(/*)`, `member/update`, `replay/my-videos`, `lighting/availability`, `lighting/groups`, `lighting/groups/{id}/places`, `lighting/places/{id}/activate`, `lighting/release`, `lighting/activations`, `social/groups`, `social/groups/{id}/places`, `social/availability`, `social/beverages`, `social/limits`, `social/bookings`, `social/bookings/{id}`, `social/bookings/{id}/guests`.
+**Autenticados**: `verify-token`, `schedule(/*)`, `place/{x}`, `places(/*)`, `member/update`, `replay/my-videos`, `lighting/availability`, `lighting/groups`, `lighting/groups/{id}/places`, `lighting/places/{id}/activate`, `lighting/release`, `lighting/activations`, `social/groups`, `social/groups/{id}/places`, `social/availability`, `social/beverages`, `social/furniture`, `social/limits`, `social/bookings`, `social/bookings/{id}`, `social/bookings/{id}/guests`.
 
 > Para expor um endpoint novo da Lara ao navegador **é obrigatório** adicioná-lo aqui, com a regex mais fechada possível (um caminho por regex, `\d+` para ids).
 
@@ -65,8 +65,8 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 | `replay/places`, `replay/places/{id}/videos`, `replay/my-videos` | GET | Replay | proxy |
 | `/storage/replay/videos/**` (fora de `/api`) | GET/HEAD | rota de mídia | servidor |
 | `lighting/*` | GET/POST | Luz da quadra | proxy |
-| `social/*` (groups, availability, beverages, limits, bookings; `PUT bookings/{id}` edita a pré-reserva) | GET/POST/PUT/DELETE | Espaços sociais ([13](13-espacos-sociais.md)) | proxy |
-| `social/bookings/{id}` | GET | `utils/lara.computeSocialBookingCharge` (valor a cobrar) | servidor |
+| `social/*` (groups, availability, beverages, furniture, limits, bookings; `PUT bookings/{id}` edita a pré-reserva) | GET/POST/PUT/DELETE | Espaços sociais ([13](13-espacos-sociais.md)) | proxy |
+| `social/bookings/{id}` | GET | `utils/lara.computeSocialBookingCharge` (valor a cobrar) e `socialBookingIsPaid` (checagem de "já pago") | servidor |
 | `webhooks/whatsapp` | POST | webhook | servidor |
 | `aprovacao/login`, `aprovacao/ordens`, `aprovacao/ordens/{cd}`, `aprovacao/ordens/{cd}/decidir` | POST/GET | área de aprovação | servidor (sem token de app; `Authorization` = JWT do diretor) |
 

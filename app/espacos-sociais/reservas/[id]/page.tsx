@@ -4,8 +4,10 @@
  * Detalhe de uma reserva de espaço social: valor discriminado, pagamento,
  * lista de convidados e desistência.
  *
- * Quais botões aparecem é decidido pelos booleanos da Lara (`can_pay`,
- * `can_cancel`, `can_edit_guests`) — nunca por prazo calculado aqui. Depois de
+ * Quais botões aparecem é decidido pelos booleanos da Lara (`can_edit`,
+ * `can_pay`, `can_cancel`, `can_edit_guests`) — nunca por prazo calculado
+ * aqui. A reserva pode ter sido feita pela secretaria (`origin`) e já chegar
+ * aprovada ou paga: nada aqui supõe que ela passou por `requested`. Depois de
  * cada ação a reserva é relida; o estado da tela nunca é montado a partir da
  * resposta da ação.
  *
@@ -15,6 +17,8 @@
  *
  * Pagar usa o mesmo formulário de cartão das quadras (CheckoutPayment), no
  * modo `socialBookingId`: o servidor relê a reserva para saber quanto cobrar.
+ * Antes de abrir o checkout a reserva é relida — se a secretaria deu baixa
+ * manual, `can_pay` já vem `false` e nada é cobrado.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,6 +30,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faArrowLeft,
     faCircleExclamation,
+    faBuilding,
     faCreditCard,
     faPenToSquare,
     faPen,
@@ -41,23 +46,27 @@ import ReplayNotice from "../../../components/Replay/ReplayNotice";
 import SocialStageBadge from "../../../components/Social/SocialStageBadge";
 import SocialFlashBox from "../../../components/Social/SocialFlashBox";
 import SocialGuestsEditor, { type GuestDraft } from "../../../components/Social/SocialGuestsEditor";
-import SocialBookingForm from "../../../components/Social/SocialBookingForm";
+import SocialBookingForm, { type SocialCatalog } from "../../../components/Social/SocialBookingForm";
 import CheckoutPayment, { type SocialPaymentOutcome } from "../../../components/Checkout/CheckoutPayment";
 import {
     cancelSocialBooking,
-    fetchSocialBeverages,
     fetchSocialBooking,
+    fetchSocialCatalog,
     fetchSocialGroupPlaces,
     replaceSocialGuests,
-    type SocialBeverage,
     type SocialBooking,
+    type SocialBookingItem,
     type SocialFailure,
     type SocialPlace,
 } from "../../../../services/social-api";
 import {
+    CONTACT_NOTICE,
     formatBRL,
     formatDayLong,
+    formatFurnitureCount,
     formatInstant,
+    formatTimeRange,
+    isFurniture,
     onlyDigits,
     refusalFlash,
     refusedGuestIndex,
@@ -85,9 +94,9 @@ export default function SocialBookingDetailPage() {
     const [guestErrorIndex, setGuestErrorIndex] = useState<number | null>(null);
     const [confirmCancel, setConfirmCancel] = useState(false);
     // Edição da pré-reserva: precisa do espaço (máximo de extras, incluídos,
-    // capacidade) e do catálogo de bebidas, lidos ao abrir.
+    // capacidade, horário) e do catálogo de bebidas e mesas/cadeiras, lidos ao abrir.
     const [editPlace, setEditPlace] = useState<SocialPlace | null>(null);
-    const [catalog, setCatalog] = useState<SocialBeverage[]>([]);
+    const [catalog, setCatalog] = useState<SocialCatalog>({ beverages: [], furniture: [] });
     const [pending, setPending] = useState(false);
     // Trava síncrona: dois toques antes do re-render não viram duas ações.
     const busy = useRef(false);
@@ -150,6 +159,9 @@ export default function SocialBookingDetailPage() {
             setShowPayment(false);
         } else if (outcome.type === "refused") {
             setShowPayment(false);
+            // "Já pago" (baixa manual da secretaria) não é falha: o texto padrão
+            // explica que nada foi cobrado de novo.
+            const alreadyPaid = outcome.reason === "already_paid";
             showFlash(
                 refusalFlash(
                     {
@@ -157,7 +169,7 @@ export default function SocialBookingDetailPage() {
                         status: 409,
                         kind: outcome.reason ? "rule" : "server",
                         reason: outcome.reason,
-                        error: outcome.message,
+                        error: alreadyPaid ? "" : outcome.message,
                         context: {},
                         fieldErrors: {},
                     },
@@ -169,13 +181,35 @@ export default function SocialBookingDetailPage() {
         await load(true);
     };
 
+    /**
+     * Relê a reserva antes de abrir o checkout: se a secretaria deu baixa
+     * manual nesse meio-tempo, `can_pay` vem `false` e o cartão nem aparece.
+     */
+    const openPayment = () =>
+        runAction(async () => {
+            if (!booking) return;
+            const result = await fetchSocialBooking(booking.id);
+            if (!result.ok) {
+                await handleRefusal(result, "Não foi possível abrir o pagamento");
+                return;
+            }
+            setBooking(result.data);
+            if (result.data.can_pay) {
+                setShowPayment(true);
+            } else if (result.data.payment) {
+                toast.info("Esta reserva já está paga — nada a cobrar.");
+            } else {
+                toast.info("O pagamento desta reserva não está mais disponível. Atualizamos os dados.");
+            }
+        });
+
     const startEditingBooking = () =>
         runAction(async () => {
             if (!booking) return;
             const groupId = booking.place_group?.id;
-            const [placesResult, beveragesResult] = await Promise.all([
+            const [placesResult, catalogResult] = await Promise.all([
                 groupId ? fetchSocialGroupPlaces(groupId) : Promise.resolve(null),
-                fetchSocialBeverages(),
+                fetchSocialCatalog(),
             ]);
             const place = placesResult?.ok
                 ? placesResult.data.places.find((item) => item.id === booking.place.id) ?? null
@@ -188,7 +222,7 @@ export default function SocialBookingDetailPage() {
                 });
                 return;
             }
-            setCatalog(beveragesResult.ok ? beveragesResult.data : []);
+            setCatalog(catalogResult);
             setEditPlace(place);
             setShowPayment(false);
             setEditingGuests(false);
@@ -215,11 +249,10 @@ export default function SocialBookingDetailPage() {
                 setEditPlace(null);
                 await handleRefusal(failure, "Não foi possível salvar");
                 return;
-            case "beverage_unavailable": {
-                const beverages = await fetchSocialBeverages();
-                if (beverages.ok) setCatalog(beverages.data);
+            case "beverage_unavailable":
+            case "item_limit":
+                setCatalog(await fetchSocialCatalog());
                 break;
-            }
         }
         if (failure.kind === "unauthorized") return;
         if (!(failure.kind === "server" && failure.status >= 500)) {
@@ -277,6 +310,23 @@ export default function SocialBookingDetailPage() {
             await handleRefusal(result, "Não foi possível desistir");
         });
 
+    /** Itens de uma categoria nos valores, com rótulo do grupo. */
+    const renderItemGroup = (label: string, items: SocialBookingItem[]) =>
+        items.length > 0 && (
+            <>
+                <span className={style.summaryGroupLabel}>{label}</span>
+                {items.map((item) => (
+                    <div key={item.item_id} className={style.summaryLine}>
+                        <span>
+                            {item.quantity} × {item.name}
+                            {item.unit ? ` (${item.unit})` : ""}
+                        </span>
+                        <span>{formatBRL(item.subtotal)}</span>
+                    </div>
+                ))}
+            </>
+        );
+
     if (status === "loading") return <LoadingScreen />;
 
     let body: React.ReactNode;
@@ -313,12 +363,21 @@ export default function SocialBookingDetailPage() {
                     <div className={style.detailTitleRow}>
                         <h1 className={replayStyle.replayTitle}>{booking.place.name}</h1>
                         <SocialStageBadge stage={booking.stage} label={booking.stage_label} />
+                        {booking.origin === "secretaria" && (
+                            <span className={style.originBadge}>
+                                <FontAwesomeIcon icon={faBuilding} /> Feita pela secretaria
+                            </span>
+                        )}
                     </div>
                     <p className={replayStyle.replayLead}>
                         <span style={{ textTransform: "capitalize" }}>{formatDayLong(booking.date)}</span>
+                        {booking.start_time
+                            ? ` · ${formatTimeRange(booking.start_time, booking.end_time, booking.ends_next_day)}`
+                            : ""}
                         {booking.place_group ? ` · ${booking.place_group.name}` : ""}
                     </p>
                     {stageSentence(booking.stage) && <p className={style.limitNote}>{stageSentence(booking.stage)}</p>}
+                    {booking.stage === "requested" && <p className={style.notice}>{CONTACT_NOTICE}</p>}
                     {reason && <p className={style.observation}>Motivo: {reason}</p>}
                     {booking.can_edit && !editPlace && (
                         <div className={style.headerActions}>
@@ -340,7 +399,7 @@ export default function SocialBookingDetailPage() {
                     <SocialBookingForm
                         place={editPlace}
                         date={booking.date}
-                        beverages={catalog}
+                        catalog={catalog}
                         editing={booking}
                         onSaved={onBookingSaved}
                         onRefusal={onBookingEditRefusal}
@@ -352,6 +411,15 @@ export default function SocialBookingDetailPage() {
                             <div className={style.panel}>
                                 <h2 className={style.panelTitle}>Evento</h2>
                                 <dl className={style.infoList}>
+                                    {booking.start_time && (
+                                        <>
+                                            <dt>Horário</dt>
+                                            <dd>
+                                                {formatTimeRange(booking.start_time, booking.end_time, booking.ends_next_day)}
+                                                {booking.duration_hours ? ` (${booking.duration_hours} h)` : ""}
+                                            </dd>
+                                        </>
+                                    )}
                                     <dt>Tipo</dt>
                                     <dd>{booking.event_type ?? "—"}</dd>
                                     <dt>Pessoas</dt>
@@ -359,6 +427,12 @@ export default function SocialBookingDetailPage() {
                                         {booking.expected_guests ?? "—"}
                                         {booking.place.capacity > 0 ? ` (capacidade ${booking.place.capacity})` : ""}
                                     </dd>
+                                    {(booking.tables_total > 0 || booking.chairs_total > 0) && (
+                                        <>
+                                            <dt>Mesas e cadeiras</dt>
+                                            <dd>{formatFurnitureCount(booking.tables_total, booking.chairs_total)}</dd>
+                                        </>
+                                    )}
                                     {booking.notes && (
                                         <>
                                             <dt>Observações</dt>
@@ -474,15 +548,14 @@ export default function SocialBookingDetailPage() {
                                             <span>{formatBRL(booking.extras_total)}</span>
                                         </div>
                                     )}
-                                    {booking.items.map((item) => (
-                                        <div key={item.beverage_id} className={style.summaryLine}>
-                                            <span>
-                                                {item.quantity} × {item.name}
-                                                {item.unit ? ` (${item.unit})` : ""}
-                                            </span>
-                                            <span>{formatBRL(item.subtotal)}</span>
-                                        </div>
-                                    ))}
+                                    {renderItemGroup(
+                                        "Bebidas",
+                                        booking.items.filter((item) => !isFurniture(item.category))
+                                    )}
+                                    {renderItemGroup(
+                                        "Mesas e cadeiras adicionais",
+                                        booking.items.filter((item) => isFurniture(item.category))
+                                    )}
                                     {booking.discount > 0 && (
                                         <div className={style.summaryDiscount}>
                                             <span>Desconto</span>
@@ -502,14 +575,29 @@ export default function SocialBookingDetailPage() {
                                     </p>
                                 )}
 
+                                {booking.payment && (
+                                    <div className={style.paymentBox}>
+                                        {booking.payment.manual && <strong>Pagamento registrado pela secretaria</strong>}
+                                        <span>
+                                            {formatBRL(booking.payment.paid_amount)}
+                                            {booking.payment.method_label ? ` · ${booking.payment.method_label}` : ""}
+                                            {booking.payment.paid_at ? ` · ${formatInstant(booking.payment.paid_at)}` : ""}
+                                        </span>
+                                        {booking.payment.refunded_amount > 0 && (
+                                            <span>Estornado: {formatBRL(booking.payment.refunded_amount)}</span>
+                                        )}
+                                    </div>
+                                )}
+
                                 {booking.can_pay && !showPayment && (
                                     <button
                                         type="button"
                                         className={replayStyle.replayButton}
-                                        onClick={() => setShowPayment(true)}
+                                        onClick={openPayment}
                                         disabled={pending}
                                     >
-                                        <FontAwesomeIcon icon={faCreditCard} /> Pagar {formatBRL(booking.total)}
+                                        <FontAwesomeIcon icon={faCreditCard} />{" "}
+                                        {pending ? "Conferindo..." : `Pagar ${formatBRL(booking.total)}`}
                                     </button>
                                 )}
 

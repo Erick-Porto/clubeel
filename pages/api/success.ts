@@ -3,7 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
 import API_CONSUME from "../../services/api-consume";
 import { eredeAuth, eredeBaseUrl, getEredeTransaction } from "../../utils/erede";
-import { computeAmountInCents, computeSocialBookingCharge } from "../../utils/lara";
+import {
+    AlreadyPaidError,
+    computeAmountInCents,
+    computeSocialBookingCharge,
+    schedulesArePaid,
+    socialBookingIsPaid,
+} from "../../utils/lara";
 import { guardRequest } from "../../utils/sanitize";
 import { takePendingPayment } from "../../utils/pending-payments";
 
@@ -169,13 +175,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 // `payment_mismatch` — fora do estágio, prazo vencido ou valor
                 // diferente do total). Repassa o código para a tela reler a
                 // reserva; não há "hold expirado" aqui.
-                const reason = (response.data as { reason?: unknown } | null)?.reason;
+                //
+                // O 409 de "já foram pagos" (baixa manual da secretaria) vem
+                // sem `reason`: confirma pelo estado da reserva, não pelo texto.
+                const laraReason = (response.data as { reason?: unknown } | null)?.reason;
+                let reason = typeof laraReason === "string" ? laraReason : null;
+                if (!reason && apiRes?.status === 409 && (await socialBookingIsPaid(socialBookingId, accessToken))) {
+                    reason = "already_paid";
+                }
                 const detail = apiRes?.message || "Não foi possível confirmar o pagamento da reserva. Valor estornado.";
-                return res.status(409).json({
-                    error: typeof reason === "string" ? reason : "payment_failed",
-                    reason: typeof reason === "string" ? reason : null,
-                    message: detail,
-                });
+                return res.status(409).json({ error: reason ?? "payment_failed", reason, message: detail });
+            }
+
+            // Quadra: o 409 pode ser hold expirado/conflito OU baixa manual da
+            // secretaria ("já foram pagos"). Decide pelo estado: se todos os
+            // agendamentos estão confirmados, não é expiração — a tela relê o
+            // carrinho e mostra como confirmados (o cartão já foi estornado).
+            if (apiRes?.status === 409 && (await schedulesArePaid(scheduleIds, userId, accessToken))) {
+                const detail = apiRes?.message || "Os agendamentos já foram pagos. O valor do cartão foi estornado.";
+                return res.status(409).json({ error: "already_paid", reason: "already_paid", message: detail });
             }
 
             if (hasConflict) {
@@ -204,6 +222,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             } catch (_refundErr) {
                 console.error("Falha no estorno de emergência.", _refundErr);
             }
+        }
+
+        // Recalculo sem cache achou o pedido já pago (baixa manual no meio do
+        // caminho): o estorno acima desfez a cobrança; não é erro do sistema.
+        if (error instanceof AlreadyPaidError) {
+            return res.status(409).json({ error: "already_paid", reason: "already_paid", message: error.message });
         }
 
         const message = error instanceof Error ? error.message : "Erro desconhecido";

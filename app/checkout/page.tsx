@@ -22,7 +22,7 @@ const formatPrice = (p: number | string): string => {
     return n.toFixed(2);
 };
 
-const PaymentStatusMessage: React.FC<{ type: 'success' | 'error' | 'expired' | 'refunded_conflict'; message: string; onRetry: () => void; }> = ({ type, message, onRetry }) => {
+const PaymentStatusMessage: React.FC<{ type: 'success' | 'error' | 'expired' | 'refunded_conflict' | 'already_paid'; message: string; onRetry: () => void; }> = ({ type, message, onRetry }) => {
     const router = useRouter();
     const [timeLeft, setTimeLeft] = useState(15);
 
@@ -35,6 +35,15 @@ const config = {
                 <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             ),
             title: 'Pagamento Aprovado!'
+        },
+        already_paid: {
+            destination: '/profile?tab=schedules',
+            buttonText: 'Ver meus agendamentos',
+            colorClass: style.statusSuccess,
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            ),
+            title: 'Agendamento já confirmado'
         },
         expired: {
             destination: '/',
@@ -122,7 +131,7 @@ const CheckoutComponent = () => {
     const router = useRouter();
     
     const [validatingPayment, setValidatingPayment] = useState(false);
-    const [paymentResult, setPaymentResult] = useState<'success' | 'error' | 'expired' | 'refunded_conflict' | null>(null);
+    const [paymentResult, setPaymentResult] = useState<'success' | 'error' | 'expired' | 'refunded_conflict' | 'already_paid' | null>(null);
     const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
     const total = useMemo(() => {
@@ -140,8 +149,10 @@ const CheckoutComponent = () => {
         const isFailure = status === 'failure' || status === 'rejected' || status === 'null';
         const isExpired = status === 'expired';
         const isConflict = status === 'refunded_conflict' || status === 'conflict_refunded';
+        // A secretaria confirmou (baixa manual) enquanto o sócio pagava.
+        const isAlreadyPaid = status === 'already_paid';
 
-        if (isSuccess || isFailure || isExpired || isConflict) {
+        if (isSuccess || isFailure || isExpired || isConflict || isAlreadyPaid) {
             setValidatingPayment(true);
             
             const processPaymentResult = async () => {
@@ -151,6 +162,10 @@ const CheckoutComponent = () => {
                     if (isSuccess) {
                         setPaymentResult('success');
                         clearCart();
+                        router.refresh();
+                    } else if (isAlreadyPaid) {
+                        // O refreshCart acima já tirou do carrinho o que foi confirmado.
+                        setPaymentResult('already_paid');
                         router.refresh();
                     } else if (isExpired) {
                         setPaymentResult('expired');
@@ -213,6 +228,7 @@ const CheckoutComponent = () => {
     const getStatusMessage = () => {
         switch(paymentResult) {
             case 'success': return "Pagamento confirmado. Sua quadra está reservada!";
+            case 'already_paid': return "A secretaria já registrou o pagamento destes horários. Eles estão confirmados e nada foi cobrado no seu cartão (se chegou a ser cobrado, o valor foi estornado).";
             case 'expired': return "O tempo limite da reserva expirou. Se o valor foi cobrado, ele será estornado automaticamente.";
             case 'refunded_conflict': return "Infelizmente, outra pessoa reservou este horário enquanto você finalizava o pagamento. O valor foi estornado integralmente.";
             default: return "Não foi possível confirmar o pagamento. Verifique seus dados e tente novamente.";

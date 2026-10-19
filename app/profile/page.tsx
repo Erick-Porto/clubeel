@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { ProfileForm, PasswordForm } from "../components/Profile/profile-components";
 import style from '../../styles/profile.module.css';
 import Appointments from "../components/Profile/appointments";
+import SocialPendingPaymentBanner from "../components/Social/SocialPendingPaymentBanner";
 import Header from "../components/Common/header";
 import { useCart } from "../../context/CartContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -133,6 +134,8 @@ useEffect(() => {
                 </aside>
 
                 <main className={style.contentCard}>
+                    {/* Reserva social a pagar (inclusive a aprovada no balcão): em qualquer aba. */}
+                    <SocialPendingPaymentBanner />
                     {view === 'profile' && <ProfileForm />}
                     {view === 'password' && <PasswordForm />}
                     {view === 'schedules' && <Appointments />}

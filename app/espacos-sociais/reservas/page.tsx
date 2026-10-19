@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * "Minhas reservas sociais": as reservas de espaço social do sócio, na ordem
- * da Lara (futuras primeiro, depois as passadas), com o estágio de cada uma.
+ * "Minhas reservas sociais": as reservas de espaço social do sócio — pedidas
+ * aqui e feitas pela secretaria no balcão (`origin`) —, na ordem da Lara
+ * (futuras primeiro, depois as passadas), com o estágio de cada uma.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -26,7 +27,7 @@ import { Loading, LoadingScreen } from "../../components/Common/loading";
 import ReplayNotice from "../../components/Replay/ReplayNotice";
 import SocialStageBadge from "../../components/Social/SocialStageBadge";
 import { fetchSocialBookings, type SocialBooking, type SocialFailure } from "../../../services/social-api";
-import { formatBRL, formatDayShort, formatInstant } from "../../../utils/social";
+import { formatBRL, formatDayShort, formatInstant, formatTimeRange } from "../../../utils/social";
 
 export default function SocialBookingsPage() {
     const { status } = useSession();
@@ -88,6 +89,7 @@ export default function SocialBookingsPage() {
                             <span className={style.bookingPlace}>{booking.place.name}</span>
                             <span className={style.bookingMeta}>
                                 {formatDayShort(booking.date)}
+                                {booking.start_time ? ` · ${formatTimeRange(booking.start_time, booking.end_time, booking.ends_next_day)}` : ""}
                                 {booking.event_type ? ` · ${booking.event_type}` : ""}
                                 {booking.place_group ? ` · ${booking.place_group.name}` : ""}
                             </span>
@@ -98,7 +100,12 @@ export default function SocialBookingsPage() {
                             )}
                         </div>
                         <div className={style.bookingSide}>
-                            <SocialStageBadge stage={booking.stage} label={booking.stage_label} />
+                            <div className={style.badgeRow}>
+                                {booking.origin === "secretaria" && (
+                                    <span className={style.originBadge}>Feita pela secretaria</span>
+                                )}
+                                <SocialStageBadge stage={booking.stage} label={booking.stage_label} />
+                            </div>
                             {booking.total > 0 && <span className={style.bookingTotal}>{formatBRL(booking.total)}</span>}
                             <span className={replayStyle.placeCardAction}>
                                 Detalhes <FontAwesomeIcon icon={faChevronRight} />

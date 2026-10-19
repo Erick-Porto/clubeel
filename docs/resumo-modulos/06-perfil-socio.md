@@ -18,6 +18,8 @@
 - Para a capa: `GET schedule/member/{id}` → `data.schedules` → agendamento mais recente → `GET place/{place_id}` → `image || horizontal_image`.
 - Envolto em `<Suspense>` (usa `useSearchParams`).
 
+- No topo do conteúdo (qualquer aba), `SocialPendingPaymentBanner`: uma faixa por reserva social com `can_pay` ("Você tem uma reserva aguardando pagamento até …" → detalhe). Ver [13](13-espacos-sociais.md).
+
 ## `ProfileForm` (Meus Dados)
 
 - Campos da sessão: nome, CPF, matrícula (somente leitura), e-mail e telefone (editáveis após "Editar Dados").

@@ -25,16 +25,15 @@ import Footer from "../../../components/Common/footer";
 import { Loading, LoadingScreen } from "../../../components/Common/loading";
 import ReplayNotice from "../../../components/Replay/ReplayNotice";
 import SocialCalendar from "../../../components/Social/SocialCalendar";
-import SocialBookingForm from "../../../components/Social/SocialBookingForm";
+import SocialBookingForm, { type SocialCatalog } from "../../../components/Social/SocialBookingForm";
 import SocialPlaceFacts from "../../../components/Social/SocialPlaceFacts";
 import SocialFlashBox from "../../../components/Social/SocialFlashBox";
 import {
-    fetchSocialBeverages,
+    fetchSocialCatalog,
     fetchSocialCalendar,
     fetchSocialGroupPlaces,
     fetchSocialGroups,
     fetchSocialLimits,
-    type SocialBeverage,
     type SocialBooking,
     type SocialCalendar as SocialCalendarData,
     type SocialFailure,
@@ -43,6 +42,7 @@ import {
     type SocialPlace,
 } from "../../../../services/social-api";
 import {
+    CONTACT_NOTICE,
     currentClubMonth,
     formatBRL,
     idFromSlug,
@@ -79,7 +79,7 @@ export default function SocialPlacePage() {
     const [groupName, setGroupName] = useState("");
     const [rules, setRules] = useState<string | null>(null);
     const [place, setPlace] = useState<SocialPlace | null>(null);
-    const [beverages, setBeverages] = useState<SocialBeverage[]>([]);
+    const [catalog, setCatalog] = useState<SocialCatalog>({ beverages: [], furniture: [] });
     const [limits, setLimits] = useState<SocialLimits | null>(null);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -104,10 +104,10 @@ export default function SocialPlacePage() {
         if (result.ok) setLimits(result.data);
     }, [groupId]);
 
-    const loadBeverages = useCallback(async () => {
-        const result = await fetchSocialBeverages();
-        // Sem catálogo, a pré-reserva segue sem bebidas.
-        setBeverages(result.ok ? result.data : []);
+    const loadCatalog = useCallback(async () => {
+        // Bebidas e mesas/cadeiras. Catálogo que falhar volta vazio: a
+        // pré-reserva segue sem aqueles itens.
+        setCatalog(await fetchSocialCatalog());
     }, []);
 
     const loadPlace = useCallback(async () => {
@@ -124,7 +124,7 @@ export default function SocialPlacePage() {
             fetchSocialGroupPlaces(groupId),
             fetchSocialGroups(),
             loadLimits(),
-            loadBeverages(),
+            loadCatalog(),
         ]);
 
         if (!placesResult.ok) {
@@ -142,7 +142,7 @@ export default function SocialPlacePage() {
         setRules(placesResult.data.group?.rules ?? listedGroup?.rules ?? null);
         if (!found) setLoadError("Este espaço não está disponível para reserva.");
         setLoading(false);
-    }, [groupId, placeId, loadLimits, loadBeverages]);
+    }, [groupId, placeId, loadLimits, loadCatalog]);
 
     const loadCalendar = useCallback(async () => {
         if (!placeId) return;
@@ -177,7 +177,7 @@ export default function SocialPlacePage() {
     };
 
     const onCreated = (booking: SocialBooking) => {
-        toast.success("Pré-reserva enviada! Agora é com a secretaria.");
+        toast.success(`Pré-reserva enviada! ${CONTACT_NOTICE}`, { autoClose: 9000 });
         router.push(booking.id > 0 ? `/espacos-sociais/reservas/${booking.id}` : "/espacos-sociais/reservas");
     };
 
@@ -200,7 +200,8 @@ export default function SocialPlacePage() {
                 loadLimits();
                 break;
             case "beverage_unavailable":
-                loadBeverages();
+            case "item_limit":
+                loadCatalog();
                 break;
             case "place_not_social":
                 loadPlace();
@@ -299,7 +300,7 @@ export default function SocialPlacePage() {
                             <SocialBookingForm
                                 place={place}
                                 date={selectedDate}
-                                beverages={beverages}
+                                catalog={catalog}
                                 onSaved={onCreated}
                                 onRefusal={onRefusal}
                             />

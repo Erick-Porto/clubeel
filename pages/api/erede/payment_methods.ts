@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 import { eredeAuth, eredeBaseUrl, eredeConfigured } from "../../../utils/erede";
-import { computeAmountInCents, computeSocialBookingCharge } from "../../../utils/lara";
+import { AlreadyPaidError, computeAmountInCents, computeSocialBookingCharge } from "../../../utils/lara";
 import { rateLimit, getClientIp } from "../../../utils/rate-limit";
 import { guardRequest } from "../../../utils/sanitize";
 import { savePendingPayment } from "../../../utils/pending-payments";
@@ -72,15 +72,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 charge = await computeSocialBookingCharge(socialBookingId, accessToken);
             } catch (chargeError: unknown) {
                 // Nada foi cobrado ainda. A tela relê a reserva ao receber o
-                // `reason`, como faria com a recusa da própria Lara.
+                // `reason`, como faria com a recusa da própria Lara. Já paga
+                // (baixa manual da secretaria) tem código próprio: não é erro.
                 const message = chargeError instanceof Error ? chargeError.message : 'Reserva indisponível para pagamento.';
-                return res.status(409).json({ error: message, reason: 'payment_mismatch' });
+                const reason = chargeError instanceof AlreadyPaidError ? 'already_paid' : 'payment_mismatch';
+                return res.status(409).json({ error: message, reason });
             }
             amount = charge.amountCents;
             scheduleIds = [charge.scheduleId];
             social = charge.bookingId;
         } else {
-            amount = await computeAmountInCents(scheduleIds, userId, accessToken);
+            try {
+                amount = await computeAmountInCents(scheduleIds, userId, accessToken);
+            } catch (amountError: unknown) {
+                // Quadra confirmada pela secretaria enquanto o sócio estava no
+                // checkout: não cobra; a tela relê o carrinho.
+                if (amountError instanceof AlreadyPaidError) {
+                    return res.status(409).json({ error: 'already_paid', reason: 'already_paid', message: amountError.message });
+                }
+                throw amountError;
+            }
         }
 
         const access_token = await eredeAuth();

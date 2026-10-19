@@ -12,7 +12,7 @@
 | [pages/api/erede/payment_methods.ts](../../pages/api/erede/payment_methods.ts) | Cria a transação na eRede |
 | [pages/api/success.ts](../../pages/api/success.ts) | Verifica a transação e confirma o agendamento na Lara (ou estorna) |
 | [utils/erede.ts](../../utils/erede.ts) | `eredeAuth`, `eredeBaseUrl`, `eredeConfigured`, `getEredeTransaction` |
-| [utils/lara.ts](../../utils/lara.ts) | `computeAmountInCents` (valor autoritativo das quadras) e `computeSocialBookingCharge` (espaço social) |
+| [utils/lara.ts](../../utils/lara.ts) | `computeAmountInCents` (valor autoritativo das quadras), `computeSocialBookingCharge` (espaço social), `AlreadyPaidError`, `schedulesArePaid`/`socialBookingIsPaid` (checagem de baixa manual) |
 | [utils/pending-payments.ts](../../utils/pending-payments.ts) | Cache em memória `reference → valor validado` (TTL 30 min, consumo único) |
 | [utils/bank-identifier.ts](../../utils/bank-identifier.ts) | `identifyBank(numero)` → bandeira + banco (por BIN) para tematizar o cartão |
 
@@ -54,13 +54,22 @@ Estorno: `POST {EREDE}/transactions/{tid}/refunds {amount}`; falha no estorno é
 ### `computeAmountInCents(scheduleIds, userId, sessionToken)`
 `GET {LARA}/api/schedule/member/{userId}/` (Bearer app + Session) → extrai array → **todo id pedido deve existir** entre os agendamentos do sócio, todos com status `'3'` e `price > 0` → soma em reais → `Math.round(×100)`. Qualquer violação lança erro (→ 500 no handler).
 
+## "Já pago" — baixa manual da secretaria (quadras e espaços sociais)
+
+A secretaria pode marcar como pago, na Lara, um agendamento recebido fora da plataforma (dinheiro, Pix ao clube, maquininha, transferência; `payment_method` `manual_cash`/`manual_pix`/`manual_card`/`manual_transfer`/`manual_other`) — inclusive enquanto o sócio está no checkout. Nesse caso o `POST schedule/payment` responde **409** ("Um ou mais agendamentos já foram pagos."), **sem `reason`**. Regra: **não cobrar, não tratar como falha do cartão, reler o estado**.
+
+- **Antes de cobrar** (`payment_methods`): `computeAmountInCents` lança `AlreadyPaidError` se algum agendamento pedido já está com status 1/2; `computeSocialBookingCharge` lança se a reserva tem `payment` ou está `confirmed`. → **409** `{error/reason: 'already_paid'}` e nada vai à eRede.
+- **Depois de cobrar** (`success`): se a Lara recusar com **409**, o cartão é estornado como sempre e o servidor confere **pelo estado** (não pelo texto): quadras → `schedulesArePaid` (todos os pedidos com status 1/2); social sem `reason` → `socialBookingIsPaid`. Se sim → **409** `{error/reason: 'already_paid'}`. No recálculo sem cache, `AlreadyPaidError` também vira `already_paid` (depois do estorno de emergência).
+- **Cliente — quadras**: `already_paid` (de qualquer um dos dois) → `/checkout?status=already_paid` → `refreshCart()` e tela "Agendamento já confirmado" (nada cobrado; se foi, estornado) → `/profile?tab=schedules`. O `CartContext` não redireciona `/checkout` vazio quando `status=already_paid` (como já fazia com `success`).
+- **Cliente — social**: `onSocialResult({type:'refused', reason:'already_paid'})` → flash explicativo + releitura (virá `confirmed`, `payment.manual`). Além disso, o detalhe **relê a reserva antes de abrir o checkout**.
+
 ## Pagamento de reserva de espaço social
 
 Mesmo pipeline de servidor, disparado pelo detalhe da reserva (`/espacos-sociais/reservas/[id]`) com `<CheckoutPayment socialBookingId onSocialResult />`:
 
 - O cliente manda `socialBookingId` em vez de `scheduleIds` e **não** revalida horários (não há hold; o prazo é `payment_due_at`).
-- `payment_methods`: `computeSocialBookingCharge(id, Session)` → `GET {LARA}/api/social/bookings/{id}` com o Session do sócio (reserva de outro sócio = 404); exige `can_pay === true` e `stage === 'awaiting_payment'`; valor = `round(total × 100)`; `scheduleIds = [schedule_id]` (os do corpo são ignorados — nunca mistura com quadras). Falha aqui → **409** `{reason: 'payment_mismatch'}` sem cobrar nada. O `savePendingPayment` guarda `socialBookingId`.
-- `success`: igual às quadras (eRede por `tid`, compara valor, estorna se divergir); o fallback sem cache recalcula pela reserva. `POST schedule/payment` vai com `schedule_ids: [schedule_id]` e `paid_amount` = total. Se a Lara recusar → **estorno** + **409** `{error: reason, reason, message}` (ex.: `payment_mismatch` — fora do estágio/prazo ou valor ≠ total).
+- `payment_methods`: `computeSocialBookingCharge(id, Session)` → `GET {LARA}/api/social/bookings/{id}` com o Session do sócio (reserva de outro sócio = 404); exige `can_pay === true` e `stage === 'awaiting_payment'`; valor = `round(total × 100)`; `scheduleIds = [schedule_id]` (os do corpo são ignorados — nunca mistura com quadras). Falha aqui → **409** `{reason: 'payment_mismatch'}` (ou `already_paid`, se a reserva já tem `payment`) sem cobrar nada. O `savePendingPayment` guarda `socialBookingId`.
+- `success`: igual às quadras (eRede por `tid`, compara valor, estorna se divergir); o fallback sem cache recalcula pela reserva. `POST schedule/payment` vai com `schedule_ids: [schedule_id]` e `paid_amount` = total. Se a Lara recusar → **estorno** + **409** `{error: reason, reason, message}` (ex.: `payment_mismatch` — fora do estágio/prazo ou valor ≠ total; `already_paid` — ver acima).
 - O componente não navega: entrega `{type: 'success'|'refused'|'error'}` a `onSocialResult`, e a tela relê a reserva.
 
 ## Página `/checkout`

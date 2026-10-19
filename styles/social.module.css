@@ -841,3 +841,126 @@
     align-items: flex-start;
   }
 }
+
+/* ------------------------------------------- Horário, erros apontados, mesas */
+
+.timeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.timeRow input {
+  width: auto;
+  min-width: 130px;
+}
+
+.timeEnd {
+  font-size: 0.92rem;
+  color: #555;
+}
+
+.timeEnd strong {
+  color: var(--grena);
+}
+
+/* Campo apontado por `invalid_time`. */
+.fieldInvalid input {
+  border-color: #b3261e;
+  background: #fff4f3;
+}
+
+/* Item apontado por `item_limit`. */
+.rowError {
+  border-radius: 10px;
+  outline: 2px solid rgba(179, 38, 30, 0.45);
+  outline-offset: 4px;
+}
+
+.summaryGroupLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+  padding-top: 4px;
+}
+
+/* -------------------------------------------- Origem e pagamento registrado */
+
+.originBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 4, 0, 0.35);
+  color: var(--grena);
+  background: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.paymentBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eef8f1;
+  color: #1e5a33;
+  font-size: 0.92rem;
+}
+
+.paymentBox strong {
+  color: #1e7a3e;
+}
+
+/* ------------------------------------- Aviso de pagamento pendente (perfil) */
+
+.pendingBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--grena);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(125, 4, 0, 0.25);
+}
+
+.pendingBanner p {
+  line-height: 1.45;
+}
+
+.pendingBannerAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--grena);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pendingList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}

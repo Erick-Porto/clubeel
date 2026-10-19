@@ -56,6 +56,7 @@ const AUTHENTICATED_ENDPOINTS: RegExp[] = [
     /^social\/groups\/\d+\/places$/,
     /^social\/availability$/,
     /^social\/beverages$/,
+    /^social\/furniture$/,
     /^social\/limits$/,
     /^social\/bookings$/,
     /^social\/bookings\/\d+$/,

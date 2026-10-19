@@ -35,8 +35,9 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 
 - **Carrinho de quadras × reserva social**: o `CartContext` trata como carrinho todo agendamento do sócio com `status_id === 3` em `schedule/member/{id}`. Se o `schedule` de uma reserva social aparecer ali com status 3, ele entraria no carrinho/checkout de quadras. Confirmar o status que a Lara usa para o agendamento da reserva social (ou se ela o exclui dessa listagem).
 - **Editar convidados exige redigitar CPFs**: a Lara devolve CPFs mascarados e o `PUT .../guests` substitui a lista inteira com `{name, cpf}`. Para não obrigar o sócio a redigitar, a Lara precisaria aceitar manter um convidado pelo `id`.
-- **Formato de `GET social/beverages`** não estava no contrato: o front aceita `{id, name, unit, price|unit_price}`.
 - `DELETE social/bookings/{id}` é enviado sem corpo (sem motivo da desistência).
+- **"Já pago" sem código**: o 409 de `schedule/payment` para baixa manual não traz `reason`. O servidor decide relendo o estado (`schedulesArePaid` / `socialBookingIsPaid`), só quando o status é 409. Se a Lara passar a mandar um código, trocar a releitura por ele.
+- **Forma de pagamento das quadras**: `schedule/member/{id}` não traz `payment_method`; se algum dia o site exibir, os da secretaria começam com `manual_` (ver [05](05-checkout-pagamento.md)).
 
 ## Fuso horário (cuidado)
 

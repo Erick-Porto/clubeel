@@ -308,6 +308,11 @@ const handlePayment = async () => {
                 // router.refresh()
                 router.push('/checkout?status=success');
             } 
+            else if (saveResult.error === 'already_paid') {
+                // A secretaria confirmou os agendamentos no balcão enquanto o
+                // sócio estava aqui: o servidor já estornou o cartão.
+                router.push('/checkout?status=already_paid');
+            }
             else if (saveOrderRes.status === 409 || saveResult.error === 'expired') {
                 setStatus({ type: 'error', msg: 'Reserva expirada. O valor foi estornado.' });
                 router.push('/checkout?status=expired');
@@ -323,6 +328,9 @@ const handlePayment = async () => {
             router.push('/checkout?status=error');
         }
 
+      } else if (transactionData.reason === 'already_paid') {
+        // Já confirmado pela secretaria antes de cobrar: nada foi cobrado.
+        router.push('/checkout?status=already_paid');
       } else {
         setStatus({ type: 'error', msg: transactionData.error || transactionData.returnMessage || 'Erro na transação.' });
       }

@@ -1,13 +1,13 @@
 /**
  * Formatação e textos dos espaços sociais.
  *
- * Nada aqui é regra: disponibilidade, preço, desconto, prazo e limite vêm da
- * Lara. Estas funções só escrevem na tela o que ela respondeu — e o
- * `estimateTotal` é só uma ESTIMATIVA para a pré-reserva (o valor oficial é o
- * `total` da resposta).
+ * Nada aqui é regra: disponibilidade, preço, desconto, prazo, limite, horário
+ * e mesas/cadeiras vêm da Lara. Estas funções só escrevem na tela o que ela
+ * respondeu — e as `estimate*` são só ESTIMATIVAS para a pré-reserva (os
+ * oficiais são `total`, `end_time`, `tables_total`/`chairs_total` da resposta).
  */
 
-import type { SocialFailure, SocialPlace, SocialBeverage } from "../services/social-api";
+import type { SocialCatalogItem, SocialFailure, SocialPlace } from "../services/social-api";
 
 const CLUB_TIME_ZONE = "America/Sao_Paulo";
 
@@ -124,15 +124,78 @@ export function maskCpf(value: string): string {
  * Lara devolve.
  */
 export function estimateTotal(
-    place: SocialPlace,
+    place: Pick<SocialPlace, "price" | "extra_guest_price">,
     extraGuests: number,
-    beverages: SocialBeverage[],
+    items: SocialCatalogItem[],
     quantities: Record<number, number>
 ): { base: number; extras: number; items: number; total: number } {
     const base = place.price;
     const extras = extraGuests * place.extra_guest_price;
-    const items = beverages.reduce((sum, beverage) => sum + (quantities[beverage.id] ?? 0) * beverage.price, 0);
-    return { base, extras, items, total: base + extras + items };
+    const itemsTotal = items.reduce((sum, item) => sum + (quantities[item.id] ?? 0) * item.price, 0);
+    return { base, extras, items: itemsTotal, total: base + extras + itemsTotal };
+}
+
+/** Estimativa de mesas e cadeiras: base + Σ quantidade × por unidade. */
+export function estimateFurniture(
+    baseTables: number,
+    baseChairs: number,
+    items: SocialCatalogItem[],
+    quantities: Record<number, number>
+): { tables: number; chairs: number } {
+    return items.reduce(
+        (acc, item) => {
+            const quantity = quantities[item.id] ?? 0;
+            return {
+                tables: acc.tables + quantity * item.tables_per_unit,
+                chairs: acc.chairs + quantity * item.chairs_per_unit,
+            };
+        },
+        { tables: baseTables, chairs: baseChairs }
+    );
+}
+
+/** Item de mesa/cadeira (o resto do catálogo é bebida). */
+export function isFurniture(category: string): boolean {
+    return category === "mobiliario";
+}
+
+/**
+ * Fim ESTIMADO do evento (início + duração), só para mostrar ao lado do campo.
+ * O oficial é o `end_time` da reserva.
+ */
+export function estimateEndTime(start: string, hours: number | null): { end: string; nextDay: boolean } | null {
+    const match = /^(\d{2}):(\d{2})$/.exec(start);
+    if (!match || !hours || hours <= 0) return null;
+    const minutes = Number(match[1]) * 60 + Number(match[2]) + Math.round(hours * 60);
+    const inDay = minutes % (24 * 60);
+    const end = `${String(Math.floor(inDay / 60)).padStart(2, "0")}:${String(inDay % 60).padStart(2, "0")}`;
+    return { end, nextDay: minutes >= 24 * 60 };
+}
+
+/** "20:00 às 02:00 (dia seguinte)". */
+export function formatTimeRange(start: string | null, end: string | null, nextDay: boolean): string {
+    if (!start) return "";
+    if (!end) return `a partir das ${start}`;
+    return `${start} às ${end}${nextDay ? " (dia seguinte)" : ""}`;
+}
+
+/** "Evento de 6 horas · início entre 10:00 e 20:00" — `null` se o espaço não tem horário. */
+export function describeEventWindow(
+    place: Pick<SocialPlace, "event_duration_hours" | "event_earliest_start" | "event_latest_start">
+): string | null {
+    if (!place.event_duration_hours) return null;
+    const hours = place.event_duration_hours;
+    const duration = `Evento de ${hours} hora${hours === 1 ? "" : "s"}`;
+    const { event_earliest_start: from, event_latest_start: to } = place;
+    if (from && to) return `${duration} · início entre ${from} e ${to}`;
+    if (from) return `${duration} · início a partir das ${from}`;
+    if (to) return `${duration} · início até as ${to}`;
+    return duration;
+}
+
+/** "13 mesas e 52 cadeiras". */
+export function formatFurnitureCount(tables: number, chairs: number): string {
+    return `${tables} mesa${tables === 1 ? "" : "s"} e ${chairs} cadeira${chairs === 1 ? "" : "s"}`;
 }
 
 /** Slug `<nome>-<id>`, no mesmo formato das outras telas (só o id importa). */
@@ -162,7 +225,10 @@ const REASON_TITLES: Record<string, string> = {
     out_of_window: "Essa data está fora do período de reserva",
     limit_reached: "Você atingiu o limite de reservas deste grupo",
     over_capacity: "Passou do limite de pessoas ou convidados",
-    beverage_unavailable: "Uma das bebidas saiu do catálogo",
+    beverage_unavailable: "Um dos itens saiu do catálogo",
+    item_limit: "Quantidade acima do permitido para um item",
+    invalid_time: "Confira o horário de início",
+    already_paid: "Esta reserva já está paga",
     invalid_guest: "Confira a lista de convidados",
     guests_locked: "A lista de convidados já está fechada",
     invalid_stage: "Essa ação não cabe mais nesta reserva",
@@ -180,6 +246,9 @@ const REASON_FALLBACKS: Record<string, string> = {
     guests_locked: "Para alterar a lista agora, fale com a secretaria.",
     contract_closed: "O contrato já foi fechado com a secretaria.",
     invalid_stage: "A reserva mudou de situação e os dados foram atualizados.",
+    beverage_unavailable: "Atualizamos o catálogo: confira as bebidas e as mesas e cadeiras antes de enviar de novo.",
+    already_paid:
+        "O pagamento já foi registrado (pela secretaria ou por outro caminho). Nada foi cobrado de novo — se o cartão chegou a ser cobrado, o valor foi estornado.",
     payment_mismatch: "O prazo ou o valor desta reserva mudou. Atualizamos os dados — confira antes de tentar de novo.",
     not_owner: "Ela pode ter sido removida ou não pertence à sua conta.",
 };
@@ -197,10 +266,31 @@ export interface SocialFlash {
     text: string;
 }
 
+/**
+ * Complemento montado com o `context` da recusa (limite do item, faixa de
+ * horário) — dado da Lara, só colocado em frase.
+ */
+function contextSentence(failure: SocialFailure): string {
+    const context = failure.context;
+    if (failure.reason === "item_limit" && context.max_quantity != null) {
+        return `Máximo de ${context.max_quantity} por reserva.`;
+    }
+    if (failure.reason === "invalid_time") {
+        const from = context.earliest_start ? String(context.earliest_start).slice(0, 5) : null;
+        const to = context.latest_start ? String(context.latest_start).slice(0, 5) : null;
+        if (from && to) return `O início precisa ficar entre ${from} e ${to}.`;
+        if (from) return `O início precisa ser a partir das ${from}.`;
+        if (to) return `O início precisa ser até as ${to}.`;
+    }
+    return "";
+}
+
 export function refusalFlash(failure: SocialFailure, fallbackTitle = "Não deu certo"): SocialFlash {
     const reason = failure.reason ?? "";
     const title = REASON_TITLES[reason] ?? fallbackTitle;
-    const text = failure.error && failure.kind !== "server" ? failure.error : REASON_FALLBACKS[reason] ?? failure.error;
+    const base = failure.error && failure.kind !== "server" ? failure.error : REASON_FALLBACKS[reason] ?? failure.error;
+    const extra = contextSentence(failure);
+    const text = extra && !base?.includes(extra) ? `${base ?? ""} ${extra}` : base;
     const hint = SECRETARY_REASONS.has(reason) ? ` ${SECRETARY_HINT}` : "";
     return { tone: failure.kind === "rule" ? "neutral" : "alert", title, text: `${text ?? ""}${hint}`.trim() };
 }
@@ -225,6 +315,9 @@ export function stageTone(stage: string): "pending" | "action" | "ok" | "muted" 
             return "muted";
     }
 }
+
+/** Aviso de `requested` (e do pós-criação): prazo de contato da secretaria. */
+export const CONTACT_NOTICE = "A secretaria do clube vai entrar em contato em até 2 dias úteis para o contrato.";
 
 /** Frase de cada estágio, como a tabela do contrato pede. */
 export function stageSentence(stage: string): string {

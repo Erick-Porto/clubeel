@@ -6,8 +6,8 @@
  * sócio é sempre o dono do Session — nenhum corpo aqui leva id, CPF ou
  * matrícula de sócio.
  *
- * O front não decide nada. Disponibilidade, preço, desconto, prazo, limite e
- * capacidade vêm da Lara; este arquivo só dá forma às respostas. Em recusa de
+ * O front não decide nada. Disponibilidade, preço, desconto, prazo, limite,
+ * capacidade, horário de término e mesas/cadeiras vêm da Lara; este arquivo só dá forma às respostas. Em recusa de
  * regra, o comportamento da tela sai do `reason` (código estável) — nunca do
  * texto.
  *
@@ -51,6 +51,17 @@ export interface SocialPlace {
     /** Quantos convidados extras dá para contratar, no máximo. */
     extra_guests: number;
     extra_guest_price: number;
+    /** Mesas e cadeiras incluídas no preço. */
+    base_tables: number;
+    base_chairs: number;
+    /**
+     * Duração fixa do evento em horas. `null` = espaço sem horário: não se
+     * pede início. Com valor, o início é obrigatório na pré-reserva.
+     */
+    event_duration_hours: number | null;
+    /** Faixa permitida para o início ("HH:MM"); `null` = sem limite. */
+    event_earliest_start: string | null;
+    event_latest_start: string | null;
 }
 
 export interface SocialGroupPlaces {
@@ -74,11 +85,23 @@ export interface SocialCalendar {
     days: SocialCalendarDay[];
 }
 
-export interface SocialBeverage {
+/**
+ * Item do catálogo: bebida (`GET social/beverages`) ou mesa/cadeira/jogo
+ * (`GET social/furniture`). Os dois vão no mesmo `items` do pedido, por
+ * `item_id`; distinguem-se pela `category`.
+ */
+export interface SocialCatalogItem {
     id: number;
+    /** "bebida" ou "mobiliario". */
+    category: string;
     name: string;
     unit: string | null;
     price: number;
+    /** Quantas mesas/cadeiras CADA unidade acrescenta (0 nas bebidas). */
+    tables_per_unit: number;
+    chairs_per_unit: number;
+    /** Máximo por reserva; `null` = sem limite. */
+    max_quantity: number | null;
 }
 
 /** Cada limite é `null` quando o grupo não define. */
@@ -96,12 +119,30 @@ export type SocialStage =
     | "expired";
 
 export interface SocialBookingItem {
-    beverage_id: number;
+    item_id: number;
+    /** "bebida" ou "mobiliario". */
+    category: string;
     name: string;
     unit: string | null;
+    /** Preço contratado (congelado na pré-reserva). */
     unit_price: number;
     quantity: number;
     subtotal: number;
+    tables_per_unit: number;
+    chairs_per_unit: number;
+}
+
+/** Pagamento registrado — pelo site (Rede) ou baixa manual da secretaria. */
+export interface SocialPayment {
+    paid_amount: number;
+    paid_at: string | null;
+    /** "credit"/"debit" (Rede, pelo site) ou "manual_*" (secretaria). */
+    method: string;
+    /** Rótulo pronto em português ("Pix direto ao clube"). */
+    method_label: string;
+    /** true = baixa manual: pago fora da plataforma. */
+    manual: boolean;
+    refunded_amount: number;
 }
 
 export interface SocialGuest {
@@ -117,7 +158,18 @@ export interface SocialBooking {
     schedule_id: number;
     stage: SocialStage | string;
     stage_label: string;
+    /**
+     * "site" (pedida aqui) ou "secretaria" (feita no balcão, em nome do sócio).
+     * As da secretaria podem já começar em `awaiting_payment` ou `confirmed`.
+     */
+    origin: string;
     date: string;
+    /** "HH:MM"; `null` quando o espaço não tem duração. */
+    start_time: string | null;
+    end_time: string | null;
+    duration_hours: number | null;
+    /** O fim cai depois da meia-noite. */
+    ends_next_day: boolean;
     place: { id: number; name: string; capacity: number; max_guests: number };
     place_group: { id: number; name: string } | null;
     event_type: string | null;
@@ -128,12 +180,20 @@ export interface SocialBooking {
     extra_guests: number;
     extra_guest_price: number;
     extras_total: number;
+    /** Base de mesas/cadeiras copiada do espaço na pré-reserva. */
+    base_tables: number;
+    base_chairs: number;
+    /** Base + mobiliário contratado — os números oficiais. */
+    tables_total: number;
+    chairs_total: number;
     items: SocialBookingItem[];
     items_total: number;
     discount: number;
     /** Valor a cobrar. Não somar no front. */
     total: number;
     payment_due_at: string | null;
+    /** Pagamento registrado; `null` enquanto não há. Com ele, nunca cobrar de novo. */
+    payment: SocialPayment | null;
     /** `max_guests` + extras contratados. */
     guest_limit: number;
     guests: SocialGuest[];
@@ -153,11 +213,14 @@ export interface SocialBooking {
 export interface SocialBookingRequest {
     place_id: number;
     date: string;
+    /** "HH:MM" — obrigatório quando o espaço tem `event_duration_hours`. */
+    start_time?: string;
     event_type?: string;
     expected_guests?: number;
     extra_guests?: number;
     notes?: string;
-    items?: Array<{ beverage_id: number; quantity: number }>;
+    /** Bebidas e mobiliário juntos. */
+    items?: Array<{ item_id: number; quantity: number }>;
     guests?: Array<{ name: string; cpf: string }>;
 }
 
@@ -168,11 +231,12 @@ export interface SocialBookingRequest {
  * `null` limpa o campo.
  */
 export interface SocialBookingUpdate {
+    start_time?: string;
     event_type?: string | null;
     expected_guests?: number | null;
     extra_guests?: number;
     notes?: string | null;
-    items?: Array<{ beverage_id: number; quantity: number }>;
+    items?: Array<{ item_id: number; quantity: number }>;
     guests?: Array<{ name: string; cpf: string }>;
 }
 
@@ -186,6 +250,8 @@ export type SocialReason =
     | "limit_reached"
     | "over_capacity"
     | "beverage_unavailable"
+    | "item_limit"
+    | "invalid_time"
     | "invalid_guest"
     | "guests_locked"
     | "invalid_stage"
@@ -207,7 +273,7 @@ export interface SocialFailure {
     reason: SocialReason | string | null;
     /** Texto que a Lara mandou (ou um genérico). */
     error: string;
-    /** `context` da recusa (`limit`, `index`...). */
+    /** `context` da recusa (`limit`, `index`, `item_id`, `max_quantity`, `earliest_start`...). */
     context: Record<string, unknown>;
     /** Erros de campo do Laravel (`errors`), quando `kind === 'validation'`. */
     fieldErrors: Record<string, string[]>;
@@ -287,7 +353,18 @@ function toPlace(raw: unknown): SocialPlace {
         max_guests: toNumber(obj.max_guests),
         extra_guests: toNumber(obj.extra_guests),
         extra_guest_price: toNumber(obj.extra_guest_price),
+        base_tables: toNumber(obj.base_tables),
+        base_chairs: toNumber(obj.base_chairs),
+        event_duration_hours: toNumberOrNull(obj.event_duration_hours),
+        event_earliest_start: toTimeOrNull(obj.event_earliest_start),
+        event_latest_start: toTimeOrNull(obj.event_latest_start),
     };
+}
+
+/** "HH:MM" (corta segundos, se vierem); `null` se vazio ou mal formado. */
+function toTimeOrNull(value: unknown): string | null {
+    const match = /^(\d{1,2}):(\d{2})/.exec(String(value ?? ""));
+    return match ? `${match[1].padStart(2, "0")}:${match[2]}` : null;
 }
 
 function toCalendar(raw: unknown): SocialCalendar {
@@ -303,14 +380,30 @@ function toCalendar(raw: unknown): SocialCalendar {
     };
 }
 
-function toBeverage(raw: unknown): SocialBeverage {
+function toCatalogItem(raw: unknown, fallbackCategory: string): SocialCatalogItem {
     const obj = asObj(raw);
     return {
         id: toNumber(obj.id),
+        category: String(obj.category ?? fallbackCategory),
         name: String(obj.name ?? ""),
         unit: toStringOrNull(obj.unit),
-        // O catálogo pode chamar o preço de `price` ou `unit_price`.
         price: toNumber(obj.price ?? obj.unit_price),
+        tables_per_unit: toNumber(obj.tables_per_unit),
+        chairs_per_unit: toNumber(obj.chairs_per_unit),
+        max_quantity: toNumberOrNull(obj.max_quantity),
+    };
+}
+
+function toPayment(raw: unknown): SocialPayment | null {
+    if (!raw || typeof raw !== "object") return null;
+    const obj = asObj(raw);
+    return {
+        paid_amount: toNumber(obj.paid_amount),
+        paid_at: toStringOrNull(obj.paid_at),
+        method: String(obj.method ?? ""),
+        method_label: String(obj.method_label ?? obj.method ?? ""),
+        manual: obj.manual === true,
+        refunded_amount: toNumber(obj.refunded_amount),
     };
 }
 
@@ -345,7 +438,12 @@ function toBooking(raw: unknown): SocialBooking {
         schedule_id: toNumber(obj.schedule_id),
         stage: String(obj.stage ?? ""),
         stage_label: String(obj.stage_label ?? ""),
+        origin: String(obj.origin ?? "site"),
         date: String(obj.date ?? ""),
+        start_time: toTimeOrNull(obj.start_time),
+        end_time: toTimeOrNull(obj.end_time),
+        duration_hours: toNumberOrNull(obj.duration_hours),
+        ends_next_day: obj.ends_next_day === true,
         place: {
             id: toNumber(place.id),
             name: String(place.name ?? ""),
@@ -360,21 +458,30 @@ function toBooking(raw: unknown): SocialBooking {
         extra_guests: toNumber(obj.extra_guests),
         extra_guest_price: toNumber(obj.extra_guest_price),
         extras_total: toNumber(obj.extras_total),
+        base_tables: toNumber(obj.base_tables),
+        base_chairs: toNumber(obj.base_chairs),
+        tables_total: toNumber(obj.tables_total),
+        chairs_total: toNumber(obj.chairs_total),
         items: listOf(obj.items, "items").map((item) => {
             const i = asObj(item);
             return {
-                beverage_id: toNumber(i.beverage_id),
+                // `beverage_id` é o nome antigo do mesmo id.
+                item_id: toNumber(i.item_id ?? i.beverage_id),
+                category: String(i.category ?? "bebida"),
                 name: String(i.name ?? ""),
                 unit: toStringOrNull(i.unit),
                 unit_price: toNumber(i.unit_price),
                 quantity: toNumber(i.quantity),
                 subtotal: toNumber(i.subtotal),
+                tables_per_unit: toNumber(i.tables_per_unit),
+                chairs_per_unit: toNumber(i.chairs_per_unit),
             };
         }),
         items_total: toNumber(obj.items_total),
         discount: toNumber(obj.discount),
         total: toNumber(obj.total),
         payment_due_at: toStringOrNull(obj.payment_due_at),
+        payment: toPayment(obj.payment),
         guest_limit: toNumber(obj.guest_limit),
         guests: listOf(obj.guests, "guests").map(toGuest),
         guests_editable_until: toStringOrNull(obj.guests_editable_until),
@@ -480,10 +587,35 @@ export async function fetchSocialCalendar(placeId: number, month: string): Promi
     return { ok: true, status: response.status, data: toCalendar(response.data) };
 }
 
-export async function fetchSocialBeverages(): Promise<SocialResult<SocialBeverage[]>> {
+/** Bebidas ativas. */
+export async function fetchSocialBeverages(): Promise<SocialResult<SocialCatalogItem[]>> {
     const response = await API_CONSUME("GET", "social/beverages");
     if (!response.ok) return failure(response.status, response.data, response.message);
-    return { ok: true, status: response.status, data: listOf(response.data, "beverages").map(toBeverage) };
+    return {
+        ok: true,
+        status: response.status,
+        data: listOf(response.data, "beverages").map((item) => toCatalogItem(item, "bebida")),
+    };
+}
+
+/** Mesas, cadeiras e jogos completos adicionais ativos. */
+export async function fetchSocialFurniture(): Promise<SocialResult<SocialCatalogItem[]>> {
+    const response = await API_CONSUME("GET", "social/furniture");
+    if (!response.ok) return failure(response.status, response.data, response.message);
+    return {
+        ok: true,
+        status: response.status,
+        data: listOf(response.data, "furniture").map((item) => toCatalogItem(item, "mobiliario")),
+    };
+}
+
+/**
+ * Os dois catálogos de uma vez. Um catálogo que falhar volta vazio: a
+ * pré-reserva segue sem aqueles itens em vez de travar.
+ */
+export async function fetchSocialCatalog(): Promise<{ beverages: SocialCatalogItem[]; furniture: SocialCatalogItem[] }> {
+    const [beverages, furniture] = await Promise.all([fetchSocialBeverages(), fetchSocialFurniture()]);
+    return { beverages: beverages.ok ? beverages.data : [], furniture: furniture.ok ? furniture.data : [] };
 }
 
 export async function fetchSocialLimits(groupId: number): Promise<SocialResult<SocialLimits>> {
@@ -499,7 +631,7 @@ export async function createSocialBooking(request: SocialBookingRequest): Promis
     return { ok: true, status: response.status, data: toBooking(response.data) };
 }
 
-/** Futuras primeiro, depois as passadas — a ordem é a da Lara. */
+/** Do site e da secretaria; futuras primeiro, depois as passadas — a ordem é a da Lara. */
 export async function fetchSocialBookings(): Promise<SocialResult<SocialBooking[]>> {
     const response = await API_CONSUME("GET", "social/bookings");
     if (!response.ok) return failure(response.status, response.data, response.message);
