@@ -9,7 +9,7 @@
 | [pages/api/auth/[...nextauth].ts](../../pages/api/auth/[...nextauth].ts) | `authOptions` (exportado e reutilizado por outras rotas via `getServerSession`) |
 | [types/next-auth.d.ts](../../types/next-auth.d.ts) | Augment: `Session.accessToken`, `user.{id, cpf, title, telephone, born_date}`; mesmo em `User` e `JWT` |
 | [app/components/provider.tsx](../../app/components/provider.tsx) | `NextAuthProvider` = `SessionProvider` |
-| [app/login/page.tsx](../../app/login/page.tsx) | Página `/login` (sidebar + carrossel) |
+| [app/login/page.tsx](../../app/login/page.tsx) | Página `/login` (painel + carrossel; no celular o carrossel vira fundo) |
 | [app/components/Common/login-aside.tsx](../../app/components/Common/login-aside.tsx) | `AuthSidebar`: formulários de login e cadastro, tela de "manutenção" |
 | [app/forgot-password/page.tsx](../../app/forgot-password/page.tsx) | Recuperação de senha em 2 passos |
 | [app/components/Auth/TokenValidator.tsx](../../app/components/Auth/TokenValidator.tsx) | Revalida o token da Lara periodicamente e faz signOut se inválido |
@@ -36,7 +36,8 @@
   - Matrícula normalizada no blur: `^\d{5}$` (associado), `^\d{4}FCN$` (funcionário), `^\d{5}ESC$` (escolinha); outro formato → erro.
   - Chama `API_CONSUME('POST','register', {}, {title, cpf, birthDate: 'AAAA-MM-DD', password: SHA256})` **via proxy** (`register` é endpoint público na allowlist) e em seguida faz `signIn`.
 - `?maintenance=true` na URL força a tela de manutenção.
-- Há um bloco comentado com link "Ver os replays das quadras" (entrada pública para `/replay` a partir do login).
+- **Botão RePET**: abaixo do formulário (login e cadastro; some na tela de manutenção) há um botão grande, na cor do módulo replay, "Não precisa de conta · RePET · Assista aos replays das quadras" → `/replay`. É a entrada pública para a galeria a partir do login (quem abre a raiz sem sessão cai aqui pelo middleware).
+- **Visual**: no desktop, painel à esquerda + carrossel de fotos à direita. No celular (≤900px) o carrossel fica **fixo ao fundo** e o painel vira um cartão translúcido por cima (`auth.module.css` + `login-side-bar.module.css`).
 
 `/login` (`app/login/page.tsx`): se já autenticado, redireciona para `safeCallbackUrl(callbackUrl)`. Envolto em `<Suspense>` porque usa `useSearchParams` (sem isso o build quebra).
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { faBan, faCheck, faChevronLeft, faChevronRight, faCircleCheck, faLock, faMinus } from "@fortawesome/free-solid-svg-icons";
 import style from "../../../styles/social.module.css";
 import { Loading } from "../Common/loading";
+import { Pill } from "../UI/ui";
 import type { SocialCalendar as SocialCalendarData } from "../../../services/social-api";
 import { firstWeekday, formatDayLong, formatMonth } from "../../../utils/social";
 
@@ -115,19 +116,11 @@ export default function SocialCalendar({
             )}
 
             <div className={style.legend}>
-                <span>
-                    <i className={`${style.legendSwatch} ${style.dayAvailable}`} /> Disponível
-                </span>
-                <span>
-                    <i className={`${style.legendSwatch} ${style.dayReserved}`} /> Ocupada
-                </span>
-                <span>
-                    <i className={`${style.legendSwatch} ${style.dayBlocked}`} /> Bloqueada pelo clube
-                </span>
-                <span>
-                    <i className={`${style.legendSwatch} ${style.dayOut}`} style={{ border: "1px solid #ddd" }} /> Fora
-                    do período
-                </span>
+                <Pill kind="ok" icon={faCheck}>Disponível</Pill>
+                <Pill kind="off" icon={faBan}>Ocupada</Pill>
+                <Pill kind="danger" icon={faLock}>Bloqueada pelo clube</Pill>
+                <Pill kind="off" icon={faMinus}>Fora do período</Pill>
+                <Pill kind="info" icon={faCircleCheck}>Escolhida</Pill>
             </div>
         </div>
     );

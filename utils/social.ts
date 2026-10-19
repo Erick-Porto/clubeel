@@ -302,8 +302,12 @@ export function refusedGuestIndex(failure: SocialFailure): number | null {
     return Number.isInteger(index) && index >= 0 ? index : null;
 }
 
-/** Cores do selo de estágio. Estágio desconhecido cai no neutro. */
-export function stageTone(stage: string): "pending" | "action" | "ok" | "muted" {
+/**
+ * Cor (e ícone) do selo de estágio — só a aparência; o texto é o `stage_label`
+ * da Lara. Recusada/cancelada usam o tom de erro da identidade visual;
+ * estágio desconhecido cai no neutro.
+ */
+export function stageTone(stage: string): "pending" | "action" | "ok" | "danger" | "muted" {
     switch (stage) {
         case "requested":
             return "pending";
@@ -311,6 +315,9 @@ export function stageTone(stage: string): "pending" | "action" | "ok" | "muted" 
             return "action";
         case "confirmed":
             return "ok";
+        case "refused":
+        case "cancelled":
+            return "danger";
         default:
             return "muted";
     }

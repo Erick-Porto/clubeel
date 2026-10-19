@@ -11,14 +11,17 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-    faArrowLeft,
+    faBuilding,
     faCalendarPlus,
     faChampagneGlasses,
     faChevronRight,
     faCircleExclamation,
+    faClock,
+    faMagnifyingGlass,
     faRotateRight,
 } from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../../../styles/page.module.css";
+import ui from "../../../styles/ui.module.css";
 import replayStyle from "../../../styles/replay.module.css";
 import style from "../../../styles/social.module.css";
 import Header from "../../components/Common/header";
@@ -26,11 +29,14 @@ import Footer from "../../components/Common/footer";
 import { Loading, LoadingScreen } from "../../components/Common/loading";
 import ReplayNotice from "../../components/Replay/ReplayNotice";
 import SocialStageBadge from "../../components/Social/SocialStageBadge";
+import { SocialCover } from "../../components/UI/covers";
+import { PageHeader, SearchBar, matchesSearch } from "../../components/UI/ui";
 import { fetchSocialBookings, type SocialBooking, type SocialFailure } from "../../../services/social-api";
 import { formatBRL, formatDayShort, formatInstant, formatTimeRange } from "../../../utils/social";
 
 export default function SocialBookingsPage() {
     const { status } = useSession();
+    const [query, setQuery] = useState("");
     const [bookings, setBookings] = useState<SocialBooking[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<SocialFailure | null>(null);
@@ -81,11 +87,38 @@ export default function SocialBookingsPage() {
             />
         );
     } else {
+        const visible = bookings.filter((booking) =>
+            matchesSearch(
+                query,
+                booking.place.name,
+                booking.event_type,
+                booking.place_group?.name,
+                booking.stage_label,
+                String(booking.id)
+            )
+        );
         body = (
+            <>
+            <SearchBar id="busca-reservas" value={query} onChange={setQuery} placeholder="Buscar por espaço, evento ou estágio" />
+            {visible.length === 0 ? (
+                <ReplayNotice
+                    icon={faMagnifyingGlass}
+                    title={`Nada encontrado para “${query}”`}
+                    description="Confira a grafia ou limpe a busca."
+                />
+            ) : (
             <div className={style.bookingList}>
-                {bookings.map((booking) => (
+                {visible.map((booking) => (
                     <Link key={booking.id} href={`/espacos-sociais/reservas/${booking.id}`} className={style.bookingCard}>
                         <div className={style.bookingMain}>
+                            <div className={style.badgeRow}>
+                                <SocialStageBadge stage={booking.stage} label={booking.stage_label} />
+                                {booking.origin === "secretaria" && (
+                                    <span className={style.originBadge}>
+                                        <FontAwesomeIcon icon={faBuilding} /> Feita pela secretaria
+                                    </span>
+                                )}
+                            </div>
                             <span className={style.bookingPlace}>{booking.place.name}</span>
                             <span className={style.bookingMeta}>
                                 {formatDayShort(booking.date)}
@@ -94,47 +127,43 @@ export default function SocialBookingsPage() {
                                 {booking.place_group ? ` · ${booking.place_group.name}` : ""}
                             </span>
                             {booking.stage === "awaiting_payment" && booking.payment_due_at && (
-                                <span className={style.bookingMeta}>
-                                    Pagar até <strong>{formatInstant(booking.payment_due_at)}</strong>
+                                <span className={style.bookingDue}>
+                                    <FontAwesomeIcon icon={faClock} /> Pagar até <strong>{formatInstant(booking.payment_due_at)}</strong>
                                 </span>
                             )}
                         </div>
                         <div className={style.bookingSide}>
-                            <div className={style.badgeRow}>
-                                {booking.origin === "secretaria" && (
-                                    <span className={style.originBadge}>Feita pela secretaria</span>
-                                )}
-                                <SocialStageBadge stage={booking.stage} label={booking.stage_label} />
-                            </div>
                             {booking.total > 0 && <span className={style.bookingTotal}>{formatBRL(booking.total)}</span>}
-                            <span className={replayStyle.placeCardAction}>
+                            <span className={style.bookingAction}>
                                 Detalhes <FontAwesomeIcon icon={faChevronRight} />
                             </span>
                         </div>
                     </Link>
                 ))}
             </div>
+            )}
+            </>
         );
     }
 
     return (
         <div className={globalStyle.page}>
-            <Header options={null} surgeIn={0} onlyScroll={false} />
+            <Header />
+            <SocialCover />
 
-            <section className={replayStyle.replaySection}>
-                <Link href="/espacos-sociais" className={style.backLink}>
-                    <FontAwesomeIcon icon={faArrowLeft} /> Espaços sociais
-                </Link>
-                <div className={replayStyle.replayHeader}>
-                    <h1 className={replayStyle.replayTitle}>Minhas reservas sociais</h1>
-                    <p className={replayStyle.replayLead}>
-                        Acompanhe a análise da secretaria, pague quando a reserva for aprovada e mantenha a lista de
-                        convidados em dia.
-                    </p>
-                </div>
+            <main className={`${globalStyle.main} ${ui.page}`}>
+                <PageHeader
+                    title="Minhas reservas sociais"
+                    lead="Acompanhe a análise da secretaria, pague quando a reserva for aprovada e mantenha a lista de convidados em dia."
+                    actions={
+                        <Link href="/espacos-sociais" className={`${ui.btn} ${ui.btnPrimary}`}>
+                            <FontAwesomeIcon icon={faCalendarPlus} /> Nova reserva
+                        </Link>
+                    }
+                />
 
                 {body}
-            </section>
+            </main>
 
             <Footer />
         </div>

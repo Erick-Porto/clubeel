@@ -5,7 +5,7 @@ Front-end Next.js 15 (React 19, TypeScript) do Clube dos Funcionários da CSN. C
 ## Documentação — leia antes de mudar código
 
 - **Sempre** leia [docs/resumo-modulos/README.md](docs/resumo-modulos/README.md) (visão geral, arquitetura, regras, glossário).
-- Depois, abra só o(s) módulo(s) que a tarefa toca (`docs/resumo-modulos/01..11-*.md` e `13-espacos-sociais.md`).
+- Depois, abra só o(s) módulo(s) que a tarefa toca (`docs/resumo-modulos/01..11-*.md` e `13-espacos-sociais.md`); em qualquer mudança de tela, também `14-identidade-visual.md`.
 - Antes de "consertar" algo estranho, consulte [12-pontos-de-atencao.md](docs/resumo-modulos/12-pontos-de-atencao.md): vários comportamentos são intencionais.
 - Se alterar comportamento descrito nesses docs, **atualize o doc no mesmo trabalho**. Se o doc divergir do código, o código vence — corrija o doc.
 - Sempre que montar uma nova função, pergunte ao usuário se deve criar uma nova branch.
@@ -31,6 +31,6 @@ Front-end Next.js 15 (React 19, TypeScript) do Clube dos Funcionários da CSN. C
 - Imports **relativos** (`../../services/...`); não use os aliases `@/`.
 - Textos de UI, mensagens e comentários em **português**. Preserve os comentários explicativos (o "porquê") dos módulos recentes; na área `/aprovacao` os identificadores também são em português.
 - Páginas de sócio são client components que buscam dados com `API_CONSUME` no `useEffect`; `/aprovacao` usa Server Components + Server Actions, sem fetch no cliente. Não misture os padrões.
-- Estilo com CSS Modules em `styles/`, cor-tema `var(--grena)`; ícones FontAwesome; avisos com `react-toastify` (só no cliente).
+- Estilo com CSS Modules em `styles/`, identidade v4 ([14-identidade-visual.md](docs/resumo-modulos/14-identidade-visual.md)): cor sempre por token (`var(--grena)`, `var(--surface)`…, nunca hex), tema claro e escuro, peças em `app/components/UI/`; ícones FontAwesome; avisos com `react-toastify` (só no cliente).
 - Senha do sócio vai à Lara como SHA-256 calculado no cliente; senha da aprovação vai em texto puro do servidor. Não troque.
 - Commits/PRs só quando o usuário pedir.

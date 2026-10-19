@@ -13,7 +13,7 @@
 
 ## Página
 
-- Abas (`ViewState`): `profile` ("Meus Dados"), `password` ("Segurança"), `schedules` ("Agendamentos", badge = tamanho do carrinho).
+- Abas (`ViewState`), em pílula (`ui.seg`) abaixo do cabeçalho: `schedules` ("Agendamentos", contador = tamanho do carrinho), `profile` ("Meus dados"), `password` ("Segurança"). A aba inicial continua `profile`, salvo os casos abaixo.
 - Abre em `schedules` se `?tab=schedules` **ou** se o carrinho tem itens.
 - Para a capa: `GET schedule/member/{id}` → `data.schedules` → agendamento mais recente → `GET place/{place_id}` → `image || horizontal_image`.
 - Envolto em `<Suspense>` (usa `useSearchParams`).
@@ -45,4 +45,4 @@ Ordem dos blocos:
 ## `Banner`
 
 - Avatar: tenta `fetch(${process.env.INTERNAL_LARA_API_URL}/api/image/{id})` **a partir do navegador** com `Authorization: Bearer ${process.env.INTERNAL_LARA_API_TOKEN}`. No cliente essas variáveis são `undefined` → a requisição sempre falha e cai no toast "Foto de perfil não encontrada." + avatar padrão. **Bug conhecido** — a correção correta é um endpoint no proxy (ex.: `image/\d+` na allowlist, ou rota dedicada que devolva a imagem), nunca expor o token.
-- Capa padrão: `placehold.co` com o nome do clube.
+- Capa: foto do último local agendado; sem ela, o substituto na cor do módulo `perfil` (o `placehold.co` saiu no rebrand v4). Sem foto de perfil, o avatar mostra as **iniciais** (o `default-avatar.png` não é mais usado aqui). O toast do bug acima continua aparecendo — a lógica não foi alterada.

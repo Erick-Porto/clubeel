@@ -5,16 +5,18 @@ import Footer from "../components/Common/footer";
 import Banner from "../components/Profile/banner";
 import { useSession } from "next-auth/react";
 import { ProfileForm, PasswordForm } from "../components/Profile/profile-components";
-import style from '../../styles/profile.module.css';
+import globalStyle from '../../styles/page.module.css';
+import ui from '../../styles/ui.module.css';
 import Appointments from "../components/Profile/appointments";
 import SocialPendingPaymentBanner from "../components/Social/SocialPendingPaymentBanner";
 import Header from "../components/Common/header";
+import { LoadingScreen } from "../components/Common/loading";
 import { useCart } from "../../context/CartContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faUser, faKey, faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faKey, faCalendarDays } from "@fortawesome/free-solid-svg-icons";
 import API_CONSUME from "../../services/api-consume";
-import { useSearchParams } from "next/navigation"; 
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 
 type ViewState = 'profile' | 'password' | 'schedules';
@@ -31,7 +33,7 @@ const ProfileContent = () => {
     const { data: session, status } = useSession();
     const [view, setView] = useState<ViewState>('profile');
     const [lastScheduleImage, setLastScheduleImage] = useState<string | undefined>(undefined);
-    
+
     const searchParams = useSearchParams();
 
     useEffect(() => {
@@ -52,7 +54,7 @@ useEffect(() => {
             if (status !== 'authenticated' || !session?.accessToken) {
                 toast.error("Sessão inválida. Por favor, faça login novamente.");
                 return;
-                
+
             }
             try {
                 const schedulesResponse = await API_CONSUME("GET", `schedule/member/${session.user.id}`);
@@ -62,8 +64,8 @@ useEffect(() => {
                 }
 
                 const schedulesData = schedulesResponse.data;
-                const schedules: Schedule[] = Array.isArray(schedulesData.schedules) 
-                    ? schedulesData.schedules 
+                const schedules: Schedule[] = Array.isArray(schedulesData.schedules)
+                    ? schedulesData.schedules
                     : (schedulesData.schedules || []);
 
                 if (schedules.length > 0) {
@@ -79,7 +81,7 @@ useEffect(() => {
                         if (placeResponse.ok && placeResponse.data) {
                             const placeData = placeResponse.data;
                             const imageToUse = placeData.image || placeData.horizontal_image;
-                            
+
                             if (imageToUse) {
                                 setLastScheduleImage(imageToUse);
                             }
@@ -91,56 +93,46 @@ useEffect(() => {
             }
         };
 
-        fetchLastPlaceImage();
+        if (status !== 'loading') fetchLastPlaceImage();
     }, [session, status]);
 
+    if (status === 'loading') return <LoadingScreen />;
+
     const menuItems: { id: ViewState; label: string; icon: IconDefinition; badge?: number }[] = [
-        { id: 'profile', label: 'Meus Dados', icon: faUser },
+        { id: 'schedules', label: 'Agendamentos', icon: faCalendarDays, badge: cart?.length },
+        { id: 'profile', label: 'Meus dados', icon: faUser },
         { id: 'password', label: 'Segurança', icon: faKey },
-        { id: 'schedules', label: 'Agendamentos', icon: faCalendarAlt, badge: cart?.length },
     ];
 
     return (
-        <div className={style.profilePageContainer}>
-            <Header options={null} surgeIn={-1} onlyScroll={true} />
-            <Banner lastScheduleImage={lastScheduleImage} />
+        <div className={globalStyle.page}>
+            <Header />
 
-            <div className={style.profileContentWrapper}>
-                <aside className={style.profileSidebar}>
-                    <ul className={style.profileMenu}>
-                        {menuItems.map(item => (
-                            <li 
-                                key={item.id}
-                                className={`${style.menuItem} ${view === item.id ? style.menuItemActive : ''}`}
-                                onClick={() => setView(item.id)}
-                            >
-                                <FontAwesomeIcon icon={item.icon} width={20} />
-                                {item.label}
-                                {item.badge ? (
-                                    <span style={{
-                                        background: view === item.id ? 'white' : 'var(--grena)', 
-                                        color: view === item.id ? 'var(--grena)' : 'white',
-                                        borderRadius:'50%', 
-                                        width:20, height:20, 
-                                        display:'flex', justifyContent:'center', alignItems:'center',
-                                        fontSize:'0.7rem', marginLeft:'auto'
-                                    }}>
-                                        {item.badge}
-                                    </span>
-                                ) : null}
-                            </li>
-                        ))}
-                    </ul>
-                </aside>
+            <main className={`${globalStyle.main} ${ui.page}`}>
+                <Banner lastScheduleImage={lastScheduleImage} />
 
-                <main className={style.contentCard}>
-                    {/* Reserva social a pagar (inclusive a aprovada no balcão): em qualquer aba. */}
-                    <SocialPendingPaymentBanner />
-                    {view === 'profile' && <ProfileForm />}
-                    {view === 'password' && <PasswordForm />}
-                    {view === 'schedules' && <Appointments />}
-                </main>
-            </div>
+                <nav className={ui.seg} aria-label="Seções do perfil">
+                    {menuItems.map(item => (
+                        <button
+                            key={item.id}
+                            type="button"
+                            className={`${ui.segItem} ${view === item.id ? ui.segActive : ''}`}
+                            aria-pressed={view === item.id}
+                            onClick={() => setView(item.id)}
+                        >
+                            <FontAwesomeIcon icon={item.icon} />
+                            {item.label}
+                            {item.badge ? <span className={ui.segCount}>{item.badge}</span> : null}
+                        </button>
+                    ))}
+                </nav>
+
+                {/* Reserva social a pagar (inclusive a aprovada no balcão): em qualquer aba. */}
+                <SocialPendingPaymentBanner />
+                {view === 'profile' && <ProfileForm />}
+                {view === 'password' && <PasswordForm />}
+                {view === 'schedules' && <Appointments />}
+            </main>
 
             <Footer />
         </div>
@@ -149,7 +141,7 @@ useEffect(() => {
 
 const ProfilePage = () => {
     return (
-        <Suspense fallback={<div className={style.profilePageContainer}>Carregando...</div>}>
+        <Suspense fallback={<LoadingScreen />}>
             <ProfileContent />
         </Suspense>
     );

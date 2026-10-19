@@ -44,7 +44,16 @@ export default async function LoginAprovacaoPage({
             width={200}
             height={80}
             quality={100}
-            className={styles.logoImagem}
+            className={`${styles.logoImagem} ${styles.logoClaro}`}
+            priority
+          />
+          <Image
+            src="/images/logo-cfcsn-w-horiz.png"
+            alt="Clube dos Funcionários"
+            width={200}
+            height={80}
+            quality={100}
+            className={`${styles.logoImagem} ${styles.logoEscuro}`}
             priority
           />
         </div>

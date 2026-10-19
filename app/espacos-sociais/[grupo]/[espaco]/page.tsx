@@ -11,13 +11,15 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faCircleExclamation, faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faCircleExclamation, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../../../../styles/page.module.css";
+import ui from "../../../../styles/ui.module.css";
+import { SocialCover } from "../../../components/UI/covers";
+import { Media, PageHeader } from "../../../components/UI/ui";
 import replayStyle from "../../../../styles/replay.module.css";
 import style from "../../../../styles/social.module.css";
 import Header from "../../../components/Common/header";
@@ -315,25 +317,22 @@ export default function SocialPlacePage() {
 
     return (
         <div className={globalStyle.page}>
-            <Header options={null} surgeIn={0} onlyScroll={false} />
+            <Header />
+            <SocialCover />
 
-            <section className={replayStyle.replaySection}>
-                <Link href="/espacos-sociais" className={style.backLink}>
-                    <FontAwesomeIcon icon={faArrowLeft} /> Espaços sociais
-                </Link>
+            <main className={`${globalStyle.main} ${ui.page}`}>
+                <PageHeader
+                    backHref="/espacos-sociais"
+                    backLabel="Espaços sociais"
+                    kicker={groupName || "Espaço social"}
+                    title={place?.name ?? "Espaço social"}
+                    lead={place ? <>Diária de <strong className={ui.mono}>{formatBRL(place.price)}</strong>. Escolha uma data disponível no calendário para fazer a pré-reserva.</> : undefined}
+                />
 
-                <div
-                    className={style.groupBanner}
-                    style={banner ? { backgroundImage: `url(${banner})` } : undefined}
-                >
-                    <div className={style.groupBannerText}>
-                        <h2>{place?.name ?? "Espaço social"}</h2>
-                        {groupName && <span>{groupName}</span>}
-                    </div>
-                </div>
+                {banner && <Media src={banner} alt={`Foto de ${place?.name ?? "espaço social"}`} area="social" ratio="short" className={style.placeHero} />}
 
                 {body}
-            </section>
+            </main>
 
             <Footer />
         </div>

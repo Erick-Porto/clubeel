@@ -13,8 +13,15 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarCheck, faCircleExclamation, faRotateRight, faChampagneGlasses } from "@fortawesome/free-solid-svg-icons";
+import {
+    faArrowRight,
+    faChampagneGlasses,
+    faCircleExclamation,
+    faMagnifyingGlass,
+    faRotateRight,
+} from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../../styles/page.module.css";
+import ui from "../../styles/ui.module.css";
 import replayStyle from "../../styles/replay.module.css";
 import style from "../../styles/social.module.css";
 import Header from "../components/Common/header";
@@ -22,6 +29,8 @@ import Footer from "../components/Common/footer";
 import { Loading, LoadingScreen } from "../components/Common/loading";
 import ReplayNotice from "../components/Replay/ReplayNotice";
 import SocialPlaceFacts from "../components/Social/SocialPlaceFacts";
+import { SocialCover } from "../components/UI/covers";
+import { Media, MediaTag, PageHeader, SearchBar, matchesSearch } from "../components/UI/ui";
 import {
     fetchSocialGroupPlaces,
     fetchSocialGroups,
@@ -44,6 +53,7 @@ export default function SocialSpacesPage() {
     const [groups, setGroups] = useState<GroupWithPlaces[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<SocialFailure | null>(null);
+    const [query, setQuery] = useState("");
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -76,6 +86,15 @@ export default function SocialSpacesPage() {
 
     if (status === "loading") return <LoadingScreen />;
 
+    // Busca pelo grupo (mostra todos os espaços dele) ou pelo nome do espaço.
+    const visibleGroups = groups
+        .map((entry) =>
+            matchesSearch(query, entry.group.name)
+                ? entry
+                : { ...entry, places: entry.places.filter((place) => matchesSearch(query, place.name)) }
+        )
+        .filter((entry) => entry.places.length > 0);
+
     let body: React.ReactNode;
     if (loading) {
         body = <Loading />;
@@ -102,82 +121,87 @@ export default function SocialSpacesPage() {
             />
         );
     } else {
-        body = groups.map(({ group, places, rules }) => {
-            const banner = placeImageUrl(group.image_horizontal);
-            return (
-                <section key={group.id} className={style.groupBlock}>
-                    <div
-                        className={style.groupBanner}
-                        style={banner ? { backgroundImage: `url(${banner})` } : undefined}
-                    >
-                        <div className={style.groupBannerText}>
-                            <h2>{group.name}</h2>
-                            <span>
-                                {places.length} espaço{places.length === 1 ? "" : "s"} · reserva de dia inteiro
-                            </span>
-                        </div>
-                    </div>
+        body = (
+            <>
+                <SearchBar id="busca-espacos" value={query} onChange={setQuery} placeholder="Buscar churrasqueira, salão ou espaço" />
+                {visibleGroups.length === 0 ? (
+                    <ReplayNotice
+                        icon={faMagnifyingGlass}
+                        title={`Nada encontrado para “${query}”`}
+                        description="Confira a grafia ou limpe a busca."
+                    />
+                ) : (
+                    visibleGroups.map(({ group, places, rules }) => (
+                        <section key={group.id} className={style.groupBlock} aria-labelledby={`grupo-${group.id}`}>
+                            <div className={style.groupHead}>
+                                <h2 className={ui.sectionTitle} id={`grupo-${group.id}`}>{group.name}</h2>
+                                <span className={ui.muted}>
+                                    {places.length} espaço{places.length === 1 ? "" : "s"} · reserva de dia inteiro
+                                </span>
+                            </div>
 
-                    {rules && (
-                        <details className={style.rules}>
-                            <summary>Regras do clube para {group.name}</summary>
-                            <p className={style.rulesText}>{rules}</p>
-                        </details>
-                    )}
+                            {rules && (
+                                <details className={style.rules}>
+                                    <summary>Regras do clube para {group.name}</summary>
+                                    <p className={style.rulesText}>{rules}</p>
+                                </details>
+                            )}
 
-                    <div className={style.placeGrid}>
-                        {places.map((place) => {
-                            const image = placeImageUrl(place.image);
-                            return (
-                                <article key={place.id} className={style.placeCard}>
-                                    <div
-                                        className={style.placeImage}
-                                        style={image ? { backgroundImage: `url(${image})` } : undefined}
-                                        role="img"
-                                        aria-label={`Foto de ${place.name}`}
-                                    >
-                                        <span className={style.priceTag}>{formatBRL(place.price)} / diária</span>
-                                    </div>
-                                    <div className={style.placeBody}>
-                                        <h3 className={style.placeName}>{place.name}</h3>
-                                        <SocialPlaceFacts place={place} />
-                                        <Link
-                                            href={`/espacos-sociais/${socialSlug(group.name, group.id)}/${socialSlug(place.name, place.id)}`}
-                                            className={style.placeAction}
+                            <div className={style.placeGrid}>
+                                {places.map((place) => (
+                                    <article key={place.id} className={style.placeCard}>
+                                        <Media
+                                            src={placeImageUrl(place.image)}
+                                            alt={`Foto de ${place.name}`}
+                                            area="social"
+                                            icon={faChampagneGlasses}
+                                            ratio="wide"
                                         >
-                                            Ver datas e reservar
-                                        </Link>
-                                    </div>
-                                </article>
-                            );
-                        })}
-                    </div>
-                </section>
-            );
-        });
+                                            <MediaTag>
+                                                <span className={ui.mono}>{formatBRL(place.price)}</span>&nbsp;/ diária
+                                            </MediaTag>
+                                        </Media>
+                                        <div className={style.placeBody}>
+                                            <h3 className={style.placeName}>{place.name}</h3>
+                                            <SocialPlaceFacts place={place} />
+                                        </div>
+                                        <div className={style.placeFoot}>
+                                            <Link
+                                                href={`/espacos-sociais/${socialSlug(group.name, group.id)}/${socialSlug(place.name, place.id)}`}
+                                                className={style.placeAction}
+                                            >
+                                                Ver datas e reservar <FontAwesomeIcon icon={faArrowRight} />
+                                            </Link>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        </section>
+                    ))
+                )}
+            </>
+        );
     }
 
     return (
         <div className={globalStyle.page}>
-            <Header options={null} surgeIn={0} onlyScroll={false} />
+            <Header />
+            <SocialCover />
 
-            <section className={replayStyle.replaySection}>
-                <div className={replayStyle.replayHeader}>
-                    <h1 className={replayStyle.replayTitle}>Espaços sociais</h1>
-                    <p className={replayStyle.replayLead}>
-                        Churrasqueiras e salões para o seu evento, reservados pelo <strong>dia inteiro</strong>. Você
-                        escolhe a data e envia a pré-reserva; a secretaria analisa, faz o contrato com você e libera o
-                        pagamento por aqui.
-                    </p>
-                    <div className={style.headerActions}>
-                        <Link href="/espacos-sociais/reservas" className={style.secondaryButton}>
-                            <FontAwesomeIcon icon={faCalendarCheck} /> Minhas reservas sociais
-                        </Link>
-                    </div>
-                </div>
+            <main className={`${globalStyle.main} ${ui.page}`}>
+                <PageHeader
+                    title="Espaços sociais"
+                    lead={
+                        <>
+                            Churrasqueiras e salões para o seu evento, reservados pelo <strong>dia inteiro</strong>. Você
+                            escolhe a data e envia a pré-reserva; a secretaria analisa, faz o contrato com você e libera o
+                            pagamento por aqui.
+                        </>
+                    }
+                />
 
                 {body}
-            </section>
+            </main>
 
             <Footer />
         </div>

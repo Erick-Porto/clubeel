@@ -80,6 +80,7 @@ Regras de ouro dessa arquitetura:
 11. [11-ui-compartilhada.md](11-ui-compartilhada.md) — header, footer, loading, tutorial, carrossel, estilos, componentes órfãos.
 12. [12-pontos-de-atencao.md](12-pontos-de-atencao.md) — bugs conhecidos, dívidas técnicas, documentos desatualizados, armadilhas.
 13. [13-espacos-sociais.md](13-espacos-sociais.md) — churrasqueiras/salões: vitrine, calendário, pré-reserva, minhas reservas, pagamento por reserva.
+14. [14-identidade-visual.md](14-identidade-visual.md) — rebrand v4: tokens, tema escuro, cores de módulo, peças de UI (`app/components/UI/`), modelo de tela, pegadinhas.
 
 ## 5. Fluxo principal do sócio (ponta a ponta)
 
@@ -96,7 +97,7 @@ Regras de ouro dessa arquitetura:
 - **Comandos**: `npm run dev` (Turbopack), `npm run build`, `npm run lint`. Não há testes automatizados. Para validar mudanças use `npx tsc --noEmit` + `npm run lint` + `npm run build`.
 - **Imports são relativos** (`../../services/api-consume`), não `@/…` — o alias quebrava no ambiente do usuário. Os `paths` do `tsconfig.json` existem mas estão sem uso. Mantenha imports relativos.
 - **Idioma**: UI, mensagens e comentários em **português**. Os módulos recentes (Replay, Luz, Aprovação, webhook, segurança) têm comentários longos explicando o *porquê* — preserve esse estilo ao editá-los. A área `/aprovacao` usa até identificadores em português (`lerToken`, `decidirOrdem`); siga o padrão do arquivo que estiver editando.
-- **Estilo**: CSS Modules por tela/componente em `styles/`, cor-tema `var(--grena)` (#7d0400). Ícones: FontAwesome. Avisos: `react-toastify` (`toast.*`) — **somente no cliente**.
+- **Estilo**: identidade visual v4 (grená, tokens com tema claro/escuro, cor por módulo) — leia [14-identidade-visual.md](14-identidade-visual.md) antes de mexer em tela. CSS Modules em `styles/`, cor-tema `var(--grena)`, peças compartilhadas em `app/components/UI/`. Ícones: FontAwesome. Avisos: `react-toastify` (`toast.*`) — **somente no cliente**.
 - **Páginas de sócio são client components** que buscam dados no `useEffect` via `API_CONSUME`. A área `/aprovacao` é o oposto (Server Components + Server Actions, nenhum fetch no cliente) — não misture os padrões.
 - **Ao adicionar endpoint da Lara chamado do cliente**: (1) inclua a regex na allowlist do proxy; (2) decida público × autenticado; (3) se precisar do sócio, nunca aceite `member_id` do cliente como autoridade — a Lara usa o header `Session`.
 - **Ao adicionar rota de sócio protegida**: inclua no `matcher` de `middleware.ts`.

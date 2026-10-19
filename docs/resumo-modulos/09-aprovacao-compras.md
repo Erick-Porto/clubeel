@@ -30,7 +30,10 @@
 | `components/andamento.tsx` | client | Passos de aprovação (nível, responsável, decisão, por quem, quando, observação) |
 | `components/botao-recarregar.tsx` | client | `router.refresh()` em transição |
 
-Estilos: [styles/aprovacao.module.css](../../styles/aprovacao.module.css).
+Estilos: [styles/aprovacao.module.css](../../styles/aprovacao.module.css) (identidade v4, ver [14](14-identidade-visual.md); cor do módulo `compras` na marca da área, logo claro/escuro).
+
+- `components/filtro-ordens.tsx` (client): **busca na fila**. Recebe os cartões já renderizados no servidor e só filtra por número, fornecedor, departamento, solicitante e processo — nenhum fetch no cliente.
+- No celular a tabela de itens da ordem vira cartões; os rótulos vêm de `data-rotulo` em cada `<td>`.
 
 ## API da Lara (`/api/aprovacao/...`, `Authorization: Bearer <JWT do diretor>`, sem token de aplicação)
 

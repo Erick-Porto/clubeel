@@ -11,8 +11,8 @@
 | [app/components/Schedules/clock.tsx](../../app/components/Schedules/clock.tsx) | Relógio de expiração do carrinho (10 min) |
 | [app/components/Schedules/booking-button.tsx](../../app/components/Schedules/booking-button.tsx) | Botão de ação / link |
 | [context/CartContext.tsx](../../context/CartContext.tsx) | Estado global do carrinho |
-| [app/components/Common/ItensGrid.tsx](../../app/components/Common/ItensGrid.tsx) | Grade de esportes (mobile) |
-| [app/components/Common/sportive-square.tsx](../../app/components/Common/sportive-square.tsx) | Carrossel infinito de esportes (desktop) |
+| [app/components/Common/ItensGrid.tsx](../../app/components/Common/ItensGrid.tsx) | Grade de esportes antiga (sem uso desde o rebrand v4) |
+| [app/components/Common/sportive-square.tsx](../../app/components/Common/sportive-square.tsx) | Carrossel antigo (sem uso desde o rebrand v4) |
 | [utils/uriGen.tsx](../../utils/uriGen.tsx) | `URIGen(nome, id, data)` → `/place/<slug>-<id>?date=...` |
 
 Todas as páginas são **client components** protegidas pelo middleware.
@@ -25,10 +25,11 @@ Há três geradores ligeiramente diferentes: `name.replace(/\s+/g,'-').toLowerCa
 ## Home (`/`)
 
 - `GET places/group` → objeto de grupos; converte `vertices` (string JSON ou array) em `{x,y}[]` (para o mapa, hoje desativado).
-- Mostra só `category === "esportiva"`: `ItensGrid` no mobile, `SportiveSquare` no desktop. Link → `/places/<nome>-<id>`.
-- **Espaços sociais no mesmo carrossel**: a home também chama `social/groups` e acrescenta, no fim da lista, um card por grupo social (imagem `image_vertical` → `image_horizontal` → `/images/default-card.png`), com selo "Espaço social" e link para `/espacos-sociais`. Falha nessa chamada é ignorada (carrossel só com esportes). Com grupos sociais, o título desktop vira "Áreas Esportivas e Sociais". `SportiveSquare`/`ItensGrid` aceitam `href` e `tag` opcionais por item (`CarouselItem`).
-- `HomeLightingBanner` no topo (ver [08](08-luz-da-quadra.md)).
-- Seções "Mapa" (`MapBanner`), "Social" e `MobileNavBar`, tutorial da home: **comentadas**. `NAV_OPTIONS` vazio.
+- Desde o rebrand v4 ([14](14-identidade-visual.md)): título "Olá, <nome>", `HomeLightingBanner`, **busca** (filtra na página, sem acento/maiúscula) e uma **grade de cartões grandes com foto** (`image_horizontal` → `image_vertical`; sem foto, substituto na cor do módulo). Mesma grade no celular e no desktop.
+- Mostra só `category === "esportiva"`. Link → `/places/<nome>-<id>`.
+- **Espaços sociais na mesma grade**: a home também chama `social/groups` e acrescenta, no fim, um cartão por grupo social (`image_horizontal` → `image_vertical`), com etiqueta "Espaço social" e link para `/espacos-sociais`. Falha nessa chamada é ignorada (grade só com esportes). Com grupos sociais, o rótulo vira "Áreas esportivas e sociais".
+- Abaixo, "Atalhos" fixos (Meus agendamentos, Meus vídeos, Minhas reservas sociais) — só navegação, sem contagens.
+- Mapa (`MapBanner`), `MobileNavBar` e tutorial da home: continuam **desligados** (os arquivos existem, sem uso).
 
 ## Esporte (`/places/[slug]`)
 
@@ -89,5 +90,11 @@ O carrinho **não é local**: são os agendamentos do sócio com `status_id === 
 
 ## Componentes de vitrine
 
-- `ItensGrid` (mobile): grade de 2 colunas com `image_vertical` → `/places/...` (ou `href` do item). Cada linha tem **240px fixos** (`grid-auto-rows`) — antes o bloco inteiro tinha 720px e cada card a mais encolhia todos. Com total ímpar, o último card ocupa a linha inteira.
-- `SportiveSquare` (desktop): duplica a lista até ≥8 itens e de novo (×2) para animação CSS de carrossel infinito.
+- A home monta a grade direto em `app/page.tsx` (componentes `Media`/`SearchBar` de `app/components/UI/ui.tsx`).
+- `ItensGrid` e `SportiveSquare` (grade mobile e carrossel infinito do desktop, visual antigo) **ficaram sem uso** no rebrand v4. Não foram apagados — confirmar com o usuário antes de remover.
+
+## Telas no visual v4
+
+- `/places`: título com voltar, faixa de datas em "chips" (dia da semana, número em mono, mês) — mesma lógica de setas/animação —, cartões de quadra com selo de estado (texto + ícone: "N disponíveis", "Esgotado", "Indisponível").
+- `/place`: título com voltar (`router.back()`), legenda em selos, grade de horários. No desktop, resumo fixo à direita (foto, seleção, subtotal, botões, relógio). Até 1024px, **barra de ação fixa** no rodapé (relógio, total, Adicionar/Finalizar), acima da barra inferior de módulos.
+- Os `id`s do tutorial (`schedule-N`, `action-buttons-1/2`, `expire-clock`, `date-selection`, `place-card-0`, `schedule-button-0`) foram mantidos.

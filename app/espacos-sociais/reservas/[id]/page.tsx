@@ -37,7 +37,9 @@ import {
     faRotateRight,
 } from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../../../../styles/page.module.css";
+import ui from "../../../../styles/ui.module.css";
 import replayStyle from "../../../../styles/replay.module.css";
+import { SocialCover } from "../../../components/UI/covers";
 import style from "../../../../styles/social.module.css";
 import Header from "../../../components/Common/header";
 import Footer from "../../../components/Common/footer";
@@ -360,8 +362,7 @@ export default function SocialBookingDetailPage() {
         body = (
             <>
                 <div className={style.detailHead}>
-                    <div className={style.detailTitleRow}>
-                        <h1 className={replayStyle.replayTitle}>{booking.place.name}</h1>
+                    <div className={style.badgeRow}>
                         <SocialStageBadge stage={booking.stage} label={booking.stage_label} />
                         {booking.origin === "secretaria" && (
                             <span className={style.originBadge}>
@@ -369,8 +370,11 @@ export default function SocialBookingDetailPage() {
                             </span>
                         )}
                     </div>
-                    <p className={replayStyle.replayLead}>
-                        <span style={{ textTransform: "capitalize" }}>{formatDayLong(booking.date)}</span>
+                    <div className={style.detailTitleRow}>
+                        <h1 className={ui.title}>{booking.place.name}</h1>
+                    </div>
+                    <p className={ui.lead}>
+                        <span className={ui.capFirst}>{formatDayLong(booking.date)}</span>
                         {booking.start_time
                             ? ` · ${formatTimeRange(booking.start_time, booking.end_time, booking.ends_next_day)}`
                             : ""}
@@ -672,14 +676,15 @@ export default function SocialBookingDetailPage() {
 
     return (
         <div className={globalStyle.page}>
-            <Header options={null} surgeIn={0} onlyScroll={false} />
+            <Header />
+            <SocialCover />
 
-            <section className={replayStyle.replaySection}>
+            <main className={`${globalStyle.main} ${ui.page}`}>
                 <Link href="/espacos-sociais/reservas" className={style.backLink}>
                     <FontAwesomeIcon icon={faArrowLeft} /> Minhas reservas sociais
                 </Link>
                 {body}
-            </section>
+            </main>
 
             <Footer />
         </div>

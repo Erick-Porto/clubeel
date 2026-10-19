@@ -1,118 +1,16 @@
+/*
+ * Casca das telas de sócio: cabeçalho, miolo e rodapé empilhados, com o rodapé
+ * sempre no fim da tela. O miolo de cada tela usa `ui.page` (ui.module.css).
+ */
 .page {
-  --header-height: 80px;
-  --page-bg: var(--background);
-  width: 100vw;
-  min-height: 100vh; 
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background-color: var(--page-bg);
-  padding-top: var(--header-height);
-  overflow-x: hidden;
+  background: var(--canvas);
 }
 
 .main {
+  flex: 1;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  flex: 1; 
-}
-
-.Section {
-  width: 100%;
-  min-height: 100vh;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.contentWrapper {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.sectionTitle {
-  font-size: 2.5rem;
-  color: var(--grena);
-  font-weight: 800;
-  letter-spacing: -1px;
-  text-transform: uppercase;
-  margin-bottom: 40px;
-  text-align: center;
-  position: relative;
-  z-index: 2;
-}
-
-.sectionTitle::after {
-  content: '';
-  display: block;
-  width: 60px;
-  height: 4px;
-  background-color: var(--grena-light);
-  margin: 15px auto 0;
-  border-radius: 2px;
-}
-
-.footerContainer {
-  width: 100%;
-  scroll-snap-align: start;
-  background-color: var(--grena);
-  margin-top: auto;
-}
-
-@media (max-width: 1024px) {
-  .homePage {
-    padding-top: 0;
-    height: 100dvh;
-    /* overflow: hidden; */
-    position: fixed;
-    top: 0;
-    left: 0;
-  }
-
-  .homePage .main {
-    /* flex-direction: row; */
-    height: 100%;
-    width: 100vw;
-    overflow-x: auto;
-    /* overflow-y: hidden;
-    scroll-snap-type: x mandatory; */
-    scrollbar-width: none;
-    /* -ms-overflow-style: none; */
-  }
-  
-  .homePage .main::-webkit-scrollbar { display: none; }
-
-  .Section {
-    min-width: 100vw;
-    width: 100vw;
-    box-sizing: border-box;
-    height: fit-content;
-    justify-content: flex-start; 
-    padding: 90px 20px 120px; 
-    /* overflow-y: auto; */
-    scroll-snap-align: center;
-  }
-/* 
-  .sectionSocial { order: 1; }
-  .sectionMap { order: 2; }
-  .sectionSports { order: 3; } */
-
-  .sectionMap {
-    padding: 0; 
-    padding-top: 80px;
-    padding-bottom: 80px;
-    overflow: hidden;
-  }
-
-  .sectionTitle {
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-  }
 }

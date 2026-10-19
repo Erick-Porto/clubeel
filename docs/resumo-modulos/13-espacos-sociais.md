@@ -56,6 +56,8 @@ Falha: `{ok:false, status, kind: 'rule'|'validation'|'throttled'|'unauthorized'|
 
 ## Telas
 
+Visual v4 ([14](14-identidade-visual.md)): capa do módulo `social` com abas **Espaços** / **Minhas reservas** em todas as telas. Vitrine e "Minhas reservas" têm **busca** na página. Selo de estágio (`SocialStageBadge` → `Pill`): `requested` e `awaiting_payment` em tom de atenção (relógio / cartão), `confirmed` ok, `refused` e `cancelled` em tom de erro (`stageTone` devolve `danger`), demais neutros — o texto continua sendo o `stage_label` da Lara. No celular, o calendário vem antes da ficha e a barra "Total estimado + Enviar pré-reserva" acompanha a rolagem do formulário.
+
 ### Vitrine
 `social/groups` → para cada grupo, `social/groups/{id}/places` em paralelo. Grupo sem espaço não aparece. Card (`SocialPlaceFacts`): foto, diária, capacidade, convidados incluídos, extras, "Inclui X mesas e Y cadeiras", "Evento de N horas · início entre A e B" (quando há duração), `amenities`, `description` (destacado), regras do grupo em `<details>`.
 

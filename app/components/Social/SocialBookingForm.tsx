@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFloppyDisk, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import style from "../../../styles/social.module.css";
 import replayStyle from "../../../styles/replay.module.css";
+import ui from "../../../styles/ui.module.css";
 import QuantityStepper from "./QuantityStepper";
 import SocialGuestsEditor, { type GuestDraft } from "./SocialGuestsEditor";
 import {
@@ -290,7 +291,7 @@ export default function SocialBookingForm({
                         <dt>Espaço</dt>
                         <dd>{editing.place.name}</dd>
                         <dt>Data</dt>
-                        <dd style={{ textTransform: "capitalize" }}>{formatDayLong(editing.date)}</dd>
+                        <dd><span className={ui.capFirst}>{formatDayLong(editing.date)}</span></dd>
                     </dl>
                     <p className={style.hint}>
                         Data e espaço não mudam na edição. Para outro dia ou espaço, desista desta pré-reserva e faça
@@ -490,7 +491,12 @@ export default function SocialBookingForm({
                     : `A reserva só é confirmada após análise da secretaria e pagamento. ${CONTACT_NOTICE}`}
             </p>
 
-            <div className={style.headerActions}>
+            {/* No celular, a barra de envio acompanha a rolagem do formulário. */}
+            <div className={`${style.headerActions} ${style.formSubmit}`}>
+                <span className={style.formSubmitTotal}>
+                    <small>Total estimado</small>
+                    <strong>{formatBRL(estimate.total)}</strong>
+                </span>
                 <button type="submit" className={replayStyle.replayButton} disabled={pending || !date}>
                     <FontAwesomeIcon icon={editing ? faFloppyDisk : faPaperPlane} />{" "}
                     {pending ? (editing ? "Salvando..." : "Enviando...") : editing ? "Salvar alterações" : "Enviar pré-reserva"}
