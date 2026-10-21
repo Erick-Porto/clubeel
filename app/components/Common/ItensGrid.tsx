@@ -1,10 +1,15 @@
 'use client';
-import Image from 'next/image';
+import Image from 'next/image'; 
 import Link from 'next/link';
 import Style from '../../../styles/itens-grid.module.css';
-import type { CarouselItem } from './sportive-square';
 
-export default function ItensGrid({ data }: { data: CarouselItem[] }) {
+interface dataType {
+    id: number;
+    name: string;
+    image_vertical: string;
+}
+
+export default function ItensGrid({ data }: { data: dataType[] }) {
     if (!data || data.length === 0) {
         return (
             <div className={Style.gridContainer}>
@@ -17,27 +22,23 @@ export default function ItensGrid({ data }: { data: CarouselItem[] }) {
 
     return (
         <div className={Style.gridContainer}>
-            {data.map((item) => {
-                const href = item.href ?? `/places/${item.name.replace(/\s+/g, '-').toLowerCase()}-${item.id}`;
-                return (
-                    <Link key={href} referrerPolicy='no-referrer' rel='noopener noreferrer' href={href}>
-                        <div className={Style.gridItem}>
-                            <Image
-                                src={item.image_vertical}
-                                alt={`Imagem de ${item.name}`}
-                                className={Style.gridItemImage}
-                                width={1280}
-                                height={720}
-                                quality={100}
-                            />
-                            <div className={Style.gridItemOverlay}>
-                                {item.tag && <span className={Style.gridItemTag}>{item.tag}</span>}
-                                <h3 className={Style.gridItemTitle}>{item.name}</h3>
-                            </div>
+            {data.map((item) => (
+                <Link key={item.id} referrerPolicy='no-referrer' rel='noopener noreferrer' href={`/places/${item.name.replace(/\s+/g, '-').toLowerCase()}-${item.id}`}>
+                    <div className={Style.gridItem}>
+                        <Image
+                            src={item.image_vertical}
+                            alt={`Imagem de ${item.name}`}
+                            className={Style.gridItemImage}
+                            width={1280}
+                            height={720}
+                            quality={100}
+                        />
+                        <div className={Style.gridItemOverlay}>
+                            <h3 className={Style.gridItemTitle}>{item.name}</h3>
                         </div>
-                    </Link>
-                );
-            })}
+                    </div>
+                </Link>
+            ))}
         </div>
     );
 }

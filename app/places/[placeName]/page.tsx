@@ -1,6 +1,5 @@
 "use client"
 import globalStyle from "../../../styles/page.module.css";
-import ui from "../../../styles/ui.module.css";
 import style from "../../../styles/places.module.css"
 import Footer from '../../components/Common/footer';
 import Header from '../../components/Common/header';
@@ -10,11 +9,9 @@ import API_CONSUME from "../../../services/api-consume";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRight, faBan, faCalendarXmark, faCheck, faChevronLeft, faChevronRight, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { LoadingScreen } from "../../components/Common/loading";
 import TutorialOverlay, { TutorialStep } from "../../components/Common/tutorial-overlay";
-import ReplayNotice from "../../components/Replay/ReplayNotice";
-import { PageHeader } from "../../components/UI/ui";
 import { toast } from "react-toastify";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
@@ -91,7 +88,7 @@ const fetchPlaces = useCallback(async () => {
 
             if (!response.ok || !response.data) toast.error("Erro ao buscar locais: " + (response.message || "Erro desconhecido"));
             const apiData = response.data;
-
+            
             const placesArray: Place[] = Object.values(apiData.places || {});
             setGroup(apiData.group);
             setPlaces(placesArray);
@@ -103,7 +100,7 @@ const fetchPlaces = useCallback(async () => {
 
         } catch (error) {
             toast.error("Erro ao buscar locais: " + (error instanceof Error ? error.message : String(error)));
-
+            
         }
     }, [placeId, session, status]);
 
@@ -127,7 +124,7 @@ const fetchPlaces = useCallback(async () => {
 
     const handleDateSelectionArrow = (direction: 'next' | 'prev') => {
         if (isAnimating) return;
-
+        
         const today = new Date();
         const diff = getDaysDifference(selectedDate, today);
 
@@ -147,9 +144,9 @@ const fetchPlaces = useCallback(async () => {
             const newDate = new Date(selectedDate);
             newDate.setDate(selectedDate.getDate() + (direction === 'next' ? dateDifference : -dateDifference));
             setSelectedDate(newDate);
-
+            
             setIsAnimating(null);
-        }, 500);
+        }, 500); 
     };
 
     if (status === 'loading' || !session) {
@@ -158,8 +155,8 @@ const fetchPlaces = useCallback(async () => {
 
     const today = new Date();
     const daysFromToday = getDaysDifference(selectedDate, today);
-
-    const canGoPrev = daysFromToday >= dateDifference;
+    
+    const canGoPrev = daysFromToday >= dateDifference; 
     const canGoNext = (daysFromToday + dateDifference) <= maxAntecedence;
 
     const TUTORIAL_STEPS: TutorialStep[] = [
@@ -190,33 +187,29 @@ const fetchPlaces = useCallback(async () => {
         }
     ]
 
-    const longDate = (date: Date) => date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-
     return (
         <div className={globalStyle.page}>
-            <Header />
+            <Header options={null} surgeIn={0} onlyScroll={false} profileOptions={null} />
             <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Modalidade" />
-
-            <main className={`${globalStyle.main} ${ui.page}`}>
-                <PageHeader
-                    backHref="/"
-                    backLabel="Voltar ao início"
-                    kicker="Quadras"
-                    title={group?.name || 'Carregando...'}
-                    lead={<>Horários de <strong>{longDate(selectedDate)}</strong>. Escolha a data e depois a quadra.</>}
-                />
+            
+            <section className={globalStyle.Section} style={{ paddingBottom: "60px" }}>
+                
+                <div className={style.placeBanner} style={{ backgroundImage: `url(${group?.image_horizontal || ''})` }}>
+                    <div className={style.placeBannerCover}>
+                        <h1>{group?.name || 'Carregando...'}</h1>
+                    </div>
+                </div>
 
                 <div className={style.dateSelectionContainer} id="date-selection">
                     <button
-                        type="button"
                         className={style.dateSelectionArrow}
                         onClick={() => handleDateSelectionArrow("prev")}
                         disabled={!canGoPrev || !!isAnimating}
-                        aria-label="Datas anteriores"
+                        aria-label="Avançar data"
                     >
                         <FontAwesomeIcon icon={faChevronLeft} />
                     </button>
-
+                    
                     <div className={style.dateSelectionContentView}>
                         <ul className={`${style.dateSelection} ${isAnimating ? style[isAnimating] : ''}`}>
                             {weekView.map((item, index) => {
@@ -225,21 +218,17 @@ const fetchPlaces = useCallback(async () => {
                                 const isDisabled = itemDiff < 0 || itemDiff > maxAntecedence;
 
                                 return (
-                                    <li key={index}>
-                                        <button
-                                            type="button"
-                                            className={`${style.dateSelectionItem} ${isSelected ? style.dateSelectedItem : ''} ${isDisabled ? style.dateItemDisabled : ''}`}
-                                            onClick={() => !isDisabled && setSelectedDate(item)}
-                                            disabled={isDisabled}
-                                            aria-pressed={isSelected}
-                                            aria-label={longDate(item)}
-                                        >
-                                            <span className={style.dateWeekday}>
-                                                {itemDiff === 0 ? 'hoje' : item.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}
-                                            </span>
-                                            <span className={style.dateDay}>{item.toLocaleDateString('pt-BR', { day: '2-digit' })}</span>
-                                            <span className={style.dateMonth}>{item.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</span>
-                                        </button>
+                                    <li
+                                        key={index}
+                                        className={`
+                                            ${style.dateSelectionItem} 
+                                            ${isSelected ? style.dateSelectedItem : ''}
+                                            ${isDisabled ? style.dateItemDisabled : ''}
+                                        `}
+                                        onClick={() => !isDisabled && setSelectedDate(item)}
+                                    >
+                                        <span>{item.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                                        <span>{item.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.','')}</span>
                                     </li>
                                 );
                             })}
@@ -247,47 +236,45 @@ const fetchPlaces = useCallback(async () => {
                     </div>
 
                     <button
-                        type="button"
                         className={style.dateSelectionArrow}
                         onClick={() => handleDateSelectionArrow("next")}
                         disabled={!canGoNext || !!isAnimating}
-                        aria-label="Próximas datas"
+                        aria-label="Avançar data"
                     >
                         <FontAwesomeIcon icon={faChevronRight} />
                     </button>
                 </div>
 
-                { places.length > 0 ? (
                 <div className={style.placeList} id="place-list">
-                    {places.map((item, index) => {
+                    { places.length > 0 ? (
+                    places.map((item, index) => {
                         const isAvailable = limit === 0 ? false : item.available_slots >= 1;
                         return (
                             <div key={item.id} id={`place-card-${index}`} className={`${style.placeCard} ${!isAvailable ? style.placeCardDisabled : ''}`}>
                                 <div className={style.placeCardImageContainer}>
-                                    <div
-                                        className={style.placeCardImage}
-                                        style={item.image ? { backgroundImage: `url(${item.image})` } : undefined}
-                                        role="img"
+                                    <div 
+                                        className={style.placeCardImage} 
+                                        style={{ backgroundImage: `url(${item.image})` }} 
+                                        role="img" 
                                         aria-label={`Imagem de ${item.name}`}
                                     />
                                     <span className={`${style.statusBadge} ${isAvailable ? style.available : style.unavailable}`}>
-                                        <FontAwesomeIcon icon={isAvailable ? faCheck : item.available_slots === 0 ? faXmark : faBan} />
-                                        {item.available_slots >= 1 ? `${item.available_slots > 1 ? item.available_slots + ' disponíveis' : '1 disponível'}` : item.available_slots === 0 ? 'Esgotado' : 'Indisponível'}
+                                        {item.available_slots >= 1 ? `${item.available_slots > 1 ? item.available_slots + ' Disponíveis' : '1 Disponível'}` : item.available_slots === 0 ? 'Esgotado' : 'Indisponível'}
                                     </span>
                                 </div>
 
                                 <div className={style.placeCardInfo}>
                                     <h3 className={style.placeCardTitle}>{item.name}</h3>
-
+                                    
                                     {isAvailable ? (
-                                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer'
+                                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' 
                                             id={`schedule-button-${index}`}
                                             className={`${style.placeAction} ${style.btnReserve}`}
                                             href={{
                                                 pathname: `/place/${item.name.replace(/\s+/g, '-').toLowerCase()}-${item.id}`
                                             }}
                                         >
-                                            Reservar horário <FontAwesomeIcon icon={faArrowRight} />
+                                            Reservar Horário
                                         </Link>
                                     ) : (
                                         <div className={`${style.placeAction} ${style.disabledText}`}>
@@ -297,16 +284,15 @@ const fetchPlaces = useCallback(async () => {
                                 </div>
                             </div>
                         );
-                    })}
-                </div>
+                    })
+                
                 ) : (
-                    <ReplayNotice
-                        icon={faCalendarXmark}
-                        title="Nenhuma quadra disponível"
-                        description="Não há quadras disponíveis para a data selecionada. Tente outra data."
-                    />
+                    <div className={style.noPlacesMessage}>
+                        Nenhuma quadra disponível para a data selecionada.
+                    </div>
                 )}
-            </main>
+                </div>
+            </section>
             <Footer />
         </div>
     );

@@ -1,188 +1,287 @@
-/* Abas "Meus dados" e "Segurança" do perfil e o modal de confirmação de senha. */
+.profilePageContainer {
+    background-color: #f4f6f8;
+    min-height: 100vh;
+}
 
-.formContainer {
-  background: var(--surface);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  border: 1px solid rgb(var(--line-rgb) / .6);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 760px;
+.profileContentWrapper {
+    max-width: 1200px;
+    margin: 0 auto; 
+    padding: 60px 20px 0 20px; 
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
+}
+
+.profileSidebar {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+}
+
+.profileMenu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.menuItem {
+    padding: 14px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+}
+
+.menuItem:hover {
+    background-color: #f9f9f9;
+    color: var(--grena);
+}
+
+.menuItemActive {
+    background-color: var(--grena);
+    color: white;
+    box-shadow: 0 4px 12px rgba(115, 0, 1, 0.2);
+}
+
+.contentCard {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 40px;
+    min-height: 400px;
+    animation: fadeIn 0.4s ease-out;
 }
 
 .sectionTitle {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -.01em;
+    font-size: 1.5rem;
+    color: var(--grena);
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+    font-weight: 700;
+}
+
+.formContainer {
+    width: 100%;
 }
 
 .formGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
 }
 
 .fullWidth {
-  grid-column: 1 / -1;
+    grid-column: 1 / -1;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .formLabel {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-2);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #444;
 }
 
 .formInput {
-  width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    background-color: #fff;
+    color: #333;
+}
+
+.formInput:focus {
+    outline: none;
+    border-color: var(--grena);
+    box-shadow: 0 0 0 3px rgba(115, 0, 1, 0.1);
+}
+
+.formInput:disabled {
+    background-color: #f5f5f5;
+    color: #888;
+    border-color: #eee;
+    cursor: not-allowed;
 }
 
 .actionButtons {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 4px;
-}
-
-.primaryButton,
-.secondaryButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 10px 20px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  font-weight: 700;
-  font-size: 14.5px;
-  cursor: pointer;
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
 }
 
 .primaryButton {
-  background: var(--grena);
-  color: #fff;
+    background-color: var(--grena);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+    flex: 1;
 }
 
-.primaryButton:hover:not(:disabled) {
-  background: var(--grena-hover);
+.primaryButton:hover {
+    background-color: #800000;
+    transform: translateY(-2px);
 }
 
 .primaryButton:disabled {
-  opacity: .45;
-  cursor: not-allowed;
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .secondaryButton {
-  background: var(--surface);
-  border-color: var(--line-strong);
-  color: var(--ink);
+    background-color: transparent;
+    border: 1px solid var(--grena);
+    color: var(--grena);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
 }
 
 .secondaryButton:hover {
-  background: var(--subtle);
+    background-color: #fff5f5;
 }
 
-/* --------------------------------------------------------- Regras da senha */
-
 .passwordRulesContainer {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--canvas);
-  border: 1px solid var(--line);
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
 }
 
 .rulesList {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .ruleBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 700;
-  background: var(--subtle);
-  color: var(--ink-3);
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background-color: #eee;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s;
 }
 
 .ruleMet {
-  background: var(--ok-soft);
-  color: var(--ok);
+    background-color: #e6f4ea;
+    color: #1e8e3e;
+    font-weight: 600;
 }
 
-/* ------------------------------------------------------------------ Modal */
-
 .modalOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 3000;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgb(18 12 14 / .55);
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
 }
 
 .modalContent {
-  width: 100%;
-  max-width: 400px;
-  background: var(--surface);
-  border-radius: 22px;
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-pop);
-  padding: 24px;
-  text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: center;
 }
 
 .modalTitle {
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 600;
-  margin-bottom: 6px;
+    font-size: 1.2rem;
+    color: var(--grena);
+    margin-bottom: 10px;
 }
 
 .modalText {
-  color: var(--ink-2);
-  margin-bottom: 18px;
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 20px;
 }
 
-@media (max-width: 600px) {
-  .formContainer {
-    padding: 16px;
-  }
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
 
-  .formGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
-  .actionButtons > button {
-    flex: 1;
-  }
+@media (max-width: 900px) {
+    .profileContentWrapper {
+        grid-template-columns: 1fr;
+        margin-top: 0;
+        gap: 20px;
+        padding: 90px 0 0 0;
+    }
 
-  /* No celular o modal sobe de baixo, perto do polegar. */
-  .modalOverlay {
-    place-items: end center;
-    padding: 0;
-  }
+    .profileSidebar {
+        position: static;
+        padding: 5px;
+        border-radius: 0 0 16px 16px;
+        margin-top: -20px;
+    }
 
-  .modalContent {
-    max-width: none;
-    border-radius: 22px 22px 0 0;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-  }
+    .profileMenu {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 5px;
+        gap: 5px;
+    }
+
+    .menuItem {
+        white-space: nowrap;
+        font-size: .7rem;
+        padding: 8px;
+        flex-shrink: 0;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .contentCard {
+        padding: 25px 20px;
+    }
 }

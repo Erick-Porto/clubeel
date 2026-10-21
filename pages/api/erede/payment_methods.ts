@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 import { eredeAuth, eredeBaseUrl, eredeConfigured } from "../../../utils/erede";
-import { AlreadyPaidError, computeAmountInCents, computeSocialBookingCharge } from "../../../utils/lara";
+import { computeAmountInCents } from "../../../utils/lara";
 import { rateLimit, getClientIp } from "../../../utils/rate-limit";
 import { guardRequest } from "../../../utils/sanitize";
 import { savePendingPayment } from "../../../utils/pending-payments";
@@ -57,42 +57,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!guardRequest(req, res)) return;
 
     try {
-        const { method, cardData, socialBookingId } = req.body;
-        let { scheduleIds } = req.body;
+        const { method, cardData, scheduleIds } = req.body;
 
         // 3. O valor é SEMPRE recalculado no servidor — nunca vem do cliente.
-        // Reserva de espaço social: o valor é o `total` da reserva lida na
-        // Lara, e o agendamento cobrado é só o `schedule_id` dela (os
-        // `scheduleIds` do corpo são ignorados — sem misturar com quadras).
-        let amount: number;
-        let social: number | undefined;
-        if (socialBookingId !== undefined && socialBookingId !== null) {
-            let charge;
-            try {
-                charge = await computeSocialBookingCharge(socialBookingId, accessToken);
-            } catch (chargeError: unknown) {
-                // Nada foi cobrado ainda. A tela relê a reserva ao receber o
-                // `reason`, como faria com a recusa da própria Lara. Já paga
-                // (baixa manual da secretaria) tem código próprio: não é erro.
-                const message = chargeError instanceof Error ? chargeError.message : 'Reserva indisponível para pagamento.';
-                const reason = chargeError instanceof AlreadyPaidError ? 'already_paid' : 'payment_mismatch';
-                return res.status(409).json({ error: message, reason });
-            }
-            amount = charge.amountCents;
-            scheduleIds = [charge.scheduleId];
-            social = charge.bookingId;
-        } else {
-            try {
-                amount = await computeAmountInCents(scheduleIds, userId, accessToken);
-            } catch (amountError: unknown) {
-                // Quadra confirmada pela secretaria enquanto o sócio estava no
-                // checkout: não cobra; a tela relê o carrinho.
-                if (amountError instanceof AlreadyPaidError) {
-                    return res.status(409).json({ error: 'already_paid', reason: 'already_paid', message: amountError.message });
-                }
-                throw amountError;
-            }
-        }
+        const amount = await computeAmountInCents(scheduleIds, userId, accessToken);
 
         const access_token = await eredeAuth();
 
@@ -153,7 +121,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             amountCents: amount,
             method,
             createdAt: Date.now(),
-            socialBookingId: social,
         });
 
         return res.status(200).json(transactionData);

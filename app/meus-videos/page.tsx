@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+    faArrowRight,
     faCircleExclamation,
     faFilm,
     faRightToBracket,
@@ -21,10 +22,7 @@ import {
     faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../../styles/page.module.css";
-import ui from "../../styles/ui.module.css";
 import style from "../../styles/replay.module.css";
-import { ReplayCover } from "../components/UI/covers";
-import { PageHeader } from "../components/UI/ui";
 import Header from "../components/Common/header";
 import Footer from "../components/Common/footer";
 import { Loading, LoadingScreen } from "../components/Common/loading";
@@ -94,19 +92,19 @@ export default function MyVideosPage() {
 
     return (
         <div className={globalStyle.page}>
-            <Header />
-            <ReplayCover />
+            <Header options={null} surgeIn={0} onlyScroll={false} />
 
-            <main className={`${globalStyle.main} ${ui.page}`}>
-                <PageHeader
-                    title="Meus vídeos"
-                    lead={
-                        <>
-                            Os replays gravados durante as suas reservas. Cada vídeo fica disponível por{" "}
-                            <strong>7 dias</strong> a partir da gravação — baixe o que quiser guardar.
-                        </>
-                    }
-                />
+            <section className={style.replaySection}>
+                <div className={style.replayHeader}>
+                    <h1 className={style.replayTitle}>Meus vídeos</h1>
+                    <p className={style.replayLead}>
+                        Os replays gravados durante as suas reservas. Cada vídeo fica disponível por{" "}
+                        <strong>7 dias</strong> a partir da gravação — baixe o que quiser guardar.
+                    </p>
+                    <Link href="/replay" className={style.replayLinkInline}>
+                        Ver a galeria das quadras <FontAwesomeIcon icon={faArrowRight} />
+                    </Link>
+                </div>
 
                 {status === "unauthenticated" || sessionExpired ? (
                     <ReplayNotice
@@ -197,7 +195,7 @@ export default function MyVideosPage() {
                         </div>
                     </>
                 )}
-            </main>
+            </section>
 
             <Footer />
         </div>

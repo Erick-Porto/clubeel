@@ -17,12 +17,6 @@ export interface PendingPayment {
   amountCents: number;
   method: string;
   createdAt: number;
-  /**
-   * Preenchido quando a cobrança é de uma reserva de espaço social: o
-   * `scheduleIds` então é só o `schedule_id` dela, e a falha da Lara volta
-   * com `reason` (ex.: `payment_mismatch`) em vez de "expired".
-   */
-  socialBookingId?: number;
 }
 
 // Generosa o suficiente para cobrir a confirmacao (normalmente quase

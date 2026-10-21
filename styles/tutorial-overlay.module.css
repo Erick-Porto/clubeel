@@ -42,12 +42,10 @@
 
 .card {
   position: absolute;
-  background-color: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line);
+  background-color: white;
   padding: 25px;
-  border-radius: 20px;
-  box-shadow: var(--shadow-pop);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
   width: 90%;
   max-width: 380px;
   pointer-events: auto;
@@ -58,24 +56,22 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--grena-ink);
+  color: var(--grena, #a00001);
   font-weight: 800;
   margin-bottom: 8px;
 }
 
 .title {
   font-size: 1.25rem;
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -.01em;
+  font-weight: 700;
+  color: #333;
   margin-bottom: 10px;
   line-height: 1.2;
 }
 
 .description {
   font-size: 0.95rem;
-  color: var(--ink-2);
+  color: #555;
   line-height: 1.5;
   margin-bottom: 20px;
 }
@@ -90,14 +86,14 @@
 .skipBtn {
   background: none;
   border: none;
-  color: var(--ink-3);
+  color: #999;
   font-size: 0.9rem;
   cursor: pointer;
   text-decoration: underline;
 }
 
 .nextBtn {
-  background-color: var(--grena);
+  background-color: var(--grena, #a00001);
   color: white;
   border: none;
   padding: 10px 24px;
@@ -112,7 +108,7 @@
 
 .nextBtn:hover {
   transform: scale(1.05);
-  background-color: var(--grena-hover);
+  background-color: #800000;
 }
 
 .iconWrapper {
@@ -121,10 +117,10 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  background: var(--grena-tint);
+  background: #f0f0f0;
   border-radius: 50%;
   margin-right: 8px;
-  color: var(--grena-ink);
+  color: var(--grena, #a00001);
   font-size: 0.9rem;
 }
 

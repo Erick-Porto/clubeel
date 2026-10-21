@@ -1,255 +1,315 @@
-/*
- * Esporte (/places): faixa de datas e cartões de quadra.
- * Os cartões (placeCard…) também são usados pelo seletor da Luz da quadra.
- */
+/* Banner Imersivo */
+.placeBanner {
+  width: 100%;
+  height: 40vh;
+  min-height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  margin-bottom: 40px;
+}
 
-/* --------------------------------------------------------- Faixa de datas */
+.placeBanner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+  z-index: 1;
+}
+
+.placeBannerCover {
+  z-index: 2;
+  position: relative;
+  color: white;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.placeBannerCover h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  margin: 0;
+}
 
 .dateSelectionContainer {
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 40px auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 20px;
+  padding: 0 20px;
   user-select: none;
 }
 
-.dateSelectionArrow {
-  width: 44px;
-  height: 44px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink-2);
-  cursor: pointer;
-}
-
-.dateSelectionArrow:hover:not(:disabled) {
-  color: var(--grena-ink);
-  border-color: rgb(var(--grena-rgb) / .5);
-}
-
-.dateSelectionArrow:disabled {
-  opacity: .35;
-  cursor: not-allowed;
-}
-
 .dateSelectionContentView {
-  flex: 1;
-  min-width: 0;
+  flex-grow: 1;
   overflow: hidden;
   position: relative;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 }
 
-/*
- * A lista tem 3× a largura visível e mostra o terço do meio; as setas animam
- * para um dos lados (`.next`/`.prev`) antes de trocar o bloco de datas.
- */
 .dateSelection {
   display: flex;
   width: 300%;
   transform: translateX(-33.333%);
-  transition: transform .5s cubic-bezier(.25, .8, .25, 1);
+  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
   list-style: none;
-  padding: 4px 0;
+  padding: 10px 0;
 }
 
 .dateSelection.next { transform: translateX(-66.666%); }
 .dateSelection.prev { transform: translateX(0%); }
 
-.dateSelection > li {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  padding: 0 4px;
-}
-
 .dateSelectionItem {
   flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  padding: 8px 2px;
-  border-radius: 16px;
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
+  padding: 12px 5px;
   cursor: pointer;
-  transition: border-color .15s, background-color .15s;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  color: #666;
+  border: 1px solid transparent;
 }
 
-.dateSelectionItem:hover:not(:disabled) {
-  border-color: rgb(var(--grena-rgb) / .5);
+.dateSelectionItem:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  color: var(--grena);
 }
 
-.dateWeekday,
-.dateMonth {
-  font-size: 11px;
+.dateSelectedItem {
+  background-color: var(--grena) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(115, 0, 1, 0.3);
+  transform: translateY(-2px);
+}
+
+.dateSelectionItem span:first-child {
+  font-size: 1.2rem;
   font-weight: 700;
+}
+
+.dateSelectionItem span:last-child {
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--ink-3);
+  font-weight: 500;
+  margin-top: 4px;
 }
 
-.dateMonth {
-  font-weight: 600;
-  text-transform: lowercase;
-  letter-spacing: 0;
+.dateSelectionArrow {
+  background: white;
+  border: 1px solid #eee;
+  color: var(--grena);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  flex-shrink: 0;
 }
 
-.dateDay {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  font-size: 20px;
-  line-height: 1.2;
+.dateSelectionArrow:hover:not(:disabled) {
+  background-color: var(--grena);
+  color: white;
+  transform: scale(1.1);
 }
 
-.dateSelectedItem,
-.dateSelectedItem:hover:not(:disabled) {
-  background: var(--grena);
-  border-color: var(--grena);
-  color: #fff;
-}
-
-.dateSelectedItem .dateWeekday,
-.dateSelectedItem .dateMonth {
-  color: rgb(255 255 255 / .8);
-}
-
-.dateItemDisabled {
-  opacity: .35;
+.dateSelectionArrow:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
-  border-style: dashed;
 }
-
-/* ---------------------------------------------------------- Cartões de quadra */
+.dateItemDisabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background-color: #f9f9f9;
+  pointer-events: none;
+  text-decoration: line-through;
+}
 
 .placeList {
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-}
-
-@media (max-width: 420px) {
-  .placeList {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .placeCard {
-  background: var(--surface);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  border: 1px solid rgb(var(--line-rgb) / .6);
+  background: white;
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  height: 100%;
+  border: 1px solid #f0f0f0;
 }
 
-.placeCardDisabled .placeCardImage {
-  filter: grayscale(.6);
-  opacity: .75;
+.placeCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
 }
 
 .placeCardImageContainer {
   position: relative;
-  aspect-ratio: 16 / 9;
-  background: rgb(var(--a-quadras-rgb));
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
 }
 
 .placeCardImage {
-  position: absolute;
-  inset: 0;
+  width: 100%;
+  height: 100%;
   background-size: cover;
   background-position: center;
+  transition: transform 0.5s ease;
+}
+
+.placeCard:hover .placeCardImage {
+  transform: scale(1.05);
 }
 
 .statusBadge {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 999px;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 700;
-  line-height: 1.4;
-  max-width: calc(100% - 20px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: 0 1px 3px rgb(0 0 0 / .15);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .available {
-  background: var(--ok-soft);
-  color: var(--ok);
+  background-color: rgba(255, 255, 255, 0.95);
+  color: var(--grena);
 }
 
 .unavailable {
-  background: var(--subtle);
-  color: var(--ink-3);
+  background-color: rgba(100, 100, 100, 0.9);
+  color: white;
 }
 
 .placeCardInfo {
-  padding: 14px 16px 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  flex: 1;
+  gap: 15px;
+  flex-grow: 1;
+  justify-content: space-between;
+  background: white;
 }
 
 .placeCardTitle {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -.01em;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
 }
 
 .placeAction {
-  margin-top: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  font-weight: 700;
-  font-size: 14.5px;
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
   text-align: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
 .btnReserve {
-  background: var(--grena);
-  color: #fff;
-  cursor: pointer;
+  background-color: var(--grena);
+  color: white;
+  border: none;
 }
 
-.btnReserve:hover:not(:disabled) {
-  background: var(--grena-hover);
-}
-
-.btnReserve:disabled {
-  background: var(--subtle);
-  color: var(--ink-3);
-  border-color: var(--line);
-  cursor: not-allowed;
+.btnReserve:hover {
+  background-color: #5a0000;
+  box-shadow: 0 4px 12px rgba(115, 0, 1, 0.2);
 }
 
 .disabledText {
-  background: var(--subtle);
-  color: var(--ink-3);
-  border-style: dashed;
-  border-color: var(--line-strong);
+  color: #999;
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.placeCardDisabled {
+  opacity: 0.8;
+}
+
+.placeCardDisabled .placeCardImage {
+  filter: grayscale(0.8);
+}
+@media(min-width: 768px) {
+  .placeBanner{
+    background-position: 0 35%;
+  }
+}
+@media (max-width: 768px) {
+  .placeBanner {
+    height: 30vh;
+    min-height: 200px;
+  }
+  
+  .placeBannerCover h1 {
+    font-size: 2rem;
+  }
+
+  .dateSelectionItem {
+    padding: 8px 2px;
+  }
+  
+  .dateSelectionItem span:first-child {
+    font-size: 1rem;
+  }
+  
+  .dateSelectionItem span:last-child {
+    font-size: 0.7rem;
+  }
+  
+  .dateSelectionArrow {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .placeList {
+    grid-template-columns: 1fr;
+  }
+  
+  .placeBannerCover h1 {
+    font-size: 1.8rem;
+  }
+  
+  .dateSelectionContainer {
+    padding: 0 10px;
+    gap: 10px;
+  }
 }

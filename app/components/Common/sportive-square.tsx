@@ -1,24 +1,20 @@
 "use client"
 import Style from '../../../styles/sportive-square.module.css';
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from 'next/image'; 
 
-export interface CarouselItem {
+interface Place {
     id: number;
     name: string;
     image_vertical: string;
-    /** Destino do card. Sem ele, vai para a lista de quadras do esporte. */
-    href?: string;
-    /** Selo pequeno acima do nome (ex.: "Espaço social"). */
-    tag?: string;
 }
 
 interface SportiveSquareProps {
-    places: CarouselItem[];
+    places: Place[];
 }
 
 const SportiveSquare: React.FC<SportiveSquareProps> = ({ places }) => {
-
+    
     const formatPlaceNameForUrl = (name: string) => {
         return name.replace(/\s+/g, '-').toLowerCase();
     };
@@ -35,7 +31,7 @@ const SportiveSquare: React.FC<SportiveSquareProps> = ({ places }) => {
 
     let fillList = [...places];
     const MIN_ITEMS_ON_SCREEN = 8;
-
+    
     while (fillList.length < MIN_ITEMS_ON_SCREEN) {
         fillList = [...fillList, ...places];
     }
@@ -47,7 +43,7 @@ const SportiveSquare: React.FC<SportiveSquareProps> = ({ places }) => {
             <div className={Style.carousel}>
                 {finalCarouselList.map((place, index) => (
                     <div
-                        key={`${place.href ?? place.id}-clone-${index}`}
+                        key={`${place.id}-clone-${index}`} 
                         className={Style.square}
                     >
                         <Image
@@ -59,9 +55,8 @@ const SportiveSquare: React.FC<SportiveSquareProps> = ({ places }) => {
                             priority={index < 4}
                             quality={100}
                         />
-
-                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={place.href ?? `/places/${formatPlaceNameForUrl(place.name)}-${place.id}`} className={Style.squareInfo}>
-                            {place.tag && <span className={Style.tag}>{place.tag}</span>}
+                        
+                         <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href={`/places/${formatPlaceNameForUrl(place.name)}-${place.id}`} className={Style.squareInfo}>
                             <span className={Style.title}>{place.name}</span>
                         </Link>
                     </div>

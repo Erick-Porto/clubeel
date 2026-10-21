@@ -228,15 +228,14 @@ function Detalhe({ ordem }: { ordem: OrdemDetalhe }) {
               </thead>
               <tbody>
                 {itens.map((item, i) => (
-                  // `data-rotulo` vira o rótulo de cada campo quando a tabela vira cartão no celular.
                   <tr key={`${item.item}-${i}`}>
-                    <td data-rotulo="Item" className={styles.colunaNumero}>{item.item}</td>
+                    <td>{item.item}</td>
                     <td className={styles.celulaMaterial}>{ouTraco(item.material)}</td>
-                    <td data-rotulo="Un.">{ouTraco(item.unidade)}</td>
-                    <td data-rotulo="Qtd." className={styles.colunaNumero}>{numero(item.quantidade)}</td>
-                    <td data-rotulo="Vl. unitário" className={styles.colunaNumero}>{moedaPrecisa(item.vl_unitario)}</td>
-                    <td data-rotulo="Vl. total" className={styles.colunaNumero}>{moeda(item.vl_total)}</td>
-                    <td data-rotulo="Centro de custo" className={styles.colunaNumero}>
+                    <td>{ouTraco(item.unidade)}</td>
+                    <td className={styles.colunaNumero}>{numero(item.quantidade)}</td>
+                    <td className={styles.colunaNumero}>{moedaPrecisa(item.vl_unitario)}</td>
+                    <td className={styles.colunaNumero}>{moeda(item.vl_total)}</td>
+                    <td className={styles.colunaNumero}>
                       {item.centro_custo === null || item.centro_custo === undefined
                         ? '—'
                         : item.centro_custo}

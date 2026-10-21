@@ -1,33 +1,15 @@
-/* Tela de entrada do sócio: painel do formulário + carrossel de fotos do clube. */
 .page {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  background-color: var(--canvas);
-  position: relative;
+    display: flex;
+    flex-direction: row;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--background);
+    position: relative;
 }
 
-.page > :last-child {
-  flex: 1;
-  min-width: 0;
-}
-
-/*
- * No celular o carrossel vira o fundo da tela (fixo, atrás do formulário) e o
- * painel de entrada fica centralizado por cima, como cartão.
- */
 @media (max-width: 900px) {
-  .page {
-    flex-direction: column;
-    justify-content: center;
-  }
-
-  .page > :not(aside) {
-    position: fixed;
-    inset: 0;
-    height: auto !important;
-    z-index: 0;
-  }
+    .page {
+        flex-direction: column;
+    }
 }

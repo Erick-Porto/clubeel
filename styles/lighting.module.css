@@ -1,453 +1,282 @@
-/*
- * Luz da quadra (/luz), destaque na home e cartão no perfil.
- * O aviso fechável (.flash) também é usado pelos Espaços sociais.
- */
+/* ==========================================================================
+   Luz da quadra. A página usa o esqueleto do Replay (replay.module.css) e o
+   cartão de quadra de /places (places.module.css); aqui fica só o que é novo:
+   o painel "acesa", o seletor de duração e os avisos.
+   Celular primeiro: o sócio abre isso na beira da quadra, à noite.
+   ========================================================================== */
 
-/* ------------------------------------------------------- Destaque na home */
-
-.homeBanner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  border: 1px solid rgb(var(--line-rgb) / .6);
-  box-shadow: var(--shadow-card);
-  color: var(--ink);
-  transition: box-shadow .15s, transform .15s;
-}
-
-@media (hover: hover) {
-  .homeBanner:hover {
-    box-shadow: var(--shadow-pop);
-    transform: translateY(-1px);
-  }
-}
-
-.homeBannerLit {
-  border-color: rgb(var(--ok-rgb) / .45);
-}
-
-.homeBannerIcon {
-  width: 46px;
-  height: 46px;
-  flex: none;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  font-size: 20px;
-  background: rgb(var(--c));
-  color: rgb(var(--ci));
-}
-
-.homeBannerLit .homeBannerIcon {
-  background: var(--ok-soft);
-  color: var(--ok);
-}
-
-.homeBannerContent {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1.3;
-}
-
-.homeBannerKicker {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--ink-3);
-}
-
-.homeBannerTitle {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: -.01em;
-}
-
-.homeBannerDetail {
-  font-size: 13.5px;
-  color: var(--ink-2);
-}
-
-.homeBannerAction {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--grena-ink);
-}
-
-@media (max-width: 600px) {
-  .homeBanner {
-    flex-wrap: wrap;
-  }
-
-  .homeBannerAction {
-    flex-basis: 100%;
-    padding-left: 60px;
-  }
-}
-
-/* ------------------------------------------------------- Cartão no perfil */
-
-.statusCard {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: var(--radius-card);
-  background: var(--ok-soft);
-  color: var(--ink);
-  flex-wrap: wrap;
-}
-
-.statusCardIcon {
-  width: 42px;
-  height: 42px;
-  flex: none;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: var(--ok);
-  color: var(--on-solid);
-}
-
-.statusCardBody {
-  flex: 1;
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  font-size: 14px;
-  color: var(--ink-2);
-}
-
-.statusCardBody strong {
-  color: var(--ink);
-  font-size: 15px;
-}
-
-.statusCardAction {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  color: var(--grena-ink);
-}
-
-/* ------------------------------------------------------------ Tela /luz */
+/* ---------------------------------------------------------------- Topo */
 
 .openNow {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   align-self: flex-start;
   padding: 6px 14px;
   border-radius: 999px;
-  background: var(--ok-soft);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
+  background: #eef8ef;
+  color: #1e6b2a;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .openDot {
-  width: 9px;
-  height: 9px;
-  flex: none;
-  border-radius: 999px;
-  background: var(--ok);
-  box-shadow: 0 0 0 4px rgb(var(--ok-rgb) / .2);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2e9b40;
+  box-shadow: 0 0 0 4px rgba(46, 155, 64, 0.18);
 }
 
-.staleWarning {
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--warn-soft);
-  font-size: 13.5px;
-}
-
-.closedText strong {
-  color: var(--ink);
-}
-
-/* Aviso fechável de recusa (Luz e Espaços sociais). */
 .flash {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 14px;
-  background: var(--grena-tint);
-  color: var(--ink);
-  border-left: 4px solid var(--grena);
+  border-radius: 12px;
+  border: 1px solid #e6e6e6;
+  background: #fafafa;
 }
 
 .flashAlert {
-  background: var(--danger-soft);
-  border-left-color: var(--danger);
+  border-color: rgba(125, 4, 0, 0.3);
+  background: var(--grena-lightest);
 }
 
 .flashTitle {
   display: block;
-  font-weight: 800;
-  margin-bottom: 2px;
+  color: #333;
+  margin-bottom: 4px;
 }
 
 .flashText {
-  font-size: 14px;
-  color: var(--ink-2);
+  color: #555;
+  line-height: 1.45;
 }
 
 .flashClose {
-  width: 34px;
-  height: 34px;
-  flex: none;
-  border: 0;
-  border-radius: 999px;
+  border: none;
   background: transparent;
-  color: var(--ink-2);
+  color: #777;
+  font-size: 1rem;
   cursor: pointer;
-  display: grid;
-  place-items: center;
+  padding: 4px;
 }
 
-.flashClose:hover {
-  background: rgb(var(--ink-rgb) / .08);
+.staleWarning {
+  font-size: 0.85rem;
+  color: #8a5a00;
+  background: #fff8e6;
+  border-radius: 8px;
+  padding: 8px 12px;
 }
 
-/* ------------------------------------------------------ Seletor (passos) */
+.closedText strong {
+  color: var(--grena);
+}
+
+/* ------------------------------------------------------------- Etapas */
 
 .pickerStep {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .steps {
-  list-style: none;
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  list-style: none;
   flex-wrap: wrap;
 }
 
 .step {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 12px 4px 4px;
+  gap: 6px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: var(--subtle);
-  color: var(--ink-3);
-  font-size: 13px;
+  background: #f3f3f3;
+  color: #888;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
-.stepNumber {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-
 .stepCurrent {
-  background: var(--grena-tint);
-  color: var(--grena-ink);
-}
-
-.stepCurrent .stepNumber {
   background: var(--grena);
   color: #fff;
 }
 
 .stepDone {
-  background: var(--ok-soft);
-  color: var(--ok);
+  background: var(--grena-lightest-active);
+  color: var(--grena-dark);
 }
 
-.stepDone .stepNumber {
-  background: var(--ok);
-  color: var(--on-solid);
-}
-
-.backLink,
-.textButton {
+.stepNumber {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  align-self: flex-start;
-  border: 0;
-  background: none;
-  padding: 0;
-  font-weight: 700;
-  color: var(--grena-ink);
-  cursor: pointer;
-}
-
-.backLink {
-  min-height: 40px;
-}
-
-.backLink:hover,
-.textButton:hover {
-  text-decoration: underline;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 0.7rem;
 }
 
 .placeGrid {
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  padding: 4px 0;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
 }
 
-@media (max-width: 420px) {
-  .placeGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* Cartão de quadra do seletor (base em places.module.css). */
 .placeCardImageShort {
-  aspect-ratio: 16 / 7 !important;
-  background: rgb(var(--a-luz-rgb)) !important;
+  height: 140px;
 }
 
 .placeImagePlain {
-  background-image: none;
+  background-image: linear-gradient(135deg, var(--grena-light), var(--grena-darker));
 }
 
-.placeCardClosed .placeCardImageShort > div {
-  filter: grayscale(.7);
-  opacity: .7;
-}
-
-/* Acesa = ligada: estado `ok` (o texto "Acesa até…" diferencia de "livre"). */
 .badgeLit {
-  background: var(--ok) !important;
-  color: var(--on-solid) !important;
+  background-color: #ffd54a;
+  color: #4a3500;
 }
 
 .placeActionButton {
-  width: 100%;
-  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Quadra fora do horário: continua na lista, só não aciona. */
+.placeActionButton:disabled {
+  cursor: not-allowed;
+  background-color: #d9d9d9;
+  border-color: #d9d9d9;
+  color: #555;
+}
+
+.placeCardClosed .placeCardImageShort {
+  filter: grayscale(0.7);
+  opacity: 0.8;
 }
 
 .inlineError,
 .inlineEmpty {
-  padding: 12px 0;
-  color: var(--ink-2);
-  font-size: 14px;
+  color: #666;
+  text-align: center;
+  padding: 12px;
 }
 
-.inlineError {
-  color: var(--danger);
+.textButton {
+  border: none;
+  background: none;
+  color: var(--grena);
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
-/* --------------------------------------------------------- Passo 3: tempo */
+.backLink {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  color: var(--grena);
+  font-weight: 700;
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0;
+}
 
-.durationCard,
-.activePanel > .activeInfo,
-.actionBlock {
-  background: var(--surface);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  border: 1px solid rgb(var(--line-rgb) / .6);
-  padding: 20px;
+.durationCard {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  padding: 22px;
+  border-radius: 18px;
+  border: 1px solid #eee;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  max-width: 560px;
 }
 
 .durationPlace {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -.01em;
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.durationPlace strong {
+  color: #222;
 }
 
 .durationStatus {
-  color: var(--ink-2);
-  font-size: 14px;
-}
-
-.actionTitle {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.actionHint {
-  color: var(--ink-2);
-  font-size: 14px;
-}
-
-.actionHint strong {
-  font-family: var(--font-mono);
-  color: var(--ink);
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .notReserved {
   padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--warn-soft);
-  font-size: 13.5px;
+  border-left: 4px solid var(--grena);
+  background: var(--grena-lightest);
+  border-radius: 8px;
+  color: #444;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
-/* Seletor de duração −/+ */
+/* -------------------------------------------------- Seletor de duração */
+
 .stepper {
-  display: flex;
+  display: grid;
+  grid-template-columns: 52px 1fr 52px;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 360px;
 }
 
 .stepperButton {
-  width: 48px;
-  height: 48px;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--grena-ink);
-  font-size: 16px;
-  display: grid;
-  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid #e3e3e3;
+  background: #fff;
+  color: var(--grena);
+  font-size: 1.1rem;
   cursor: pointer;
 }
 
 .stepperButton:hover:not(:disabled) {
-  background: var(--subtle);
+  background: var(--grena);
+  color: #fff;
+  border-color: var(--grena);
 }
 
 .stepperButton:disabled {
-  color: var(--ink-3);
-  opacity: .5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .stepperValue {
-  min-width: 90px;
   text-align: center;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--grena-dark);
 }
 
 .stepperRange {
-  flex-basis: 100%;
-  font-size: 12.5px;
-  color: var(--ink-3);
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #888;
 }
+
+/* -------------------------------------------------------------- Botões */
 
 .primaryButton,
 .secondaryButton,
@@ -456,187 +285,356 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 48px;
-  padding: 10px 22px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  font-weight: 700;
-  font-size: 15px;
+  min-height: 50px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
   cursor: pointer;
+  max-width: 360px;
+  width: 100%;
 }
 
 .primaryButton {
   background: var(--grena);
   color: #fff;
+  border: none;
 }
 
 .primaryButton:hover:not(:disabled) {
-  background: var(--grena-hover);
+  background: var(--grena-light);
 }
 
 .secondaryButton {
-  background: var(--surface);
-  border-color: var(--line-strong);
-  color: var(--ink);
-}
-
-.secondaryButton:hover:not(:disabled) {
-  background: var(--subtle);
+  background: #fff;
+  color: var(--grena);
+  border: 2px solid var(--grena);
 }
 
 .dangerButton {
-  background: transparent;
-  border-color: rgb(var(--danger-rgb) / .55);
-  color: var(--danger);
-}
-
-.dangerButton:hover:not(:disabled) {
-  background: var(--danger-soft);
+  background: var(--grena-dark);
+  color: #fff;
+  border: none;
 }
 
 .primaryButton:disabled,
 .secondaryButton:disabled,
 .dangerButton:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
-
-@media (max-width: 600px) {
-  .primaryButton,
-  .secondaryButton,
-  .dangerButton {
-    width: 100%;
-  }
+  opacity: 0.6;
+  cursor: progress;
 }
 
 /* ------------------------------------------------------ Estado "acesa" */
 
 .activePanel {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .activeHero {
-  grid-column: 1 / -1;
-  border-radius: var(--radius-card);
-  padding: 24px;
-  background: rgb(var(--a-luz-rgb));
-  color: rgb(var(--a-luz-ink-rgb));
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 4px;
+  padding: 28px 20px;
+  border-radius: 22px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 213, 74, 0.35), transparent 60%),
+    linear-gradient(160deg, var(--grena-dark), var(--grena-darkest));
+  box-shadow: 0 14px 34px rgba(77, 0, 1, 0.3);
 }
 
 .activeKicker {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  align-self: flex-start;
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: 999px;
-  background: rgb(var(--a-luz-ink-rgb));
-  color: rgb(var(--a-luz-rgb));
-  font-size: 12px;
+  background: #ffd54a;
+  color: #4a3500;
+  font-size: 0.75rem;
   font-weight: 800;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  letter-spacing: .06em;
-  margin-bottom: 8px;
 }
 
 .activePlace {
-  font-size: 15px;
+  margin-top: 10px;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .activePlace strong {
-  font-family: var(--font-display);
-  font-weight: 600;
+  color: #fff;
 }
 
 .activeUntilLabel {
-  margin-top: 10px;
-  font-size: 12px;
-  font-weight: 700;
+  margin-top: 14px;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  opacity: .8;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .activeUntil {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(44px, 10vw, 64px);
-  font-weight: 600;
+  font-size: clamp(3.4rem, 16vw, 5.2rem);
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .activeCountdown {
   margin-top: 6px;
+  font-size: 1.05rem;
   font-weight: 700;
-  font-size: 15px;
+  color: #ffd54a;
+  font-variant-numeric: tabular-nums;
 }
 
 .activeShared {
-  grid-column: 1 / -1;
   display: flex;
+  gap: 10px;
   align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: var(--grena-tint);
-  font-size: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #eef8ef;
+  color: #1e5b27;
+  line-height: 1.45;
 }
 
 .activeShared svg {
   margin-top: 3px;
-  color: var(--grena-ink);
 }
 
 .activeInfo {
-  grid-column: 1 / -1;
-  font-size: 14px;
-  color: var(--ink-2);
-}
-
-.activeInfo strong {
-  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #444;
+  line-height: 1.5;
 }
 
 .activeInfoMuted {
-  color: var(--ink-3);
-  font-size: 13px;
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.actionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #eee;
+  background: #fff;
+}
+
+.actionTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #333;
+}
+
+.actionHint {
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.actionHint strong {
+  color: var(--grena);
 }
 
 .confirmBox {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px;
-  border-radius: 14px;
-  background: var(--danger-soft);
-  font-size: 14px;
+  color: #444;
+  line-height: 1.45;
 }
 
 .confirmActions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-@media (max-width: 760px) {
-  .activePanel {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.confirmActions > button {
+  width: auto;
+  flex: 1 1 160px;
+}
 
-  .activeHero {
-    padding: 20px;
+/* --------------------------------------------------- Cartão no perfil */
+
+.statusCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(150deg, var(--grena-dark), var(--grena-darkest));
+  box-shadow: 0 8px 20px rgba(77, 0, 1, 0.22);
+  flex-wrap: wrap;
+}
+
+.statusCardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffd54a;
+  color: #4a3500;
+  flex-shrink: 0;
+}
+
+.statusCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.statusCardBody span {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusCardAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #ffd54a;
+}
+
+/* ------------------------------------------------- Destaque na home */
+
+/* Mesma gramática do carrossel: foto cheia, degradê escuro, título caixa alta. */
+.homeBanner {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 1280px;
+  min-height: 42svh;
+  margin: 0 auto 40px;
+  padding: 32px;
+  border-radius: 22px;
+  overflow: hidden;
+  color: #fff;
+  background-color: var(--grena-dark);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.homeBanner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    165deg,
+    rgba(0, 0, 0, 0.15) 20%,
+    rgba(46, 0, 1, 0.7) 65%,
+    rgba(26, 0, 1, 0.95) 100%
+  );
+}
+
+.homeBannerLit::after {
+  background:
+    radial-gradient(circle at 85% 10%, rgba(255, 213, 74, 0.4), transparent 45%),
+    linear-gradient(165deg, rgba(0, 0, 0, 0.15) 20%, rgba(46, 0, 1, 0.75) 65%, rgba(26, 0, 1, 0.95) 100%);
+}
+
+.homeBanner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 50px rgba(77, 0, 1, 0.3);
+}
+
+.homeBannerContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 70ch;
+}
+
+.homeBannerKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #ffd54a;
+  color: #4a3500;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.homeBannerTitle {
+  font-size: clamp(1.9rem, 6vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.5);
+}
+
+.homeBannerDetail {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.homeBannerAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  background: var(--grena);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.homeBanner:hover .homeBannerAction {
+  background: var(--grena-light);
+}
+
+@media (max-width: 768px) {
+  /* A seção da home não tem margem lateral no celular; o destaque cria a dele. */
+  .homeBanner {
+    width: calc(100% - 28px);
+    min-height: 300px;
+    padding: 22px;
+    margin: 0 14px 20px;
+    border-radius: 18px;
   }
 
   .durationCard,
-  .activePanel > .activeInfo,
   .actionBlock {
     padding: 16px;
+  }
+
+  .placeGrid {
+    grid-template-columns: 1fr;
   }
 }

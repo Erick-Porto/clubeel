@@ -151,10 +151,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }, [pathname, session, fetchCartData]);
 
     useEffect(() => {
-        // Telas de resultado com o carrinho já vazio: pagamento aprovado e
-        // "já pago" (a secretaria confirmou os agendamentos no balcão).
-        const isSuccessScreen = typeof window !== 'undefined' &&
-            (window.location.search.includes('status=success') || window.location.search.includes('status=already_paid'));
+        const isSuccessScreen = typeof window !== 'undefined' && window.location.search.includes('status=success');
 
         if (!isLoading && cart.length === 0 && pathname === '/checkout' && !isSuccessScreen) {
             router.push('/');

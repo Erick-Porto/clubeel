@@ -17,9 +17,5 @@ export const config = {
     "/meus-videos",
     // Luz da quadra: acender é ação de sócio.
     "/luz",
-    // Espaços sociais: vitrine, calendário, pré-reserva e "minhas reservas"
-    // são todos do sócio (a Lara responde pelo Session dele).
-    "/espacos-sociais",
-    "/espacos-sociais/:path*",
   ]
 }

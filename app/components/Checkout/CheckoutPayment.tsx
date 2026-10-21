@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "../../../styles/payment-selector.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCreditCard, faBarcode, faQrcode, faWifi, faCheckCircle, faTimesCircle, faArrowLeft, faCopy, faClock, faLock, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
+import { faCreditCard, faBarcode, faQrcode, faWifi, faCheckCircle, faTimesCircle, faArrowLeft, faCopy, faClock } from "@fortawesome/free-solid-svg-icons";
 import { identifyBank } from "../../../utils/bank-identifier";
 // import { CreditCardBrand } from "./CreditCardBrand";
 import { useRouter } from "next/navigation";
@@ -32,23 +32,7 @@ interface User {
     born_date?: string;
 }
 
-/** Desfecho do pagamento de uma reserva de espaço social, entregue à tela da reserva. */
-export type SocialPaymentOutcome =
-    | { type: "success" }
-    /** Recusa com código (ex.: `payment_mismatch`): a tela relê a reserva. */
-    | { type: "refused"; reason: string | null; message: string }
-    | { type: "error"; message: string };
-
-interface CPParams {
-    /**
-     * Quando presente, o formulário paga ESTA reserva de espaço social em vez
-     * do carrinho de quadras: não revalida horários, manda só o id da reserva
-     * (o servidor relê o `total` e o `schedule_id` na Lara) e entrega o
-     * resultado em `onSocialResult` em vez de navegar para /checkout.
-     */
-    socialBookingId?: number;
-    onSocialResult?: (outcome: SocialPaymentOutcome) => void;
-}
+type CPParams = Record<string, never>;
 
 interface PixResponse {
   qrcode: string;
@@ -66,8 +50,7 @@ interface CustomSession {
     accessToken?: string;
 }
 
-export default function CheckoutPayment({ socialBookingId, onSocialResult }: CPParams) {
-    const isSocial = socialBookingId !== undefined;
+export default function CheckoutPayment({}: CPParams) {
     const { data: sessionData } = useSession();
     const session = sessionData as CustomSession | null;
   // 2. Instanciar o router  
@@ -146,62 +129,6 @@ export default function CheckoutPayment({ socialBookingId, onSocialResult }: CPP
     setCardData(prev => ({ ...prev, [name]: formattedValue }));
   };
 
-/**
- * Pagamento de uma reserva de espaço social. Mesmo caminho de servidor das
- * quadras (payment_methods → success), mas sem revalidar horários — o prazo é
- * o `payment_due_at`, conferido no servidor — e sem `scheduleIds`: só o id da
- * reserva vai, e o servidor descobre quanto cobrar e qual agendamento pagar.
- */
-const handleSocialPayment = async () => {
-    const finish = (outcome: SocialPaymentOutcome) => {
-        setStatus({ type: outcome.type === "success" ? 'success' : 'error', msg: outcome.type === "success" ? 'Pagamento confirmado!' : outcome.message });
-        onSocialResult?.(outcome);
-    };
-
-    try {
-        const response = await fetch('/api/erede/payment_methods', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                method,
-                cardData: {
-                    ...cardData,
-                    number: cardData.number.replace(/\s/g, ''),
-                },
-                socialBookingId,
-            })
-        });
-        const transactionData = await response.json();
-
-        if (!response.ok) {
-            const message = transactionData.error || transactionData.returnMessage || 'Erro na transação.';
-            if (transactionData.reason) finish({ type: 'refused', reason: transactionData.reason, message });
-            else setStatus({ type: 'error', msg: message });
-            return;
-        }
-
-        const saveOrderRes = await fetch('/api/success', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transactionData, socialBookingId, method })
-        });
-        const saveResult = await saveOrderRes.json();
-
-        if (saveOrderRes.ok) {
-            finish({ type: 'success' });
-        } else if (saveOrderRes.status === 409) {
-            finish({ type: 'refused', reason: saveResult.reason ?? null, message: saveResult.message || 'Pagamento não confirmado. O valor foi estornado.' });
-        } else {
-            finish({ type: 'error', message: saveResult.message || 'Não foi possível confirmar o pagamento.' });
-        }
-    } catch (error) {
-        console.error("Erro no pagamento da reserva social:", error instanceof Error ? error.message : error);
-        setStatus({ type: 'error', msg: 'Erro de comunicação.' });
-    } finally {
-        setLoading(false);
-    }
-};
-
 const handlePayment = async () => {
     if (!session?.accessToken || !session?.user?.id) {
         toast.error("Sessão expirada ou dados incompletos. Por favor, faça login novamente.");
@@ -211,11 +138,6 @@ const handlePayment = async () => {
 
     setLoading(true);
     setStatus(null);
-
-    if (isSocial) {
-        await handleSocialPayment();
-        return;
-    }
 
     try {
         await Promise.all(cart.map(
@@ -308,11 +230,6 @@ const handlePayment = async () => {
                 // router.refresh()
                 router.push('/checkout?status=success');
             } 
-            else if (saveResult.error === 'already_paid') {
-                // A secretaria confirmou os agendamentos no balcão enquanto o
-                // sócio estava aqui: o servidor já estornou o cartão.
-                router.push('/checkout?status=already_paid');
-            }
             else if (saveOrderRes.status === 409 || saveResult.error === 'expired') {
                 setStatus({ type: 'error', msg: 'Reserva expirada. O valor foi estornado.' });
                 router.push('/checkout?status=expired');
@@ -328,9 +245,6 @@ const handlePayment = async () => {
             router.push('/checkout?status=error');
         }
 
-      } else if (transactionData.reason === 'already_paid') {
-        // Já confirmado pela secretaria antes de cobrar: nada foi cobrado.
-        router.push('/checkout?status=already_paid');
       } else {
         setStatus({ type: 'error', msg: transactionData.error || transactionData.returnMessage || 'Erro na transação.' });
       }
@@ -344,21 +258,21 @@ const handlePayment = async () => {
 
   if (pixResult && method === 'pix') {
     const percentage = (timeLeft / 180) * 100;
-    const barColor = timeLeft < 30 ? 'var(--danger)' : 'var(--ok)';
+    const barColor = timeLeft < 30 ? '#dc3545' : '#1e8e3e';
 
     return (
         <div className={styles.container} style={{textAlign: 'center'}}>
-            <h3 style={{color: 'var(--ink-2)', marginBottom: 15}}>Pagamento via Pix</h3>
+            <h3 style={{color: '#444', marginBottom: 15}}>Pagamento via Pix</h3>
             
             <div style={{marginBottom: 20, padding: '0 10px'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: 5, color: 'var(--ink-2)'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: 5, color: '#666'}}>
                     <span>Tempo restante</span>
                     <span style={{fontWeight: 'bold', color: barColor}}>
                         <FontAwesomeIcon icon={faClock} style={{marginRight: 5}}/>
                         {formatTime(timeLeft)}
                     </span>
                 </div>
-                <div style={{width: '100%', backgroundColor: 'var(--subtle)', height: 8, borderRadius: 4, overflow: 'hidden'}}>
+                <div style={{width: '100%', backgroundColor: '#eee', height: 8, borderRadius: 4, overflow: 'hidden'}}>
                     <div style={{
                         width: `${percentage}%`,
                         backgroundColor: barColor,
@@ -369,7 +283,7 @@ const handlePayment = async () => {
             </div>
 
             <div style={{
-                border: '2px solid var(--line)', 
+                border: '2px solid #eee', 
                 borderRadius: 12, 
                 padding: 20, 
                 display: 'inline-block',
@@ -392,7 +306,7 @@ const handlePayment = async () => {
                         readOnly 
                         value={pixResult.qrcode} 
                         className={styles.input}
-                        style={{background: 'var(--subtle)', color: 'var(--ink-2)', fontSize: '0.8rem'}}
+                        style={{background: '#f9f9f9', color: '#666', fontSize: '0.8rem'}}
                     />
                     <button 
                         onClick={copyPixCode}
@@ -405,14 +319,14 @@ const handlePayment = async () => {
                 </div>
             </div>
 
-            <p style={{fontSize: '0.9rem', color: 'var(--ink-2)', marginBottom: 20}}>
+            <p style={{fontSize: '0.9rem', color: '#666', marginBottom: 20}}>
                 Abra o app do seu banco, escolha Pix e escaneie o QR Code ou use o Copia e Cola.
             </p>
 
             <button 
                 className={styles.tab} 
                 onClick={() => setPixResult(null)}
-                style={{margin: '0 auto', border: '1px solid var(--line-strong)'}}
+                style={{margin: '0 auto', border: '1px solid #ddd'}}
             >
                 <FontAwesomeIcon icon={faArrowLeft} /> Voltar
             </button>
@@ -445,9 +359,9 @@ const handlePayment = async () => {
 
       {method === 'pix' ? (
           <div className={styles.pixContainer} style={{textAlign:'center', padding: 20}}>
-              <FontAwesomeIcon icon={faQrcode} style={{fontSize: 60, color: 'var(--ok)', marginBottom: 20}} />
-              <h3 style={{color: 'var(--ink)', marginBottom: 10}}>Pagamento Instantâneo</h3>
-              <p style={{color: 'var(--ink-2)', fontSize: '0.9rem', lineHeight: 1.5}}>
+              <FontAwesomeIcon icon={faQrcode} style={{fontSize: 60, color: '#1e8e3e', marginBottom: 20}} />
+              <h3 style={{color: '#333', marginBottom: 10}}>Pagamento Instantâneo</h3>
+              <p style={{color: '#666', fontSize: '0.9rem', lineHeight: 1.5}}>
                   Ao confirmar, geraremos um QR Code (Copia e Cola).<br/>
                   A aprovação é imediata.
               </p>
@@ -521,7 +435,7 @@ const handlePayment = async () => {
                     <input 
                         type="text" 
                         name="number" 
-                        className={`${styles.input} ${styles.monoInput}`} 
+                        className={styles.input} 
                         placeholder="0000 0000 0000 0000"
                         value={cardData.number}
                         onChange={handleInputChange}
@@ -549,7 +463,7 @@ const handlePayment = async () => {
                     <input 
                         type="text" 
                         name="expiry" 
-                        className={`${styles.input} ${styles.monoInput}`} 
+                        className={styles.input} 
                         placeholder="MM/AA"
                         value={cardData.expiry}
                         onChange={handleInputChange}
@@ -564,7 +478,7 @@ const handlePayment = async () => {
                     <input 
                         type="text" 
                         name="cvv" 
-                        className={`${styles.input} ${styles.monoInput}`} 
+                        className={styles.input} 
                         placeholder="123"
                         value={cardData.cvv}
                         onChange={handleInputChange}
@@ -580,7 +494,7 @@ const handlePayment = async () => {
                     <input
                         type="text"
                         name="cpf"
-                        className={`${styles.input} ${styles.monoInput}`}
+                        className={styles.input}
                         placeholder="000.000.000-00"
                         value={cardData.cpf}
                         onChange={(e) => setCardData({...cardData, cpf: e.target.value})}
@@ -590,25 +504,30 @@ const handlePayment = async () => {
         </>
       )}
 
-      <div style={{ marginTop: 20 }}>
+      <div style={{ marginTop: '25px' }}>
         {status && (
-            <div className={`${styles.status} ${status.type === 'success' ? styles.statusOk : styles.statusError}`} role="status">
+            <div style={{ 
+                padding: '12px', 
+                borderRadius: '8px', 
+                marginBottom: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                backgroundColor: status.type === 'success' ? '#d1e7dd' : '#f8d7da',
+                color: status.type === 'success' ? '#0f5132' : '#842029'
+            }}>
                 <FontAwesomeIcon icon={status.type === 'success' ? faCheckCircle : faTimesCircle} />
                 <span>{status.msg}</span>
             </div>
         )}
 
-        <button
-            className={styles.confirmButton}
+        <button 
+            className={styles.confirmButton} 
             onClick={handlePayment}
             disabled={loading}
         >
-            <FontAwesomeIcon icon={faLock} />
             {loading ? 'Processando...' : method == 'pix' ? `Gerar QR Code` : 'Pagar'}
         </button>
-        <p className={styles.secureNote}>
-            <FontAwesomeIcon icon={faShieldHalved} /> Pagamento processado pela eRede.
-        </p>
       </div>
     </div>
   );

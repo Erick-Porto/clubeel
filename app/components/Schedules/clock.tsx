@@ -126,19 +126,18 @@ export default function Clock() {
     if (!cart || cart.length === 0 || secondsLeft === null) return null;
 
     return (
-        <div className={style.clock + (pulse ? ` ${style.pulse}` : '')} role="timer" aria-live="off">
-            <div
-                className={style.iconWrapper}
-                style={{ transform: `rotate(${rotation}deg)` }}
-            >
-                <FontAwesomeIcon
-                    icon={isFull ? faHourglassEnd : faHourglassStart}
-                />
-            </div>
-            <span className={style.clockLabel}>Carrinho expira em</span>
-            <span className={style.timerText}>
+        <div className={style.clock + (pulse ? ` ${style.pulse}` : '')}>
+            <div className={style.timerText}>
+                <div 
+                    className={style.iconWrapper} 
+                    style={{ transform: `rotate(${rotation}deg)` }}
+                >
+                    <FontAwesomeIcon 
+                        icon={isFull ? faHourglassEnd : faHourglassStart} 
+                    />
+                </div>
                 {secondsLeft > 0 ? formatTime(secondsLeft) : `Expirando`}
-            </span>
+            </div>
         </div>
     );
 }

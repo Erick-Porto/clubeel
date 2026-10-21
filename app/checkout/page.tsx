@@ -1,71 +1,67 @@
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react'; 
 import { useSearchParams, useRouter } from 'next/navigation';
 import CheckoutView from "../components/Checkout/checkout";
 import Footer from "../components/Common/footer";
 import Header from "../components/Common/header";
 import style from '../../styles/checkout.module.css';
 import globalStyle from '../../styles/page.module.css';
-import ui from '../../styles/ui.module.css';
 import CheckoutContent from "../components/Checkout/checkoutContent";
 import { useCart } from '../../context/CartContext';
 import { LoadingScreen } from '../components/Common/loading';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faBagShopping, faCalendarXmark, faCheck, faChevronDown, faClock, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import TutorialOverlay, { TutorialStep } from '../components/Common/tutorial-overlay';
-import { PageHeader } from '../components/UI/ui';
 import API_CONSUME from '../../services/api-consume';
 import { toast } from 'react-toastify';
 
 const formatPrice = (p: number | string): string => {
     const n = parseFloat(String(p));
-    if (isNaN(n)) return '0,00';
-    return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (isNaN(n)) return '0.00';
+    return n.toFixed(2);
 };
 
-type ResultType = 'success' | 'error' | 'expired' | 'refunded_conflict' | 'already_paid';
-
-const PaymentStatusMessage: React.FC<{ type: ResultType; message: string; onRetry: () => void; }> = ({ type, message, onRetry }) => {
+const PaymentStatusMessage: React.FC<{ type: 'success' | 'error' | 'expired' | 'refunded_conflict'; message: string; onRetry: () => void; }> = ({ type, message, onRetry }) => {
     const router = useRouter();
     const [timeLeft, setTimeLeft] = useState(15);
 
-    const config: Record<ResultType, { destination: string; buttonText: string; colorClass: string; icon: IconDefinition; title: string }> = {
+const config = {
         success: {
             destination: '/profile?tab=schedules',
             buttonText: 'Ver meus agendamentos',
             colorClass: style.statusSuccess,
-            icon: faCheck,
-            title: 'Pagamento aprovado'
-        },
-        already_paid: {
-            destination: '/profile?tab=schedules',
-            buttonText: 'Ver meus agendamentos',
-            colorClass: style.statusSuccess,
-            icon: faCheck,
-            title: 'Agendamento já confirmado'
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            ),
+            title: 'Pagamento Aprovado!'
         },
         expired: {
             destination: '/',
-            buttonText: 'Voltar ao início',
+            buttonText: 'Voltar ao Início',
             colorClass: style.statusExpired,
-            icon: faClock,
-            title: 'Tempo excedido'
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            ),
+            title: 'Tempo Excedido'
         },
         refunded_conflict: {
             destination: '/',
-            buttonText: 'Voltar ao início',
+            buttonText: 'Voltar ao Início',
             colorClass: style.statusError,
-            icon: faCalendarXmark,
-            title: 'Horário indisponível'
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            ),
+            title: 'Horário Indisponível'
         },
         error: {
             destination: '/checkout',
-            buttonText: 'Tentar novamente',
+            buttonText: 'Tentar Novamente',
             colorClass: style.statusError,
-            icon: faXmark,
-            title: 'O pagamento não foi concluído'
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            ),
+            title: 'Ops! Algo deu errado.'
         }
     };
 
@@ -100,14 +96,14 @@ const PaymentStatusMessage: React.FC<{ type: ResultType; message: string; onRetr
 
     return (
         <div className={style.statusWrapper}>
-            <div className={style.statusCard} role="status">
+            <div className={style.statusCard}>
                 <div className={`${style.statusIcon} ${currentConfig.colorClass}`}>
-                    <FontAwesomeIcon icon={currentConfig.icon} />
+                    {currentConfig.icon}
                 </div>
-
+                
                 <h2>{currentConfig.title}</h2>
                 <p>{message}</p>
-
+                
                 <button className={style.statusButton} onClick={handleButtonClick}>
                     {currentConfig.buttonText}
                 </button>
@@ -124,9 +120,9 @@ const CheckoutComponent = () => {
     const { cart, refreshCart, clearCart} = useCart();
     const searchParams = useSearchParams();
     const router = useRouter();
-
+    
     const [validatingPayment, setValidatingPayment] = useState(false);
-    const [paymentResult, setPaymentResult] = useState<ResultType | null>(null);
+    const [paymentResult, setPaymentResult] = useState<'success' | 'error' | 'expired' | 'refunded_conflict' | null>(null);
     const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
     const total = useMemo(() => {
@@ -144,23 +140,17 @@ const CheckoutComponent = () => {
         const isFailure = status === 'failure' || status === 'rejected' || status === 'null';
         const isExpired = status === 'expired';
         const isConflict = status === 'refunded_conflict' || status === 'conflict_refunded';
-        // A secretaria confirmou (baixa manual) enquanto o sócio pagava.
-        const isAlreadyPaid = status === 'already_paid';
 
-        if (isSuccess || isFailure || isExpired || isConflict || isAlreadyPaid) {
+        if (isSuccess || isFailure || isExpired || isConflict) {
             setValidatingPayment(true);
-
+            
             const processPaymentResult = async () => {
                 try {
-                    await refreshCart();
+                    await refreshCart(); 
 
                     if (isSuccess) {
                         setPaymentResult('success');
                         clearCart();
-                        router.refresh();
-                    } else if (isAlreadyPaid) {
-                        // O refreshCart acima já tirou do carrinho o que foi confirmado.
-                        setPaymentResult('already_paid');
                         router.refresh();
                     } else if (isExpired) {
                         setPaymentResult('expired');
@@ -174,7 +164,7 @@ const CheckoutComponent = () => {
                     setPaymentResult('error');
                 } finally {
                     setValidatingPayment(false);
-                    // window.history.replaceState(null, '', '/checkout');
+                    // window.history.replaceState(null, '', '/checkout'); 
                 }
             };
 
@@ -223,7 +213,6 @@ const CheckoutComponent = () => {
     const getStatusMessage = () => {
         switch(paymentResult) {
             case 'success': return "Pagamento confirmado. Sua quadra está reservada!";
-            case 'already_paid': return "A secretaria já registrou o pagamento destes horários. Eles estão confirmados e nada foi cobrado no seu cartão (se chegou a ser cobrado, o valor foi estornado).";
             case 'expired': return "O tempo limite da reserva expirou. Se o valor foi cobrado, ele será estornado automaticamente.";
             case 'refunded_conflict': return "Infelizmente, outra pessoa reservou este horário enquanto você finalizava o pagamento. O valor foi estornado integralmente.";
             default: return "Não foi possível confirmar o pagamento. Verifique seus dados e tente novamente.";
@@ -232,56 +221,47 @@ const CheckoutComponent = () => {
 
     return (
         <div className={globalStyle.page}>
-            <Header />
+            <Header options={null} surgeIn={-1} onlyScroll={false} />
             <TutorialOverlay steps={TUTORIAL_STEPS} pageKey="Pagamento" onComplete={finishedTutorial}/>
-
-            <main className={`${globalStyle.main} ${ui.page}`}>
+            
+            <section className={style.checkoutPageContainer}>
                 {paymentResult ? (
-                    <PaymentStatusMessage
-                        type={paymentResult}
+                    <PaymentStatusMessage 
+                        type={paymentResult} 
                         message={getStatusMessage()}
                         onRetry={handleRetryOrExit}
                     />
                 ) : (
                     <>
-                        <PageHeader
-                            back
-                            kicker="Quadras"
-                            title="Finalizar compra"
-                            lead="Confira os horários e pague com cartão. A confirmação sai na hora."
-                        />
-
+                       
                         <div className={style.checkoutLayout}>
-                            <aside className={style.cartSection}>
-                                <button
-                                    type="button"
-                                    className={style.mobileSummaryToggle}
-                                    onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                                    aria-expanded={isSummaryExpanded}
-                                >
-                                    <span className={style.mobileSummaryLabel}>
-                                        <FontAwesomeIcon icon={faBagShopping} />
-                                        {isSummaryExpanded ? 'Ocultar pedido' : `Ver pedido (${cart.length} ${cart.length === 1 ? 'horário' : 'horários'})`}
-                                        <FontAwesomeIcon
-                                            icon={faChevronDown}
-                                            className={`${style.chevronIcon} ${isSummaryExpanded ? style.chevronRotated : ''}`}
-                                        />
-                                    </span>
-                                    <span className={style.summaryTotalLabel}>R$ {formatPrice(total)}</span>
-                                </button>
-
-                                <div className={`${style.cartContent} ${isSummaryExpanded ? style.cartSectionExpanded : ''}`}>
-                                    <CheckoutContent total={total} formatPrice={formatPrice} />
+                            <div 
+                                className={style.mobileSummaryToggle} 
+                                onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                            >
+                                <div style={{display:'flex', alignItems:'center', gap: 8}}>
+                                    <FontAwesomeIcon icon={faShoppingCart} style={{fontSize: 14}}/>
+                                    <span>{isSummaryExpanded ? 'Ocultar detalhes' : 'Ver detalhes do pedido'}</span>
+                                    <FontAwesomeIcon 
+                                        icon={faChevronDown} 
+                                        className={`${style.chevronIcon} ${isSummaryExpanded ? style.chevronRotated : ''}`}
+                                        style={{fontSize: 12, marginLeft: 5}}
+                                    />
                                 </div>
-                            </aside>
+                                <span className={style.summaryTotalLabel}>R$ {formatPrice(total)}</span>
+                            </div>
 
-                            <section className={style.paymentSection}>
+                            <div className={`${style.cartSection} ${isSummaryExpanded ? style.cartSectionExpanded : ''}`}>
+                                <CheckoutContent total={total} formatPrice={formatPrice} />
+                            </div>
+
+                            <div className={style.paymentSection}>
                                 <CheckoutView total={total}/>
-                            </section>
+                            </div>
                         </div>
                     </>
                 )}
-            </main>
+            </section>
             <Footer />
         </div>
     );

@@ -54,7 +54,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm }) => {
     return (
         <div className={style.modalOverlay} onClick={onClose}>
             <div className={style.modalContent} onClick={e => e.stopPropagation()}>
-                <div style={{marginBottom: 15, color: 'var(--grena-ink)'}}>
+                <div style={{marginBottom: 15, color: 'var(--grena)'}}>
                     <FontAwesomeIcon icon={faLock} size="2x" />
                 </div>
                 <h2 className={style.modalTitle}>Confirme sua senha</h2>

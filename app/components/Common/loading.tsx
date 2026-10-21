@@ -1,6 +1,5 @@
 import Image from "next/image";
-import Logo from "../../../public/images/logo-cfcsn-horiz.png";
-import LogoWhite from "../../../public/images/logo-cfcsn-w-horiz.png";
+import Logo from "../../../public/images/logo-cfcsn-horiz.png"; 
 import Style from "../../../styles/loading.module.css";
 
 interface LoadingProps {
@@ -9,25 +8,16 @@ interface LoadingProps {
 
 export const LoadingScreen = () => {
     return (
-        <section className={Style.LoadingScreen} aria-busy="true" aria-label="Carregando">
+        <section className={Style.LoadingScreen}>
             <div className={Style.loadingLogo}>
-                <Image
-                    src={Logo}
-                    alt="Logo Clube dos Funcionários"
+                <Image 
+                    src={Logo} 
+                    alt="Logo Clube dos Funcionários" 
                     priority={true}
-                    width={250}
+                    width={250} 
                     height={100}
                     quality={100}
-                    className={Style.logoLight}
-                />
-                <Image
-                    src={LogoWhite}
-                    alt=""
-                    priority={true}
-                    width={250}
-                    height={100}
-                    quality={100}
-                    className={Style.logoDark}
+                    style={{ objectFit: 'contain' }}
                 />
             </div>
             <div className={Style.loading}></div>
@@ -37,7 +27,7 @@ export const LoadingScreen = () => {
 
 export const Loading = ({ small = false }: LoadingProps) => {
     return(
-        <div className={Style.loadingContainer} aria-busy="true" aria-label="Carregando">
+        <div className={Style.loadingContainer}>
             <div className={`${Style.loading} ${small ? Style.small : ''}`}></div>
         </div>
     );

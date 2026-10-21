@@ -1,39 +1,49 @@
 .bookingButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 46px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: var(--grena);
-  color: #fff;
-  font-weight: 700;
-  font-size: 14.5px;
-  line-height: 1.2;
-  text-align: center;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color .15s, border-color .15s;
+    background-color: var(--grena);
+    color: white;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 50px;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    font-size: 14px;
+    letter-spacing: 1px;
+    width: 100%;
+    box-shadow: 0 4px 15px rgba(115, 0, 1, 0.2);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    line-height: 1;
 }
 
 .bookingButton:hover:not(:disabled) {
-  background: var(--grena-hover);
+    background-color: #5a0000;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(115, 0, 1, 0.3);
+}
+
+.bookingButton:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: 0 2px 10px rgba(115, 0, 1, 0.2);
 }
 
 .bookingButton:disabled {
-  opacity: .45;
-  cursor: not-allowed;
+    background-color: #e0e0e0;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
 }
 
-.secondary {
-  background: var(--surface);
-  border-color: var(--line-strong);
-  color: var(--ink);
-}
-
-.secondary:hover:not(:disabled) {
-  background: var(--subtle);
+@media (max-width: 1024px) {
+    .bookingButton {
+        padding: 12px 20px;
+        font-size: 13px;
+        width: auto;
+        min-width: 140px;
+    }
 }

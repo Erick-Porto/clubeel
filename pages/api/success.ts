@@ -3,13 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
 import API_CONSUME from "../../services/api-consume";
 import { eredeAuth, eredeBaseUrl, getEredeTransaction } from "../../utils/erede";
-import {
-    AlreadyPaidError,
-    computeAmountInCents,
-    computeSocialBookingCharge,
-    schedulesArePaid,
-    socialBookingIsPaid,
-} from "../../utils/lara";
+import { computeAmountInCents } from "../../utils/lara";
 import { guardRequest } from "../../utils/sanitize";
 import { takePendingPayment } from "../../utils/pending-payments";
 
@@ -63,15 +57,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let currentAmount = 0;
 
     try {
-        const {
-            transactionData,
-            scheduleIds: clientScheduleIds,
-            method: clientMethod,
-            socialBookingId: clientSocialBookingId,
-        } = req.body;
-        const clientIsSocial = clientSocialBookingId !== undefined && clientSocialBookingId !== null;
+        const { transactionData, scheduleIds: clientScheduleIds, method: clientMethod } = req.body;
 
-        if (!transactionData?.tid || (!clientScheduleIds && !clientIsSocial)) {
+        if (!transactionData?.tid || !clientScheduleIds) {
             return res.status(400).json({ error: "Dados incompletos.", message: "Dados incompletos." });
         }
 
@@ -100,21 +88,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         let expectedCents: number;
         let scheduleIds: Array<number | string>;
         let method: string;
-        // Reserva de espaço social: o agendamento cobrado é só o `schedule_id`
-        // dela e o valor é o `total` lido na Lara (ver computeSocialBookingCharge).
-        let socialBookingId: number | undefined;
 
         if (pending && String(pending.userId) === String(userId)) {
             expectedCents = pending.amountCents;
             scheduleIds = pending.scheduleIds;
             method = pending.method;
-            socialBookingId = pending.socialBookingId;
-        } else if (clientIsSocial) {
-            const charge = await computeSocialBookingCharge(clientSocialBookingId, accessToken);
-            expectedCents = charge.amountCents;
-            scheduleIds = [charge.scheduleId];
-            method = clientMethod;
-            socialBookingId = charge.bookingId;
         } else {
             expectedCents = await computeAmountInCents(clientScheduleIds, userId, accessToken);
             scheduleIds = clientScheduleIds;
@@ -170,32 +148,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             );
             await refundTransaction(currentTid, currentAmount);
 
-            if (socialBookingId !== undefined) {
-                // Espaço social: a Lara recusa com `reason` estável (ex.:
-                // `payment_mismatch` — fora do estágio, prazo vencido ou valor
-                // diferente do total). Repassa o código para a tela reler a
-                // reserva; não há "hold expirado" aqui.
-                //
-                // O 409 de "já foram pagos" (baixa manual da secretaria) vem
-                // sem `reason`: confirma pelo estado da reserva, não pelo texto.
-                const laraReason = (response.data as { reason?: unknown } | null)?.reason;
-                let reason = typeof laraReason === "string" ? laraReason : null;
-                if (!reason && apiRes?.status === 409 && (await socialBookingIsPaid(socialBookingId, accessToken))) {
-                    reason = "already_paid";
-                }
-                const detail = apiRes?.message || "Não foi possível confirmar o pagamento da reserva. Valor estornado.";
-                return res.status(409).json({ error: reason ?? "payment_failed", reason, message: detail });
-            }
-
-            // Quadra: o 409 pode ser hold expirado/conflito OU baixa manual da
-            // secretaria ("já foram pagos"). Decide pelo estado: se todos os
-            // agendamentos estão confirmados, não é expiração — a tela relê o
-            // carrinho e mostra como confirmados (o cartão já foi estornado).
-            if (apiRes?.status === 409 && (await schedulesArePaid(scheduleIds, userId, accessToken))) {
-                const detail = apiRes?.message || "Os agendamentos já foram pagos. O valor do cartão foi estornado.";
-                return res.status(409).json({ error: "already_paid", reason: "already_paid", message: detail });
-            }
-
             if (hasConflict) {
                 // Reserva expirada / conflito de horário — a Lara recusou
                 // porque o hold não existe mais; já tratado no client.
@@ -222,12 +174,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             } catch (_refundErr) {
                 console.error("Falha no estorno de emergência.", _refundErr);
             }
-        }
-
-        // Recalculo sem cache achou o pedido já pago (baixa manual no meio do
-        // caminho): o estorno acima desfez a cobrança; não é erro do sistema.
-        if (error instanceof AlreadyPaidError) {
-            return res.status(409).json({ error: "already_paid", reason: "already_paid", message: error.message });
         }
 
         const message = error instanceof Error ? error.message : "Erro desconhecido";

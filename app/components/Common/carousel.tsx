@@ -58,11 +58,11 @@ export default function Carousel({height, controllers}: CarouselProps) {
   };
 
   if (isLoading) {
-    return <div className={styles.carousel} style={{ height: `${height}vh`, backgroundColor: 'var(--subtle)' }}><span className={styles.loadingText}>Carregando...</span></div>;
+    return <div className={styles.carousel} style={{ height: `${height}vh`, backgroundColor: '#f0f0f0' }}><span className={styles.loadingText}>Carregando...</span></div>;
   }
 
   if (!isLoading && files.length === 0) {
-    return <div className={styles.carousel} style={{ height: `${height}vh`, backgroundColor: 'var(--subtle)' }}><span className={styles.loadingText}>Nenhuma imagem encontrada.</span></div>;
+    return <div className={styles.carousel} style={{ height: `${height}vh`, backgroundColor: '#f0f0f0' }}><span className={styles.loadingText}>Nenhuma imagem encontrada.</span></div>;
   }
 
   return (

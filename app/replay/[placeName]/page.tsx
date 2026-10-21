@@ -9,9 +9,11 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+    faArrowLeft,
     faCalendarDay,
     faCircleExclamation,
     faFilm,
@@ -19,10 +21,7 @@ import {
     faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../../../styles/page.module.css";
-import ui from "../../../styles/ui.module.css";
 import style from "../../../styles/replay.module.css";
-import { ReplayCover } from "../../components/UI/covers";
-import { PageHeader } from "../../components/UI/ui";
 import Header from "../../components/Common/header";
 import Footer from "../../components/Common/footer";
 import { Loading } from "../../components/Common/loading";
@@ -33,7 +32,7 @@ import {
     type ReplayPageMeta,
     type ReplayVideo,
 } from "../../../services/replay-api";
-import { placeIdFromSlug, toApiDate } from "../../../utils/replay";
+import { placeIdFromSlug, sportImage, toApiDate } from "../../../utils/replay";
 
 export default function ReplayPlaceGalleryPage() {
     const params = useParams();
@@ -111,19 +110,35 @@ export default function ReplayPlaceGalleryPage() {
         .join(" ")
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+    // Sem o esporte ainda carregado, o degradê cobre o intervalo sem piscar foto.
+    const bannerImage = groupName ? sportImage(groupName) : null;
+
     return (
         <div className={globalStyle.page}>
-            <Header />
-            <ReplayCover />
+            <Header options={null} surgeIn={0} onlyScroll={false} />
 
-            <main className={`${globalStyle.main} ${ui.page}`}>
-                <PageHeader
-                    backHref="/replay"
-                    backLabel="Todas as quadras"
-                    kicker={groupName || "Replay"}
-                    title={placeName || fallbackName || "Replay"}
-                    lead="Os lances gravados nesta quadra. Cada vídeo fica disponível por 7 dias."
-                />
+            <section className={style.replaySection}>
+                {/* Mesma banda de foto da tela de esportes, para não destoar. */}
+                <div
+                    className={`${style.galleryBanner} ${bannerImage ? "" : style.galleryBannerPlain}`}
+                    style={bannerImage ? { backgroundImage: `url(${bannerImage})` } : undefined}
+                >
+                    <Link href="/replay" className={style.galleryBannerBack}>
+                        <FontAwesomeIcon icon={faArrowLeft} /> Todas as quadras
+                    </Link>
+
+                    <div className={style.galleryBannerContent}>
+                        {groupName && (
+                            <span className={style.galleryBannerSport}>{groupName}</span>
+                        )}
+                        <h1 className={style.galleryBannerTitle}>
+                            {placeName || fallbackName || "Replay"}
+                        </h1>
+                        <p className={style.galleryBannerLead}>
+                            Os lances gravados nesta quadra. Cada vídeo fica disponível por 7 dias.
+                        </p>
+                    </div>
+                </div>
 
                 <div className={style.filterBar}>
                     <label className={style.filterField} htmlFor="replay-date">
@@ -217,7 +232,7 @@ export default function ReplayPlaceGalleryPage() {
                         )}
                     </>
                 )}
-            </main>
+            </section>
 
             <Footer />
         </div>

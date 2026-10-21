@@ -6,10 +6,11 @@ import { faArrowRight, faLightbulb } from "@fortawesome/free-solid-svg-icons";
 import style from "../../../styles/lighting.module.css";
 import { useLightingAvailability } from "../../hooks/useLightingAvailability";
 import { formatClock, formatCountdown, parseInstant, windowOccasion } from "../../../utils/lighting";
-import { areaStyle } from "../UI/ui";
+
+const BANNER_IMAGE = "/images/carousel/bg-tennis.jpg";
 
 /**
- * Destaque da luz da quadra na home.
+ * Destaque da luz da quadra na home, com a cara do carrossel.
  *
  * Só aparece quando a Lara diz que dá para usar agora — alguma quadra aberta,
  * ou o sócio já com luz acesa. Fora disso some; a tela
@@ -37,8 +38,10 @@ export default function HomeLightingBanner() {
     } else {
         // Sem "até HH:MM": cada quadra fecha num horário, e o do clube não vale para todas.
         const occasion = windowOccasion(data.club_window);
-        title = "Acionar luzes";
-        detail = `Acione as luzes da quadra por aqui.${occasion ? ` · ${occasion}` : ""}`;
+        title = "Acionar Luzes";
+        detail =
+            `Acione as luzes da quadra por aqui.${occasion ? ` · ${occasion}` : ""}. ` +
+            "";
         action = "Acender a luz";
     }
 
@@ -46,18 +49,17 @@ export default function HomeLightingBanner() {
         <Link
             href="/luz"
             className={`${style.homeBanner} ${activation ? style.homeBannerLit : ""}`}
-            style={areaStyle("luz")}
+            style={{ backgroundImage: `url(${BANNER_IMAGE})` }}
         >
-            <span className={style.homeBannerIcon}>
-                <FontAwesomeIcon icon={faLightbulb} />
-            </span>
             <span className={style.homeBannerContent}>
-                <span className={style.homeBannerKicker}>{activation ? "Luz acesa" : "Luz da quadra"}</span>
+                <span className={style.homeBannerKicker}>
+                    <FontAwesomeIcon icon={faLightbulb} /> {activation ? "Luz acesa" : "Luz da quadra"}
+                </span>
                 <span className={style.homeBannerTitle}>{title}</span>
                 <span className={style.homeBannerDetail}>{detail}</span>
-            </span>
-            <span className={style.homeBannerAction}>
-                {action} <FontAwesomeIcon icon={faArrowRight} />
+                <span className={style.homeBannerAction}>
+                    {action} <FontAwesomeIcon icon={faArrowRight} />
+                </span>
             </span>
         </Link>
     );

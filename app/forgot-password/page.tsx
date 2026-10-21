@@ -77,7 +77,7 @@ const UserCheckStep = ({ onSuccess }: { onSuccess: (data: UserData) => void }) =
     return (
         <div className={style.card}>
             <div className={style.header}>
-                <div style={{color: 'var(--grena-ink)', fontSize: '2.5rem', marginBottom: 10}}>
+                <div style={{color: 'var(--grena)', fontSize: '2.5rem', marginBottom: 10}}>
                     <FontAwesomeIcon icon={faUserCheck} />
                 </div>
                 <h1 className={style.title}>Recuperar Senha</h1>
@@ -188,7 +188,7 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
     return (
         <div className={style.card}>
             <div className={style.header}>
-                <div style={{color: 'var(--grena-ink)', fontSize: '2.5rem', marginBottom: 10}}>
+                <div style={{color: 'var(--grena)', fontSize: '2.5rem', marginBottom: 10}}>
                     <FontAwesomeIcon icon={faLock} />
                 </div>
                 <h1 className={style.title}>Nova Senha</h1>
@@ -244,7 +244,7 @@ const PasswordResetStep = ({ userData }: { userData: UserData }) => {
                 </div>
                 
                 {passwordsMatch && passwords.new2 !== "" && (
-                    <div style={{color: 'var(--ok)', fontSize: '0.85rem', textAlign:'center'}}>
+                    <div style={{color: 'green', fontSize: '0.85rem', textAlign:'center'}}>
                         <FontAwesomeIcon icon={faCheck} /> As senhas coincidem
                     </div>
                 )}
