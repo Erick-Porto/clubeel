@@ -6,7 +6,7 @@
 ## 1. O que é
 
 Front-end web do **Clube dos Funcionários da CSN (CFCSN)**, Volta Redonda/RJ — produção em `espacos.clubedosfuncionarios.com.br`.
-É uma aplicação **Next.js 15 (React 19, TypeScript)** que serve cinco produtos distintos:
+É uma aplicação **Next.js 15 (React 19, TypeScript)** que serve seis produtos distintos:
 
 | Produto | Público | Rotas | Doc |
 |---|---|---|---|
@@ -15,6 +15,7 @@ Front-end web do **Clube dos Funcionários da CSN (CFCSN)**, Volta Redonda/RJ �
 | **Replay** (vídeos curtos gravados nas quadras, guardados 7 dias) | Galeria: qualquer visitante · "Meus vídeos": sócio | `/replay`, `/replay/[slug]`, `/meus-videos` | [07](07-replay.md) |
 | **Luz da quadra** (sócio acende/prolonga/devolve a luz pelo celular no uso livre) | Sócio logado | `/luz` (+ banner na home e card no perfil) | [08](08-luz-da-quadra.md) |
 | **Aprovação de compras** (diretoria aprova/reprova ordens de compra do ERP Questor) | Diretor (sessão própria, sem relação com sócio) | `/aprovacao/**` | [09](09-aprovacao-compras.md) |
+| **Assinatura remota de documentos** (termos, contratos, fichas assinados pelo link do e-mail) | Quem recebeu o link (cookie próprio, sem relação com sócio; fora dos buscadores) | `/assinar/**` | [15](15-assinatura-remota.md) |
 
 Além disso: um **webhook de WhatsApp** (Poli Digital → Lara) — [10](10-webhook-whatsapp.md).
 
@@ -36,7 +37,8 @@ Next.js (servidor, DMZ) ──────────────────�
    ├─ pages/api/success.ts             verifica na eRede + confirma Lara│
    ├─ pages/api/whatsapp/webhook.ts    Poli Digital → Lara              │
    ├─ app/api/replay/media/[...path]   stream de vídeo (Range) da Lara  │
-   └─ app/aprovacao/** (Server Components + Server Actions) → Lara      │
+   ├─ app/aprovacao/** (Server Components + Server Actions) → Lara      │
+   └─ app/(assinatura)/assinar/api/*  Route Handlers, token próprio │
                                                                          ▼
                                          Lara (Laravel)  ·  eRede  ·  ERP Questor (via Lara)
 ```
@@ -47,17 +49,18 @@ Regras de ouro dessa arquitetura:
 2. **`INTERNAL_LARA_API_TOKEN` nunca pode chegar ao bundle do cliente.** Variáveis sem prefixo `NEXT_PUBLIC_` são `undefined` no browser.
 3. **Todo endpoint novo da Lara usado pelo cliente precisa entrar na allowlist** de [`pages/api/backend/[...path].ts`](../../pages/api/backend/[...path].ts) (`PUBLIC_ENDPOINTS` ou `AUTHENTICATED_ENDPOINTS`). Fora da lista → 403.
 4. **Valor de cobrança nunca vem do cliente** — é recalculado no servidor (`utils/lara.ts → computeAmountInCents`).
-5. **Módulos novos (Replay, Luz, Aprovação, Espaços sociais) seguem "o front não decide nada"**: janela, limite, permissão, status vêm da Lara; o front só formata e exibe a mensagem que ela mandou (`error`/`reason`). Não reimplemente regra de negócio no front.
+5. **Módulos novos (Replay, Luz, Aprovação, Espaços sociais, Assinatura remota) seguem "o front não decide nada"**: janela, limite, permissão, status vêm da Lara; o front só formata e exibe a mensagem que ela mandou (`error`/`reason`). Não reimplemente regra de negócio no front.
 
 ## 3. Mapa de diretórios
 
 | Caminho | Papel | Doc |
 |---|---|---|
-| `app/` | App Router: páginas (quase todas `"use client"`), layout raiz, área `/aprovacao`, rota de mídia do replay | vários |
+| `app/` | App Router: páginas (quase todas `"use client"`), layout raiz, área `/aprovacao`, área `(assinatura)/assinar`, rota de mídia do replay, `robots.ts` | vários |
+| `tests/` | `unit/` (Vitest, rotas da assinatura) e `e2e/` (Playwright + Lara falsa) | [15](15-assinatura-remota.md) |
 | `app/components/` | Componentes por domínio: `Auth`, `Checkout`, `Common`, `Lighting`, `Profile`, `Replay`, `Schedules`, `Social` | [11](11-ui-compartilhada.md) e por domínio |
 | `app/hooks/` | `useIsMobile` (≤1024px), `useLightingAvailability` | [11](11-ui-compartilhada.md), [08](08-luz-da-quadra.md) |
 | `pages/api/` | Pages Router — **só rotas de API** (auth, proxy, pagamento, webhook) | [02](02-autenticacao-socio.md), [03](03-proxy-backend-seguranca.md), [05](05-checkout-pagamento.md), [10](10-webhook-whatsapp.md) |
-| `services/` | Clientes HTTP: `api-consume` (genérico), `replay-api`, `lighting-api`, `social-api`, `aprovacao-api` (server-only) | [03](03-proxy-backend-seguranca.md) e por domínio |
+| `services/` | Clientes HTTP: `api-consume` (genérico), `replay-api`, `lighting-api`, `social-api`, `aprovacao-api` e `assinatura-api` (server-only) | [03](03-proxy-backend-seguranca.md) e por domínio |
 | `context/` | `CartContext` (carrinho = agendamentos pendentes status 3) | [04](04-agendamento-quadras.md) |
 | `utils/` | Helpers: segurança (`sanitize`, `rate-limit`, `callback-url`), pagamento (`erede`, `lara`, `pending-payments`, `bank-identifier`), formatação (`replay`, `lighting`, `uriGen`) | por domínio |
 | `styles/` | CSS Modules (um por componente/tela) + `globals.css` (tokens de cor grená) | [11](11-ui-compartilhada.md) |
@@ -81,6 +84,7 @@ Regras de ouro dessa arquitetura:
 12. [12-pontos-de-atencao.md](12-pontos-de-atencao.md) — bugs conhecidos, dívidas técnicas, documentos desatualizados, armadilhas.
 13. [13-espacos-sociais.md](13-espacos-sociais.md) — churrasqueiras/salões: vitrine, calendário, pré-reserva, minhas reservas, pagamento por reserva.
 14. [14-identidade-visual.md](14-identidade-visual.md) — rebrand v4: tokens, tema escuro, cores de módulo, peças de UI (`app/components/UI/`), modelo de tela, pegadinhas.
+15. [15-assinatura-remota.md](15-assinatura-remota.md) — assinatura de documentos pelo link do e-mail: área isolada, cookies httpOnly, IP de quem assina, etapas, testes.
 
 ## 5. Fluxo principal do sócio (ponta a ponta)
 
@@ -94,7 +98,7 @@ Regras de ouro dessa arquitetura:
 
 ## 6. Como trabalhar neste repositório (instruções para agents)
 
-- **Comandos**: `npm run dev` (Turbopack), `npm run build`, `npm run lint`. Não há testes automatizados. Para validar mudanças use `npx tsc --noEmit` + `npm run lint` + `npm run build`.
+- **Comandos**: `npm run dev` (Turbopack), `npm run build`, `npm run lint`. Para validar mudanças use `npx tsc --noEmit` + `npm run lint` + `npm run build`. Só a assinatura remota tem testes automatizados: `npm run test` (Vitest) e `npm run test:e2e` (Playwright, Lara falsa) — ver [15](15-assinatura-remota.md#testes).
 - **Imports são relativos** (`../../services/api-consume`), não `@/…` — o alias quebrava no ambiente do usuário. Os `paths` do `tsconfig.json` existem mas estão sem uso. Mantenha imports relativos.
 - **Idioma**: UI, mensagens e comentários em **português**. Os módulos recentes (Replay, Luz, Aprovação, webhook, segurança) têm comentários longos explicando o *porquê* — preserve esse estilo ao editá-los. A área `/aprovacao` usa até identificadores em português (`lerToken`, `decidirOrdem`); siga o padrão do arquivo que estiver editando.
 - **Estilo**: identidade visual v4 (grená, tokens com tema claro/escuro, cor por módulo) — leia [14-identidade-visual.md](14-identidade-visual.md) antes de mexer em tela. CSS Modules em `styles/`, cor-tema `var(--grena)`, peças compartilhadas em `app/components/UI/`. Ícones: FontAwesome. Avisos: `react-toastify` (`toast.*`) — **somente no cliente**.

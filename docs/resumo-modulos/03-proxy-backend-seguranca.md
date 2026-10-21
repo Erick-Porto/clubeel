@@ -69,6 +69,7 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 | `social/bookings/{id}` | GET | `utils/lara.computeSocialBookingCharge` (valor a cobrar) e `socialBookingIsPaid` (checagem de "já pago") | servidor |
 | `webhooks/whatsapp` | POST | webhook | servidor |
 | `aprovacao/login`, `aprovacao/ordens`, `aprovacao/ordens/{cd}`, `aprovacao/ordens/{cd}/decidir` | POST/GET | área de aprovação | servidor (sem token de app; `Authorization` = JWT do diretor) |
+| `assinatura/remota/{link,abrir,sessao,identidade,respostas,anexos,anexos/{id},pdf,visualizado,assinar,recusar,encerrar}` | vários | assinatura remota | servidor, pelas rotas `/assinar/api/*` (fora do proxy e da allowlist; `Authorization` = `LARA_SIGNATURE_API_TOKEN`) — ver [15](15-assinatura-remota.md) |
 
 ## Anti-injeção — [utils/sanitize.ts](../../utils/sanitize.ts)
 

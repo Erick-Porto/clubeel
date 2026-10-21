@@ -43,7 +43,7 @@ Cada token existe como **canais** (`--grena-rgb: 138 21 56`, para opacidade: `rg
 | `danger` / `danger-soft` | `#C22B2B` / `#FCE4E4` | `#FF7B7B` / `#3A1616` | Recusado, cancelado, bloqueado, erro |
 | `on-solid` | branco | `#120C0E` | Texto sobre fundo sólido `ok`/`warn`/`danger` |
 
-Texto sobre botão grená é sempre branco (`#fff`). Os nomes antigos (`--grena-light`, `--grena-dark`, `--background`, `--foreground`…) continuam como apelidos dos tokens novos, para estilos inline legados.
+Texto sobre botão grená é sempre branco (`#fff`). `--pad` / `--pad-ink` (branco / tinta escura) são o "papel" do quadro de assinatura da área `/assinar` e **não trocam no tema escuro**, de propósito: o traço vira imagem dentro do PDF. Os nomes antigos (`--grena-light`, `--grena-dark`, `--background`, `--foreground`…) continuam como apelidos dos tokens novos, para estilos inline legados.
 
 ### Módulos
 
@@ -91,6 +91,7 @@ As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo d
 ```
 
 - A área `/aprovacao` tem casca própria (`aprovacao.module.css`, Server Components) e não usa `Header`/barra inferior; a busca da fila é um componente de cliente que só filtra o HTML já renderizado.
+- A área `/assinar` também tem casca própria (`assinatura.module.css`): só o logo e "Assinatura de documentos", coluna de 680px, letra 17px, botões de 52px (público amplo, pouca familiaridade com celular). Avisos com `Note` dentro de `.aviso` (16px).
 - Login e "esqueci a senha" são páginas próprias (sem cabeçalho). No celular o login mostra o formulário num cartão translúcido sobre as fotos do carrossel (fixas ao fundo). O botão **RePET** do login usa as duas cores do módulo `replay` invertidas (tinta no fundo, tom claro no texto) para contrastar nos dois temas.
 
 ## Pegadinhas

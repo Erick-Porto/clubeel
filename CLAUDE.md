@@ -1,11 +1,11 @@
 # CLAUDE.md
 
-Front-end Next.js 15 (React 19, TypeScript) do Clube dos Funcionários da CSN. Cinco produtos no mesmo app: **agendamento de quadras** (com pagamento eRede), **espaços sociais** (churrasqueiras/salões: pré-reserva, análise da secretaria, pagamento eRede), **replay** de vídeos, **luz da quadra** e **aprovação de compras** da diretoria. Toda regra de negócio e todo dado moram na API interna **Lara** (Laravel, não publicada na internet).
+Front-end Next.js 15 (React 19, TypeScript) do Clube dos Funcionários da CSN. Seis produtos no mesmo app: **agendamento de quadras** (com pagamento eRede), **espaços sociais** (churrasqueiras/salões: pré-reserva, análise da secretaria, pagamento eRede), **replay** de vídeos, **luz da quadra**, **aprovação de compras** da diretoria e **assinatura remota de documentos** (`/assinar`, pelo link do e-mail). Toda regra de negócio e todo dado moram na API interna **Lara** (Laravel, não publicada na internet).
 
 ## Documentação — leia antes de mudar código
 
 - **Sempre** leia [docs/resumo-modulos/README.md](docs/resumo-modulos/README.md) (visão geral, arquitetura, regras, glossário).
-- Depois, abra só o(s) módulo(s) que a tarefa toca (`docs/resumo-modulos/01..11-*.md` e `13-espacos-sociais.md`); em qualquer mudança de tela, também `14-identidade-visual.md`.
+- Depois, abra só o(s) módulo(s) que a tarefa toca (`docs/resumo-modulos/01..11-*.md`, `13-espacos-sociais.md` e `15-assinatura-remota.md`); em qualquer mudança de tela, também `14-identidade-visual.md`.
 - Antes de "consertar" algo estranho, consulte [12-pontos-de-atencao.md](docs/resumo-modulos/12-pontos-de-atencao.md): vários comportamentos são intencionais.
 - Se alterar comportamento descrito nesses docs, **atualize o doc no mesmo trabalho**. Se o doc divergir do código, o código vence — corrija o doc.
 - Sempre que montar uma nova função, pergunte ao usuário se deve criar uma nova branch.
@@ -13,7 +13,7 @@ Front-end Next.js 15 (React 19, TypeScript) do Clube dos Funcionários da CSN. C
 ## Comandos
 
 - `npm run dev` · `npm run build` · `npm run lint`
-- Não há testes automatizados. Valide com `npx tsc --noEmit`, `npm run lint` e `npm run build`.
+- Valide com `npx tsc --noEmit`, `npm run lint` e `npm run build`. Só a assinatura remota tem testes: `npm run test` (Vitest) e `npm run test:e2e` (Playwright contra uma Lara falsa).
 - `master` vai para produção no próximo deploy (`deploy.sh`, serviço systemd atrás do nginx, instância única).
 
 ## Regras invioláveis
@@ -22,8 +22,8 @@ Front-end Next.js 15 (React 19, TypeScript) do Clube dos Funcionários da CSN. C
 2. Endpoint novo da Lara chamado pelo cliente **precisa** entrar na allowlist do proxy (`PUBLIC_ENDPOINTS` ou `AUTHENTICATED_ENDPOINTS`), com regex o mais fechada possível.
 3. `INTERNAL_*` e demais segredos nunca podem ir para o bundle do cliente nem para logs. Nunca logue `cardData`. Nunca imprima valores do `.env`.
 4. Valor de cobrança é sempre recalculado no servidor (`utils/lara.ts`); aprovação de pagamento é verificada na eRede por `tid`, nunca pelo corpo da requisição.
-5. Nos módulos Replay, Luz, Aprovação e Espaços sociais, **o front não decide nada**: exiba o que a Lara responde (`reason`/`error`/mensagem) e não reimplemente regra de negócio.
-6. Rota de sócio protegida → adicionar ao `matcher` de `middleware.ts`. `/replay` é pública por decisão de negócio; `/aprovacao` tem sessão própria (cookie httpOnly) e não usa NextAuth.
+5. Nos módulos Replay, Luz, Aprovação, Espaços sociais e Assinatura remota, **o front não decide nada**: exiba o que a Lara responde (`reason`/`error`/mensagem) e não reimplemente regra de negócio.
+6. Rota de sócio protegida → adicionar ao `matcher` de `middleware.ts`. `/replay` é pública por decisão de negócio; `/aprovacao` tem sessão própria (cookie httpOnly) e não usa NextAuth; `/assinar` também não, e o layout raiz nem monta os provedores de sócio lá (`app/components/casca-do-site.tsx`). Nada no site linka para `/assinar`.
 7. Rate limit e cache de pagamentos pendentes são em memória (um processo só).
 8. O site também roda em `/homolog` (branch `homolog`, segunda instância, serviço `espacos-homolog`, `deploy-homolog.sh`). Caminho absoluto fora de `<Link>`/`router.push`/`redirect()` — `fetch`, `src`, `callbackUrl`, `path` de cookie, `new URL` — passa por `comBase` (`utils/base-path.ts`).
 
