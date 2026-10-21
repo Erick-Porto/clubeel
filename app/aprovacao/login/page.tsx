@@ -11,6 +11,7 @@ import { redirect } from 'next/navigation';
 import FormularioLogin from '../components/formulario-login';
 import { lerToken } from '../sessao';
 import styles from '../../../styles/aprovacao.module.css';
+import { comBase } from '../../../utils/base-path';
 
 export const metadata: Metadata = {
   title: 'Entrar | Aprovação de Compras',
@@ -39,7 +40,7 @@ export default async function LoginAprovacaoPage({
       <div className={styles.cartaoLogin}>
         <div className={styles.loginTopo}>
           <Image
-            src="/images/logo-cfcsn-horiz.png"
+            src={comBase("/images/logo-cfcsn-horiz.png")}
             alt="Clube dos Funcionários"
             width={200}
             height={80}
@@ -48,7 +49,7 @@ export default async function LoginAprovacaoPage({
             priority
           />
           <Image
-            src="/images/logo-cfcsn-w-horiz.png"
+            src={comBase("/images/logo-cfcsn-w-horiz.png")}
             alt="Clube dos Funcionários"
             width={200}
             height={80}

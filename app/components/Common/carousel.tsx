@@ -5,6 +5,7 @@ import styles from "../../../styles/carousel.module.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight, faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
+import { comBase } from '../../../utils/base-path';
 
 interface CarouselProps{
   controllers: boolean;
@@ -19,7 +20,7 @@ export default function Carousel({height, controllers}: CarouselProps) {
   useEffect(() => {
     async function fetchFiles() {
       try {
-        const response = await fetch('/api/carousel');
+        const response = await fetch(comBase('/api/carousel'));
         if (!response.ok) {
           throw new Error('Falha ao buscar imagens do carrossel');
         }
@@ -83,7 +84,7 @@ export default function Carousel({height, controllers}: CarouselProps) {
             ${styles.carouselItem}
             ${index === activeItem ? styles.active : ''}
           `}
-          style={{ backgroundImage: `url(/images/carousel/${file})` }}
+          style={{ backgroundImage: `url(${comBase(`/images/carousel/${file}`)})` }}
         >
         </div>
       ))}

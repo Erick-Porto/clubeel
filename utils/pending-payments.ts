@@ -6,7 +6,7 @@
  * segunda chamada era uma fonte de lentidao extra (risco de expirar o hold
  * do agendamento) e de falso-positivo de "valor divergente".
  *
- * Adequado para uma unica instancia (PM2 single process), mesmo modelo do
+ * Adequado para uma unica instancia (um unico processo `next start`), mesmo modelo do
  * rate-limit.ts. Para escala horizontal, migrar para um store compartilhado
  * (Redis).
  */

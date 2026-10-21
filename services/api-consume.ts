@@ -1,9 +1,11 @@
 import { signOut } from "next-auth/react";
 import { toast } from "react-toastify";
+import { comBase } from "../utils/base-path";
 
 const IS_SERVER = typeof window === 'undefined';
 const INTERNAL_API = process.env.INTERNAL_LARA_API_URL;
-const PROXY_API = "/api/backend"; 
+// No cliente o proxy também fica sob o basePath (/homolog/api/backend na homologação).
+const PROXY_API = comBase("/api/backend");
 
 export interface IApiResponse<T = any> {
     data: T | null;
@@ -57,7 +59,7 @@ async function API_CONSUME<T = any>(
             toast.error("Sua sessão expirou. Por favor, faça login novamente.");
             
             // Força o logout e limpa os cookies do NextAuth
-            await signOut({ callbackUrl: '/login', redirect: true });
+            await signOut({ callbackUrl: comBase('/login'), redirect: true });
             
             return { data: null, status: response.status, ok: false, message: "Sessão expirada." };
         }

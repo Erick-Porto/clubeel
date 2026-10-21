@@ -1,0 +1,29 @@
+# Modelo do serviço systemd da HOMOLOGAÇÃO (/homolog).
+#
+# Base: copie o .service da produção (`systemctl cat <servico-da-producao>`) e
+# mantenha User, caminho do npm/node e Environment iguais aos de lá — os valores
+# abaixo são só exemplo. O que muda é a pasta e a porta.
+#
+# Instalar:
+#   sudo cp deploy/espacos-homolog.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now espacos-homolog
+#
+# `-H 127.0.0.1`: a instância só aceita conexão local; quem fala com a internet
+# é o nginx (location /homolog). Nenhuma porta nova fica exposta na DMZ.
+
+[Unit]
+Description=Clube dos Funcionarios - homologacao (/homolog)
+After=network.target
+
+[Service]
+Type=simple
+User=administrator
+WorkingDirectory=/home/administrator/clubeel-homolog
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start -- -H 127.0.0.1 -p 3001
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -8,6 +8,7 @@
  */
 
 import type { ReplayOrientation, ReplayPlace, ReplayVideo } from "../services/replay-api";
+import { comBase } from "./base-path";
 
 /** A partir daqui o prazo vira aviso em destaque no card. */
 export const REPLAY_URGENT_DAYS = 2;
@@ -242,7 +243,7 @@ export function sportImage(groupName: string): string | null {
         .toLowerCase();
 
     for (const [pattern, file] of SPORT_IMAGES) {
-        if (pattern.test(normalized)) return `/images/carousel/${file}`;
+        if (pattern.test(normalized)) return comBase(`/images/carousel/${file}`);
     }
 
     return null;
@@ -286,7 +287,7 @@ export function resolveMediaUrl(rawUrl: string, options: { download?: boolean } 
     const filePath = rawUrl.slice(markerAt + MEDIA_MARKER.length).replace(/^\/+/, "");
     if (!filePath) return rawUrl;
 
-    return `/api/replay/media/${filePath}${options.download ? "?download=1" : ""}`;
+    return comBase(`/api/replay/media/${filePath}${options.download ? "?download=1" : ""}`);
 }
 
 /** `YYYY-MM-DD` no fuso local — formato que o filtro `?date=` da Lara espera. */

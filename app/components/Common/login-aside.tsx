@@ -13,6 +13,7 @@ import API_CONSUME from "../../../services/api-consume";
 import Link from "next/link";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { safeCallbackUrl } from "../../../utils/callback-url";
+import { comBase } from '../../../utils/base-path';
 
 export default function AuthSidebar({ useInterface }: { useInterface: string }) {
     const [cpf, setCPF] = useState("");
@@ -197,7 +198,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
         <aside className={styles.sidebar}>
             <div className={styles.sidebarHeader}>
                 <Image
-                    src="/images/logo-cfcsn-horiz.png"
+                    src={comBase("/images/logo-cfcsn-horiz.png")}
                     alt="Logo CFCSN"
                     width={200}
                     height={80}
@@ -206,7 +207,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     priority
                 />
                 <Image
-                    src="/images/logo-cfcsn-w-horiz.png"
+                    src={comBase("/images/logo-cfcsn-w-horiz.png")}
                     alt="Logo CFCSN"
                     width={200}
                     height={80}

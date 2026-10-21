@@ -14,7 +14,7 @@ Front-end Next.js 15 (React 19, TypeScript) do Clube dos Funcionários da CSN. C
 
 - `npm run dev` · `npm run build` · `npm run lint`
 - Não há testes automatizados. Valide com `npx tsc --noEmit`, `npm run lint` e `npm run build`.
-- `master` vai para produção no próximo deploy (`deploy.sh`, PM2 `espacos`, instância única).
+- `master` vai para produção no próximo deploy (`deploy.sh`, serviço systemd atrás do nginx, instância única).
 
 ## Regras invioláveis
 
@@ -25,6 +25,7 @@ Front-end Next.js 15 (React 19, TypeScript) do Clube dos Funcionários da CSN. C
 5. Nos módulos Replay, Luz, Aprovação e Espaços sociais, **o front não decide nada**: exiba o que a Lara responde (`reason`/`error`/mensagem) e não reimplemente regra de negócio.
 6. Rota de sócio protegida → adicionar ao `matcher` de `middleware.ts`. `/replay` é pública por decisão de negócio; `/aprovacao` tem sessão própria (cookie httpOnly) e não usa NextAuth.
 7. Rate limit e cache de pagamentos pendentes são em memória (um processo só).
+8. O site também roda em `/homolog` (branch `homolog`, segunda instância, serviço `espacos-homolog`, `deploy-homolog.sh`). Caminho absoluto fora de `<Link>`/`router.push`/`redirect()` — `fetch`, `src`, `callbackUrl`, `path` de cookie, `new URL` — passa por `comBase` (`utils/base-path.ts`).
 
 ## Convenções
 

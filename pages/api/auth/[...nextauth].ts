@@ -1,6 +1,8 @@
 import NextAuth, { NextAuthOptions,  } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import API_CONSUME from "../../../services/api-consume";
+import { comBase } from "../../../utils/base-path";
+import { cookiesNextAuth } from "../../../utils/auth-cookies";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -75,9 +77,14 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
+  // O NextAuth redireciona para `pages.signIn` sem aplicar o basePath do Next:
+  // sem o prefixo, a homologação mandaria o sócio para o login da produção.
   pages: {
-    signIn: '/login',
+    signIn: comBase('/login'),
   },
+
+  // Produção: padrões do NextAuth. Homologação: nomes e path próprios (ver utils/auth-cookies.ts).
+  cookies: cookiesNextAuth(),
 
   secret: process.env.NEXTAUTH_SECRET,
 };

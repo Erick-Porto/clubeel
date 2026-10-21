@@ -96,4 +96,4 @@ Lista itens (link para `/place/...?date=` via `URIGen`), botão de remover (`rem
 2. A aprovação é decidida consultando a eRede por `tid`, **não** pelo corpo da requisição.
 3. `cardData` **nunca** é logado.
 4. `takePendingPayment` consome (apaga) o registro — impede reaproveitar a mesma `reference`.
-5. O cache de pagamentos pendentes e o rate limit são por processo (PM2 single). Reiniciar o processo entre `payment_methods` e `success` só força o recálculo (fallback seguro).
+5. O cache de pagamentos pendentes e o rate limit são por processo (um processo `next start`). Reiniciar o processo entre `payment_methods` e `success` só força o recálculo (fallback seguro).

@@ -26,7 +26,7 @@
 .mapContent {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background-image: url('/images/MAPA.jpg');
+  background-image: url('../public/images/MAPA.jpg');
   background-size: cover;
   background-position: center;
   pointer-events: none;

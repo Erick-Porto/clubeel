@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import Image from "next/image";
 import API_CONSUME from "../../../services/api-consume";
 import { useSession, signOut } from 'next-auth/react';
+import { comBase } from '../../../utils/base-path';
 
 type PaymentMethod = "credit" | "debit" | "pix";
 
@@ -159,7 +160,7 @@ const handleSocialPayment = async () => {
     };
 
     try {
-        const response = await fetch('/api/erede/payment_methods', {
+        const response = await fetch(comBase('/api/erede/payment_methods'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -180,7 +181,7 @@ const handleSocialPayment = async () => {
             return;
         }
 
-        const saveOrderRes = await fetch('/api/success', {
+        const saveOrderRes = await fetch(comBase('/api/success'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ transactionData, socialBookingId, method })
@@ -205,7 +206,7 @@ const handleSocialPayment = async () => {
 const handlePayment = async () => {
     if (!session?.accessToken || !session?.user?.id) {
         toast.error("Sessão expirada ou dados incompletos. Por favor, faça login novamente.");
-        await signOut({ callbackUrl: '/login', redirect: true });
+        await signOut({ callbackUrl: comBase('/login'), redirect: true });
         return;
     }
 
@@ -259,7 +260,7 @@ const handlePayment = async () => {
 
     try {
       const scheduleIds = cart.map(item => item.id);
-      const response = await fetch('/api/erede/payment_methods', {
+      const response = await fetch(comBase('/api/erede/payment_methods'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -290,7 +291,7 @@ const handlePayment = async () => {
         
         try {
             const scheduleIds = cart.map(item => item.id); 
-            const saveOrderRes = await fetch('/api/success', {
+            const saveOrderRes = await fetch(comBase('/api/success'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

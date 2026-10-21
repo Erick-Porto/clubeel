@@ -17,6 +17,7 @@
 | [pages/api/login.ts](../../pages/api/login.ts) | Rota de login "crua" (rate limit 8/min) — **não usada pelo front atual** (o front usa NextAuth) |
 | [pages/api/register.ts](../../pages/api/register.ts) | Rota de cadastro com validação de CPF (rate limit 5/min) — **não usada pelo front atual** (o front chama `register` via proxy) |
 | [middleware.ts](../../middleware.ts) | Protege rotas de sócio (ver [01](01-infraestrutura-config.md)) |
+| [utils/auth-cookies.ts](../../utils/auth-cookies.ts) | Na homologação, nomes/path próprios dos cookies do NextAuth (`*.homolog`, `path=/homolog`); em produção, padrões |
 
 ## NextAuth (`authOptions`)
 
@@ -54,7 +55,7 @@ Passo 2 — `PasswordResetStep`: regras visuais (≥8, maiúscula, minúscula, n
 ## `TokenValidator`
 
 Montado no layout raiz. Se `status === 'authenticated'`:
-- sem `accessToken` na sessão → `signOut({callbackUrl:'/login'})`;
+- sem `accessToken` na sessão → `signOut({callbackUrl: comBase('/login')})` (o NextAuth não aplica o basePath no callback; ver [01](01-infraestrutura-config.md#homologação-homolog));
 - senão chama `GET verify-token` (via proxy, `skipAuthCheck`) agora e **a cada 5 min**; resposta não-ok/401/403 → `signOut`.
 - **Desligado em `/aprovacao*`** (para um sócio com token vencido não arrastar o diretor para `/login`).
 

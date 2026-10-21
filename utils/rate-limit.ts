@@ -2,7 +2,7 @@ import type { NextApiRequest } from 'next';
 
 /**
  * Rate limiter simples em memória (janela fixa por chave).
- * Adequado para uma única instância (PM2 single process). Para escala
+ * Adequado para uma única instância (um único processo `next start`). Para escala
  * horizontal, migrar para um store compartilhado (Redis).
  */
 

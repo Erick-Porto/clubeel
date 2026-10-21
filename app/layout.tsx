@@ -9,10 +9,15 @@ import { NextAuthProvider } from './components/provider';
 import { ToastContainer } from "react-toastify";
 import { CartProvider } from "../context/CartContext";
 import { THEME_SCRIPT } from "./components/Common/theme-script";
+import HomologBanner from "./components/UI/homolog-banner";
+import { EM_HOMOLOGACAO } from "../utils/base-path";
 
+// Na homologação: título marcado e fora dos buscadores (a URL é "secreta" só
+// por não ser divulgada; o noindex evita que ela apareça no Google).
 export const metadata: Metadata = {
-  title: "Clube dos Funcionários",
+  title: EM_HOMOLOGACAO ? "[Homologação] Clube dos Funcionários" : "Clube dos Funcionários",
   description: "Conectando gerações.",
+  ...(EM_HOMOLOGACAO ? { robots: { index: false, follow: false } } : {}),
 };
 
 // `viewport-fit=cover` libera as áreas seguras do iPhone (env(safe-area-inset-*))
@@ -40,6 +45,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body >
+        <HomologBanner />
         <NextAuthProvider>
           <CartProvider>
             <TokenValidator />

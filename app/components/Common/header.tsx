@@ -23,6 +23,7 @@ import {
 import { useCart } from '../../../context/CartContext';
 import { ThemeSwitch } from './theme';
 import { initialsOf } from '../UI/ui';
+import { comBase } from '../../../utils/base-path';
 
 type ModuleKey = 'inicio' | 'social' | 'replay' | 'luz' | 'perfil';
 
@@ -93,7 +94,7 @@ export default function Header() {
                 <div className={styles.inner}>
                     <Link href="/" aria-label="Início" className={styles.logo}>
                         <Image
-                            src="/images/logo-cfcsn-horiz.png"
+                            src={comBase("/images/logo-cfcsn-horiz.png")}
                             alt="Clube dos Funcionários CSN"
                             width={220}
                             height={88}
@@ -102,7 +103,7 @@ export default function Header() {
                             className={styles.logoLight}
                         />
                         <Image
-                            src="/images/logo-cfcsn-w-horiz.png"
+                            src={comBase("/images/logo-cfcsn-w-horiz.png")}
                             alt="Clube dos Funcionários CSN"
                             width={220}
                             height={88}
@@ -183,7 +184,7 @@ export default function Header() {
                                             type="button"
                                             className={`${styles.menuItem} ${styles.menuDanger}`}
                                             role="menuitem"
-                                            onClick={() => signOut({ callbackUrl: '/login' })}
+                                            onClick={() => signOut({ callbackUrl: comBase('/login') })}
                                         >
                                             <FontAwesomeIcon icon={faRightFromBracket} /> Sair
                                         </button>

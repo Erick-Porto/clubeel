@@ -15,7 +15,7 @@
 | Arquivo | Tipo | Papel |
 |---|---|---|
 | [services/aprovacao-api.ts](../../services/aprovacao-api.ts) | server-only (lança erro se importado no browser) | Cliente da Lara `/api/aprovacao/*`, contratos, `nomeFornecedor` |
-| [app/aprovacao/sessao.ts](../../app/aprovacao/sessao.ts) | servidor | Cookies `aprovacao_token` e `aprovacao_usuario` (base64url JSON), path `/aprovacao`, httpOnly, `secure` em produção, `sameSite: lax`, expiração = `expira_em` da API (fallback 8 h) |
+| [app/aprovacao/sessao.ts](../../app/aprovacao/sessao.ts) | servidor | Cookies `aprovacao_token` e `aprovacao_usuario` (base64url JSON), path `comBase('/aprovacao')` (`/homolog/aprovacao` na homologação), httpOnly, `secure` em produção, `sameSite: lax`, expiração = `expira_em` da API (fallback 8 h) |
 | [app/aprovacao/actions.ts](../../app/aprovacao/actions.ts) | `'use server'` | `entrar`, `sair`, `decidir` |
 | [app/aprovacao/tipos.ts](../../app/aprovacao/tipos.ts) | compartilhado | `EstadoLogin`, `EstadoDecisao` (fora de `actions.ts` porque arquivo `'use server'` só exporta funções async) |
 | [app/aprovacao/formato.ts](../../app/aprovacao/formato.ts) | puro | `moeda`, `moedaPrecisa` (até 4 decimais p/ valor unitário), `dataHora` (fuso SP), `dataHoraSimples` (hora de parede do ERP, sem `Date`), `tempoDecorrido`, `ouTraco`, `plural`, `numero`, `cnpj`, `rotuloDecisao`, `rotuloStatus` |

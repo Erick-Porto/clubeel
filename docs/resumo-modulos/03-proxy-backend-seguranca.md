@@ -84,4 +84,4 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 - `rateLimit(key, limit, windowMs) → {ok, retryAfter}`: janela fixa em `Map` em memória, poda quando passa de 5000 chaves.
 - `getClientIp(req)`: primeiro IP de `x-forwarded-for`, senão `socket.remoteAddress`.
 - Limites em uso (por IP, janela 60 s): login 8 · register 5 · pagamento 10 · webhook WhatsApp 60. Excedido → **429** + `Retry-After`.
-- Só vale para **um processo** (PM2 single). O proxy `/api/backend` **não** tem rate limit próprio.
+- Só vale para **um processo** (um processo `next start`). O proxy `/api/backend` **não** tem rate limit próprio.

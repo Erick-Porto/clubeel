@@ -4,8 +4,15 @@
 
 import type { NextConfig } from "next";
 
+// Homologação: a mesma base compilada com NEXT_PUBLIC_BASE_PATH=/homolog roda
+// numa segunda instância servida em /homolog/*. Em produção fica vazio (raiz).
+// Mesma normalização de utils/base-path.ts (o config não importa de lá).
+const rawBasePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").trim().replace(/\/+$/, "");
+const basePath = rawBasePath && !rawBasePath.startsWith("/") ? `/${rawBasePath}` : rawBasePath;
+
 const nextConfig: NextConfig = {
   reactStrictMode: false,
+  ...(basePath ? { basePath } : {}),
   images: {
     unoptimized: true,
     remotePatterns: [

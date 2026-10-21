@@ -14,6 +14,8 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | `Sair` da aprovação é form POST, não `<Link>` | Prefetch de `<Link>` deslogaria sem clique. |
 | Rota de mídia do replay sem sessão | Não amplia acesso que a galeria pública já concede; caminho travado em `storage/replay/videos/`. |
 | Imports relativos em vez de `@/` | Alias quebrava no ambiente do usuário. |
+| `comBase(...)` em `fetch`, `src`, `callbackUrl`, cookie | A homologação roda sob `/homolog`; caminho absoluto sem `comBase` cai na produção (ver [01](01-infraestrutura-config.md#homologação-homolog)). |
+| Cookies do NextAuth com nome `*.homolog` | Só na homologação; evita colisão com a produção no mesmo domínio. |
 | Luz: reler a disponibilidade após cada POST | O estado "aceso" só pode vir da Lara (multi-dispositivo, outros sócios). |
 
 ## Bugs prováveis
@@ -56,6 +58,7 @@ Se a Lara mudar o formato de datas, revise todos esses pontos juntos.
 - **Lógica de extração de arrays duplicada** (CartContext, `utils/lara.ts`, `replay-api.ts`) porque a Lara não é consistente no envelope das respostas.
 - **Hold de 10 min** está hardcoded no `Clock`; tem de bater com a Lara.
 - Várias páginas antigas disparam `toast.error("Sessão inválida...")` quando `status` ainda não é `authenticated` em algum render — pode gerar toasts espúrios.
+- **Homologação usa a Lara e a eRede de produção**: tudo que se testa lá é real (cobrança, reserva, luz, aprovação no Questor).
 - `deploy.sh` faz `git reset --hard` + `git clean -df` no host: qualquer arquivo não versionado fora do `.gitignore` some (o `.env` está protegido pelo ignore).
 
 ## Documentos desatualizados no repositório

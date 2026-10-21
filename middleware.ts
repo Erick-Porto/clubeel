@@ -1,4 +1,17 @@
-export { default } from "next-auth/middleware"
+import { withAuth } from "next-auth/middleware"
+import { nomeCookieSessao } from "./utils/auth-cookies"
+
+// Mesmo comportamento do `export { default } from "next-auth/middleware"`, só
+// que dizendo o nome do cookie de sessão — na homologação ele é outro (ver
+// utils/auth-cookies.ts). `pages.signIn` aqui vai SEM prefixo: o withAuth
+// compara com o pathname (que o Next entrega sem basePath) e prefixa sozinho
+// ao redirecionar.
+const cookieSessao = nomeCookieSessao()
+
+export default withAuth({
+  pages: { signIn: "/login" },
+  ...(cookieSessao ? { cookies: { sessionToken: { name: cookieSessao } } } : {}),
+})
 
 export const config = { 
   matcher: [

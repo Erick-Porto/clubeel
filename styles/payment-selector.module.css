@@ -74,7 +74,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background-image: url('/images/default-card.png');
+  background-image: url('../public/images/default-card.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;

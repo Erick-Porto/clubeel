@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebookSquare, faInstagramSquare, faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
+import { comBase } from '../../../utils/base-path';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -13,7 +14,7 @@ export default function Footer() {
         <div className={styles.footerInfo}>
           <div className={styles.footerLogo}>
             <Image
-              src="/images/logo-cfcsn-horiz.png"
+              src={comBase("/images/logo-cfcsn-horiz.png")}
               alt="Clube dos Funcionários"
               width={220}
               height={88}
@@ -21,7 +22,7 @@ export default function Footer() {
               className={styles.logoLight}
             />
             <Image
-              src="/images/logo-cfcsn-w-horiz.png"
+              src={comBase("/images/logo-cfcsn-w-horiz.png")}
               alt="Clube dos Funcionários"
               width={220}
               height={88}

@@ -102,7 +102,8 @@ Regras de ouro dessa arquitetura:
 - **Ao adicionar endpoint da Lara chamado do cliente**: (1) inclua a regex na allowlist do proxy; (2) decida público × autenticado; (3) se precisar do sócio, nunca aceite `member_id` do cliente como autoridade — a Lara usa o header `Session`.
 - **Ao adicionar rota de sócio protegida**: inclua no `matcher` de `middleware.ts`.
 - **Segredos**: `.env` contém credenciais reais (Lara, eRede, NextAuth, WhatsApp). Nunca imprima, logue ou commite valores. Logs de pagamento nunca devem conter `cardData`.
-- **Single-instance**: rate limit e cache de pagamentos pendentes são **em memória** (PM2 com 1 processo, app `espacos`). Escalar horizontalmente exige Redis.
+- **Homologação (`/homolog`)**: segunda instância da branch `homolog` no mesmo domínio. **Nunca use caminho absoluto** (`'/api/...'`, `'/images/...'`, `callbackUrl: '/login'`, `path` de cookie) sem `comBase` de `utils/base-path.ts` — `<Link>`, `router.push` e `redirect()` já prefixam sozinhos. Ver [01](01-infraestrutura-config.md#homologação-homolog).
+- **Single-instance**: rate limit e cache de pagamentos pendentes são **em memória** (1 processo `next start`, serviço systemd atrás do nginx). Escalar horizontalmente exige Redis.
 - Leia [12-pontos-de-atencao.md](12-pontos-de-atencao.md) antes de "consertar" algo que parece estranho — vários comportamentos são intencionais e documentados.
 
 ## 7. Glossário rápido
