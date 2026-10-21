@@ -1,13 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
 import { config } from '@fortawesome/fontawesome-svg-core'
-import TokenValidator from "./components/Auth/TokenValidator";
 import '@fortawesome/fontawesome-svg-core/styles.css'
 config.autoAddCss = false
 
-import { NextAuthProvider } from './components/provider';
 import { ToastContainer } from "react-toastify";
-import { CartProvider } from "../context/CartContext";
+import CascaDoSite from "./components/casca-do-site";
 import { THEME_SCRIPT } from "./components/Common/theme-script";
 import HomologBanner from "./components/UI/homolog-banner";
 import { EM_HOMOLOGACAO } from "../utils/base-path";
@@ -46,12 +44,8 @@ export default function RootLayout({
       </head>
       <body >
         <HomologBanner />
-        <NextAuthProvider>
-          <CartProvider>
-            <TokenValidator />
-            {children}
-          </CartProvider>
-        </NextAuthProvider>
+        {/* Sessão de sócio, carrinho e validador ficam fora de /assinar (ver casca-do-site). */}
+        <CascaDoSite>{children}</CascaDoSite>
         <ToastContainer
             position="bottom-right"
             autoClose={5000}

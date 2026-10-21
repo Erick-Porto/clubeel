@@ -53,6 +53,14 @@
   --shadow-card: 0 1px 2px rgb(30 18 21 / .05), 0 4px 14px rgb(30 18 21 / .05);
   --shadow-pop: 0 12px 40px rgb(30 18 21 / .18), 0 2px 6px rgb(30 18 21 / .08);
 
+  /* "Papel" do quadro de assinatura (/assinar): NÃO troca no tema escuro, de
+     propósito. O traço vira imagem dentro do PDF, que é branco; traço claro
+     sobre fundo escuro sumiria no documento assinado. */
+  --pad-rgb: 255 255 255;
+  --pad-ink-rgb: 30 18 21;
+  --pad: rgb(var(--pad-rgb));
+  --pad-ink: rgb(var(--pad-ink-rgb));
+
   /* Cores prontas (derivadas dos canais acima) */
   --canvas: rgb(var(--canvas-rgb));
   --surface: rgb(var(--surface-rgb));

@@ -10,9 +10,27 @@ import type { NextConfig } from "next";
 const rawBasePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").trim().replace(/\/+$/, "");
 const basePath = rawBasePath && !rawBasePath.startsWith("/") ? `/${rawBasePath}` : rawBasePath;
 
+// Área de assinatura remota (/assinar): fora de buscadores, fora de cache, sem
+// Referer para terceiros e sem poder ser emoldurada por outro site. As rotas da
+// área repetem os mesmos headers (app/(assinatura)/assinar/servidor.ts); aqui
+// eles cobrem as páginas. `source` já recebe o basePath sozinho.
+const HEADERS_ASSINATURA = [
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+  { key: "Cache-Control", value: "no-store, max-age=0" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+  { key: "X-Frame-Options", value: "DENY" },
+];
+
 const nextConfig: NextConfig = {
   reactStrictMode: false,
   ...(basePath ? { basePath } : {}),
+  async headers() {
+    return [
+      { source: "/assinar", headers: HEADERS_ASSINATURA },
+      { source: "/assinar/:path*", headers: HEADERS_ASSINATURA },
+    ];
+  },
   images: {
     unoptimized: true,
     remotePatterns: [

@@ -17,6 +17,9 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | `comBase(...)` em `fetch`, `src`, `callbackUrl`, cookie | A homologação roda sob `/homolog`; caminho absoluto sem `comBase` cai na produção (ver [01](01-infraestrutura-config.md#homologação-homolog)). |
 | Cookies do NextAuth com nome `*.homolog` | Só na homologação; evita colisão com a produção no mesmo domínio. |
 | Luz: reler a disponibilidade após cada POST | O estado "aceso" só pode vir da Lara (multi-dispositivo, outros sócios). |
+| Assinatura remota sem `NextAuthProvider`/`CartProvider` | Área isolada: não pode ler a sessão de sócio (`casca-do-site.tsx`). |
+| Assinatura: último item do `X-Forwarded-For`, não o primeiro | O primeiro é escrito pelo navegador e pode ser forjado; o IP vai para evidência jurídica. |
+| Assinatura: `--pad`/`--pad-ink` não trocam no tema escuro | O traço da assinatura vira imagem dentro do PDF branco. |
 
 ## Bugs prováveis
 
@@ -54,7 +57,14 @@ Se a Lara mudar o formato de datas, revise todos esses pontos juntos.
 
 - **Estado em memória** (rate limit, `pending-payments`) → só funciona com 1 processo. Escalar = Redis.
 - **`accessToken` da Lara exposto ao navegador** via sessão NextAuth (`/api/auth/session`). A área de aprovação foi desenhada justamente para não repetir isso.
-- **Sem testes automatizados**; validação = `tsc --noEmit`, `lint`, `build`.
+- **Testes automatizados só na assinatura remota** (`npm run test`, `npm run test:e2e`); no resto, validação = `tsc --noEmit`, `lint`, `build`.
+
+## Assinatura remota — pendências e cuidados
+
+- **IP de quem assina (PENDENTE, TI)**: `ipDeQuemAssina` usa `X-Real-IP` e, na falta dele, o **último** item do `X-Forwarded-For`. Confirmar a configuração do nginx (produção e homologação) e se há outro proxy na frente. Ver [15](15-assinatura-remota.md#ip-de-quem-assina--pendente-ti).
+- **nginx `client_max_body_size`**: precisa ser liberado (11m) só em `/assinar/api/anexos`, senão anexos acima de 1 MB param no nginx com 413.
+- **Não pôr `/assinar` no matcher do middleware** nem linkar para a área em parte nenhuma do site.
+- O `pdfjs-dist` usa o build `legacy` (polyfills para celulares antigos) e o worker empacotado pelo Next; ao atualizar a versão, testar a leitura num celular real.
 - **Lógica de extração de arrays duplicada** (CartContext, `utils/lara.ts`, `replay-api.ts`) porque a Lara não é consistente no envelope das respostas.
 - **Hold de 10 min** está hardcoded no `Clock`; tem de bater com a Lara.
 - Várias páginas antigas disparam `toast.error("Sessão inválida...")` quando `status` ainda não é `authenticated` em algum render — pode gerar toasts espúrios.

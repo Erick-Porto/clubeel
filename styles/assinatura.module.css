@@ -1,0 +1,698 @@
+/*
+ * Assinatura remota de documentos (/assinar). Casca própria, sem nada do site
+ * de reservas; mesma identidade v4 (tokens de globals.css, nada de hex).
+ *
+ * Público amplo, muitas vezes com pouca familiaridade com o celular: letra
+ * maior que no resto do site, botões altos (≥ 52px) e largura de leitura
+ * estreita. Testado a partir de 360px.
+ */
+
+.area {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--canvas);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+/* ------------------------------------------------------------ Cabeçalho */
+
+.cabecalho {
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.cabecalhoInterno {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.logoImagem {
+  height: 34px;
+  width: auto;
+}
+
+.logoEscuro {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .logoClaro { display: none; }
+  :root:not([data-theme='light']) .logoEscuro { display: block; }
+}
+
+:root[data-theme='dark'] .logoClaro { display: none; }
+:root[data-theme='dark'] .logoEscuro { display: block; }
+
+.marcaTexto {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-2);
+  padding-left: 12px;
+  border-left: 1px solid var(--line-strong);
+}
+
+/* ------------------------------------------------------------ Miolo */
+
+.conteudo {
+  flex: 1;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rodape {
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ink-3);
+  border-top: 1px solid var(--line);
+}
+
+.cartao {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.titulo {
+  font-family: var(--font-display);
+  letter-spacing: -.02em;
+  font-size: 23px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.subtitulo {
+  font-family: var(--font-display);
+  letter-spacing: -.02em;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.lead {
+  color: var(--ink-2);
+}
+
+.rotulo {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dados {
+  display: grid;
+  gap: 12px;
+}
+
+.dado {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dadoValor {
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ Progresso */
+
+.progresso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressoTexto {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.progressoDocumento {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.progressoBarra {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--subtle);
+  overflow: hidden;
+}
+
+.progressoPreenchido {
+  height: 100%;
+  background: var(--grena);
+  border-radius: 999px;
+  transition: width .25s ease;
+}
+
+/* ------------------------------------------------------------ Lista do que será pedido */
+
+.pedidos {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pedido {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pedidoIcone {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--grena-tint);
+  color: var(--grena-ink);
+  font-size: 15px;
+}
+
+/* ------------------------------------------------------------ Botões */
+
+.acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acoesLinha {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.acoesLinha > * {
+  flex: 1 1 140px;
+}
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+
+.botao:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.botaoPrincipal {
+  background: var(--grena);
+  color: #fff; /* texto sobre grená é sempre branco (doc 14) */
+}
+
+.botaoPrincipal:not(:disabled):hover {
+  background: var(--grena-hover);
+}
+
+.botaoSecundario {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.botaoSecundario:not(:disabled):hover {
+  border-color: rgb(var(--grena-rgb) / .5);
+  color: var(--grena-ink);
+}
+
+.botaoPerigo {
+  background: var(--surface);
+  color: var(--danger);
+  border-color: rgb(var(--danger-rgb) / .5);
+}
+
+.botaoPerigoSolido {
+  background: var(--danger);
+  color: var(--on-solid);
+}
+
+.botaoTexto {
+  background: none;
+  border: none;
+  color: var(--grena-ink);
+  font-weight: 700;
+  font-size: 15px;
+  min-height: 44px;
+  padding: 8px 4px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rodapeEtapa {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------ Campos */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campoTitulo {
+  font-weight: 700;
+}
+
+.campoObrigatorio {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.campo input,
+.campo textarea,
+.campo select {
+  font-size: 18px;
+  min-height: 52px;
+}
+
+.campoCpf {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 22px !important;
+  letter-spacing: .04em;
+  text-align: center;
+}
+
+.campoErro {
+  color: var(--danger);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.campo [aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opcao,
+.caixa {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  min-height: 52px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.opcao input,
+.caixa input {
+  flex: none;
+  width: 24px !important;
+  height: 24px;
+  min-height: 0 !important;
+  margin-top: 1px;
+}
+
+.opcao:has(input:checked),
+.caixa:has(input:checked) {
+  border-color: var(--grena);
+  background: var(--grena-tint);
+}
+
+.caixaTexto {
+  white-space: pre-line;
+}
+
+/* ------------------------------------------------------------ Anexos */
+
+.anexo {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.anexoTopo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.anexoNome {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.arquivo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-field);
+  background: var(--subtle);
+}
+
+.arquivoIcone {
+  font-size: 22px;
+  color: var(--ink-2);
+}
+
+.arquivoTexto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+}
+
+.arquivoMeta {
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.escondido {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ Leitura do PDF */
+
+.pdfBarra {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  background: var(--canvas);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.zoom {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.zoom button {
+  min-width: 48px;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.zoom button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.pdf {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pdfPagina {
+  display: block;
+  background: var(--pad);
+  border-radius: 6px;
+  box-shadow: var(--shadow-card);
+  max-width: none;
+}
+
+.pdfFim {
+  height: 1px;
+}
+
+.carregando {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-2);
+  padding: 16px 0;
+}
+
+/* ------------------------------------------------------------ Quadro de assinatura */
+
+.quadro {
+  position: relative;
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+  background: var(--pad);
+  overflow: hidden;
+}
+
+.quadroCanvas {
+  display: block;
+  width: 100%;
+  height: min(46vh, 280px);
+  min-height: 200px;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.quadroVisto {
+  height: min(36vh, 200px);
+  min-height: 160px;
+}
+
+/* A linha-guia fica fora do canvas: não entra na imagem da assinatura. */
+.quadroLinha {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 28%;
+  border-bottom: 1px solid rgb(var(--pad-ink-rgb) / .25);
+  pointer-events: none;
+}
+
+.quadroDica {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  text-align: center;
+  font-size: 13px;
+  color: rgb(var(--pad-ink-rgb) / .55);
+  pointer-events: none;
+}
+
+.contadorPontos {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+/* ------------------------------------------------------------ Foto */
+
+.camera {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--subtle);
+}
+
+.cameraVideo,
+.cameraFoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Espelhada só na tela, como um espelho; a foto capturada sai sem espelhar. */
+.cameraVideo {
+  transform: scaleX(-1);
+}
+
+.contagem {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 96px;
+  font-weight: 700;
+  color: var(--surface);
+  text-shadow: 0 2px 16px rgb(var(--ink-rgb) / .6);
+  background: rgb(var(--ink-rgb) / .15);
+}
+
+/* ------------------------------------------------------------ Avisos */
+
+/* O `Note` compartilhado usa 14px; aqui o público pede letra maior. */
+.aviso > div {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------ Aviso da sessão */
+
+.avisoSessao {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+}
+
+/* ------------------------------------------------------------ Modal (recusar) */
+
+.fundoModal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgb(var(--ink-rgb) / .45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+  padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .fundoModal {
+    align-items: center;
+  }
+}
+
+/* ------------------------------------------------------------ Telas finais */
+
+.final {
+  align-items: center;
+  text-align: center;
+  padding: 28px 18px;
+}
+
+.finalIcone {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+}
+
+.finalIconeOk {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.finalIconeAviso {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.finalIconePerigo {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.finalIconeNeutro {
+  background: var(--grena-tint);
+  color: var(--grena-ink);
+}
+
+.codigo {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  padding: 10px 16px;
+  border-radius: var(--radius-field);
+  background: var(--subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressoPreenchido {
+    transition: none;
+  }
+}

@@ -13,7 +13,7 @@
 | Imagens | `sharp` instalado; `images.unoptimized: true` no `next.config.ts` |
 | Runtime de produção | `next start` como serviço **systemd** (nome padrão no script: `espacos`), atrás do **nginx** (proxy reverso); instância única |
 
-Scripts (`package.json`): `dev` (`next dev --turbo`), `build`, `start`, `lint` (`next lint`). **Sem testes.**
+Scripts (`package.json`): `dev` (`next dev --turbo`), `build`, `start`, `lint` (`next lint`), `test` (Vitest) e `test:e2e` (Playwright). Os testes cobrem só a assinatura remota ([15](15-assinatura-remota.md#testes)); `vitest`, `@playwright/test` são devDependencies e `pdfjs-dist` (leitura do PDF na assinatura) é dependência.
 
 ## Arquivos de configuração
 
@@ -42,6 +42,7 @@ Ficam **fora de propósito**:
 - `/replay` e `/replay/*` — galeria pública por decisão de negócio.
 - `/login`, `/forgot-password`.
 - `/aprovacao/**` — tem sessão própria (cookie `aprovacao_token`), ver [09](09-aprovacao-compras.md).
+- `/assinar/**` — assinatura remota, cookies próprios do link do e-mail, sem relação com sócio; ver [15](15-assinatura-remota.md). **Não** colocar no matcher: o `withAuth` leria a sessão de sócio.
 - `/api/**` — cada rota faz sua própria checagem.
 
 > `/cart` está no matcher mas **não existe página** `/cart` (o carrinho vive em `/profile?tab=schedules` e `/checkout`).
@@ -54,6 +55,7 @@ Arquivos: `.env` (produção/host) e `.env.development.local` (só `NEXTAUTH_URL
 |---|---|---|
 | `INTERNAL_LARA_API_URL` | `api-consume` (server), proxy, `utils/lara`, `aprovacao-api`, rota de mídia do replay | servidor |
 | `INTERNAL_LARA_API_TOKEN` | Bearer da aplicação para a Lara (proxy, `api-consume` server, `utils/lara`) | servidor |
+| `LARA_SIGNATURE_API_TOKEN` | Bearer da assinatura remota (`services/assinatura-api.ts`); mesmo valor de `SIGNATURE_REMOTE_API_TOKEN` no Lara. **Outro** token, não reaproveitar o das reservas | servidor |
 | `NEXTAUTH_URL`, `NEXTAUTH_SECRET` | NextAuth | servidor |
 | `INTERNAL_EREDE_CLIENT_ID`, `INTERNAL_EREDE_SECRET_ID`, `INTERNAL_EREDE_API_URL`, `INTERNAL_EREDE_AUTH_URL` | `utils/erede.ts` | servidor |
 | `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | webhook (obrigatório; sem ele → 503) | servidor |
@@ -69,15 +71,20 @@ Arquivos: `.env` (produção/host) e `.env.development.local` (só `NEXTAUTH_URL
 Server component que envolve **todo o app** (inclusive `/aprovacao`):
 ```
 <html lang="pt-br"><body>
-  <NextAuthProvider>          (SessionProvider)          app/components/provider.tsx
-    <CartProvider>            (context/CartContext.tsx)
-      <TokenValidator />      (revalida token do sócio a cada 5 min; desligado em /aprovacao)
-      {children}
-    </CartProvider>
-  </NextAuthProvider>
+  <CascaDoSite>                 app/components/casca-do-site.tsx — em /assinar renderiza só {children}
+    <NextAuthProvider>          (SessionProvider)          app/components/provider.tsx
+      <CartProvider>            (context/CartContext.tsx)
+        <TokenValidator />      (revalida token do sócio a cada 5 min; desligado em /aprovacao)
+        {children}
+      </CartProvider>
+    </NextAuthProvider>
+  </CascaDoSite>
   <ToastContainer position="bottom-right" autoClose=5000 ... />
 </body></html>
 ```
+`CascaDoSite` existe para a assinatura remota não ler a sessão de sócio (o `SessionProvider` buscaria `/api/auth/session`, o `CartProvider` buscaria o carrinho). Fora de `/assinar` a árvore é a mesma de antes.
+
+`next.config.ts` também define `headers()` para `/assinar` e `/assinar/:path*` (`X-Robots-Tag`, `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, `frame-ancestors 'none'`), e `app/robots.ts` gera o `robots.txt` (`Disallow: /assinar`, `/homolog/assinar`).
 Antes do `NextAuthProvider` vem `<HomologBanner />` (`app/components/UI/homolog-banner.tsx`), que só renderiza na homologação; lá o metadata também ganha título `[Homologação] ...` e `robots: noindex, nofollow`.
 
 Também importa `styles/globals.css` e configura FontAwesome (`config.autoAddCss = false` + CSS do core). Metadata: título "Clube dos Funcionários".
