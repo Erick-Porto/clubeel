@@ -93,4 +93,4 @@ Lista na ordem da Lara (futuras primeiro), **inclusive as da secretaria** (selo 
 
 - Menu do usuário ([header.tsx](../../app/components/Common/header.tsx)): "Espaços Sociais" e "Minhas Reservas Sociais".
 - **Perfil** ([profile/page.tsx](../../app/profile/page.tsx)): `SocialPendingPaymentBanner` no topo do conteúdo, em qualquer aba — "Você tem uma reserva aguardando pagamento até …" para cada reserva com `can_pay` (é assim que o sócio descobre a reserva aprovada no balcão). Some se não houver nada ou se a leitura falhar. Aba Agendamentos: bloco "Espaços Sociais" com atalhos.
-- Home: cada grupo social vira um card (selo "Espaço social") no fim do carrossel de esportes — ver [04](04-agendamento-quadras.md).
+- Home: aba **Espaços sociais** (ao lado de Esportes), com um cartão por grupo social e link para a vitrine; `/?area=social` abre direto nela — ver [04](04-agendamento-quadras.md).

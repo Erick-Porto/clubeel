@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react";
+import { KeyboardEvent, Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -23,7 +24,7 @@ import { LoadingScreen } from "./components/Common/loading";
 import API_CONSUME from "../services/api-consume";
 import HomeLightingBanner from "./components/Lighting/HomeLightingBanner";
 import ReplayNotice from "./components/Replay/ReplayNotice";
-import { Media, MediaTag, PageHeader, SearchBar, areaStyle, matchesSearch, type Area } from "./components/UI/ui";
+import { Media, PageHeader, SearchBar, areaStyle, matchesSearch, type Area } from "./components/UI/ui";
 import { fetchSocialGroups } from "../services/social-api";
 import { placeImageUrl } from "../utils/lighting";
 
@@ -43,6 +44,17 @@ interface ApiPlaceData {
     [key: string]: unknown;
 }
 
+/**
+ * Abas da home: esportes (quadras) e espaços sociais. A aba fica na URL
+ * (`?area=social`) para dar para mandar o link direto; sem parâmetro, Esportes.
+ */
+type HomeTab = 'quadras' | 'social';
+
+const TABS: { key: HomeTab; label: string; icon: typeof faVideo }[] = [
+    { key: 'quadras', label: 'Esportes', icon: faTableTennisPaddleBall },
+    { key: 'social', label: 'Espaços sociais', icon: faChampagneGlasses },
+];
+
 /** Um cartão da home: um esporte (leva às quadras) ou um grupo de espaço social. */
 interface HomeItem {
     key: string;
@@ -58,15 +70,17 @@ const SHORTCUTS: { href: string; title: string; text: string; icon: typeof faVid
     { href: '/espacos-sociais/reservas', title: 'Minhas reservas sociais', text: 'Análise, pagamento e convidados', icon: faChampagneGlasses, area: 'social' },
 ];
 
-const Home = () => {
+const HomeContent = () => {
     const [places, setPlaces] = useState<Place[]>([]);
     const [placesLoaded, setPlacesLoaded] = useState(false);
-    // Espaços sociais entram no fim da mesma grade, um cartão por grupo
+    // Espaços sociais ficam na aba própria, um cartão por grupo
     // (Churrasqueiras, Salões...), levando à vitrine deles.
     const [socialItems, setSocialItems] = useState<HomeItem[]>([]);
     const [query, setQuery] = useState("");
 
     const { data: session, status } = useSession();
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
     useEffect(() => {
         const fetchPlaces = async () => {
@@ -130,8 +144,7 @@ const Home = () => {
         });
     }, [status]);
 
-    const items = useMemo<HomeItem[]>(() => {
-        const sports = places
+    const sports = useMemo<HomeItem[]>(() => places
             .filter((place) => place.category === "esportiva")
             .map((place) => ({
                 key: `sport-${place.id}`,
@@ -139,11 +152,34 @@ const Home = () => {
                 image: place.image_horizontal || place.image_vertical || null,
                 href: `/places/${place.name.replace(/\s+/g, '-').toLowerCase()}-${place.id}`,
                 social: false,
-            }));
-        return [...sports, ...socialItems];
-    }, [places, socialItems]);
+            })), [places]);
 
-    const visible = items.filter((item) => matchesSearch(query, item.name, item.social ? 'espaço social' : 'esporte quadra'));
+    // Sem grupo social (ou se a leitura falhou) não há abas: a home fica só
+    // com os esportes, como antes.
+    const hasSocial = socialItems.length > 0;
+    const tab: HomeTab = hasSocial && searchParams?.get('area') === 'social' ? 'social' : 'quadras';
+    const tabItems = tab === 'social' ? socialItems : sports;
+    const otherItems = tab === 'social' ? sports : socialItems;
+
+    const matches = (item: HomeItem) => matchesSearch(query, item.name, item.social ? 'espaço social' : 'esporte quadra');
+    const visible = tabItems.filter(matches);
+    // Nada nesta aba, mas a busca acha na outra: oferece trocar.
+    const otherMatches = query && visible.length === 0 ? otherItems.filter(matches).length : 0;
+
+    const selectTab = (next: HomeTab) => {
+        if (next === tab) return;
+        // replace: trocar de aba não empilha histórico; o basePath (/homolog) o Next põe sozinho.
+        router.replace(next === 'social' ? '/?area=social' : '/', { scroll: false });
+    };
+
+    // Setas trocam de aba, como pede o padrão de abas (role=tablist).
+    const onTabKey = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        const next = tab === 'quadras' ? 'social' : 'quadras';
+        selectTab(next);
+        document.getElementById(`home-tab-${next}`)?.focus();
+    };
 
     if (status === "loading") return <LoadingScreen />;
 
@@ -156,59 +192,115 @@ const Home = () => {
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader
                     title={firstName ? <>Olá, <span className={style.name}>{firstName.toLowerCase()}</span></> : "Início"}
-                    lead={socialItems.length > 0
+                    lead={hasSocial
                         ? "Escolha um esporte para reservar horário ou um espaço social para o seu evento."
                         : "Escolha um esporte para ver as quadras e os horários livres."}
                 />
 
                 <HomeLightingBanner />
 
-                <section className={ui.section} aria-labelledby="home-areas">
-                    <div className={style.searchRow}>
-                        <SearchBar id="busca-home" value={query} onChange={setQuery} placeholder="Buscar esporte ou espaço" />
-                        <span className={ui.label} id="home-areas">
-                            {socialItems.length > 0 ? "Áreas esportivas e sociais" : "Áreas esportivas"}
-                        </span>
-                    </div>
-
-                    {placesLoaded && items.length === 0 ? (
-                        <ReplayNotice
-                            icon={faTableTennisPaddleBall}
-                            title="Nenhum local para exibir"
-                            description="Não há esportes disponíveis para reserva no momento."
-                        />
-                    ) : visible.length === 0 && query ? (
-                        <ReplayNotice
-                            icon={faMagnifyingGlass}
-                            title={`Nada encontrado para “${query}”`}
-                            description="Confira a grafia ou limpe a busca."
-                        />
-                    ) : (
-                        <div className={ui.grid}>
-                            {visible.map((item) => (
-                                <Link key={item.key} href={item.href} className={`${ui.card} ${style.spotCard}`}>
-                                    <Media
-                                        src={item.image}
-                                        alt={`Foto de ${item.name}`}
-                                        area={item.social ? 'social' : 'quadras'}
-                                        icon={item.social ? faChampagneGlasses : faTableTennisPaddleBall}
+                <section className={ui.section} aria-label="Áreas do clube">
+                    {hasSocial && (
+                        <div className={style.tabs} role="tablist" aria-label="Áreas do clube" onKeyDown={onTabKey}>
+                            {TABS.map((entry) => {
+                                const active = entry.key === tab;
+                                const count = entry.key === 'social' ? socialItems.length : sports.length;
+                                return (
+                                    <button
+                                        key={entry.key}
+                                        id={`home-tab-${entry.key}`}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={active}
+                                        aria-controls="home-panel"
+                                        tabIndex={active ? 0 : -1}
+                                        className={`${style.tab} ${active ? style.tabActive : ''}`}
+                                        style={areaStyle(entry.key)}
+                                        onClick={() => selectTab(entry.key)}
                                     >
-                                        {item.social && <MediaTag icon={faChampagneGlasses}>Espaço social</MediaTag>}
-                                    </Media>
-                                    <div className={ui.cardBody}>
-                                        <h3 className={ui.cardTitle}>{item.name}</h3>
-                                    </div>
-                                    <div className={ui.cardFoot}>
-                                        <span className={style.cardAction}>
-                                            {item.social ? "Ver espaços" : "Ver quadras e horários"}
-                                        </span>
-                                        <span className={ui.spacer} />
-                                        <FontAwesomeIcon icon={faArrowRight} className={ui.muted} />
-                                    </div>
-                                </Link>
-                            ))}
+                                        <FontAwesomeIcon icon={entry.icon} />
+                                        <span>{entry.label}</span>
+                                        {(entry.key === 'social' || placesLoaded) && (
+                                            <span className={style.tabCount}>{count}</span>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
+
+                    <div
+                        id="home-panel"
+                        className={style.panel}
+                        role={hasSocial ? 'tabpanel' : undefined}
+                        aria-labelledby={hasSocial ? `home-tab-${tab}` : 'home-areas'}
+                    >
+                        <div className={style.searchRow}>
+                            <SearchBar
+                                id="busca-home"
+                                value={query}
+                                onChange={setQuery}
+                                placeholder={tab === 'social' ? 'Buscar espaço social' : 'Buscar esporte'}
+                            />
+                            {hasSocial ? (
+                                tab === 'social' && (
+                                    <Link href="/espacos-sociais" className={style.panelLink}>
+                                        Ver vitrine completa <FontAwesomeIcon icon={faArrowRight} />
+                                    </Link>
+                                )
+                            ) : (
+                                <span className={ui.label} id="home-areas">Áreas esportivas</span>
+                            )}
+                        </div>
+
+                        {tab === 'quadras' && placesLoaded && sports.length === 0 ? (
+                            <ReplayNotice
+                                icon={faTableTennisPaddleBall}
+                                title="Nenhum esporte para exibir"
+                                description="Não há esportes disponíveis para reserva no momento."
+                            />
+                        ) : visible.length === 0 && query ? (
+                            <ReplayNotice
+                                icon={faMagnifyingGlass}
+                                title={`Nada encontrado para “${query}”`}
+                                description={otherMatches > 0
+                                    ? `Não está em ${TABS.find((entry) => entry.key === tab)?.label}, mas a busca achou ${otherMatches} em ${TABS.find((entry) => entry.key !== tab)?.label}.`
+                                    : "Confira a grafia ou limpe a busca."}
+                                action={otherMatches > 0 ? (
+                                    <button
+                                        type="button"
+                                        className={`${ui.btn} ${ui.btnSecondary}`}
+                                        onClick={() => selectTab(tab === 'social' ? 'quadras' : 'social')}
+                                    >
+                                        Ver em {TABS.find((entry) => entry.key !== tab)?.label}
+                                    </button>
+                                ) : undefined}
+                            />
+                        ) : (
+                            <div className={ui.grid}>
+                                {visible.map((item) => (
+                                    <Link key={item.key} href={item.href} className={`${ui.card} ${style.spotCard}`}>
+                                        <Media
+                                            src={item.image}
+                                            alt={`Foto de ${item.name}`}
+                                            area={item.social ? 'social' : 'quadras'}
+                                            icon={item.social ? faChampagneGlasses : faTableTennisPaddleBall}
+                                        />
+                                        <div className={ui.cardBody}>
+                                            <h3 className={ui.cardTitle}>{item.name}</h3>
+                                        </div>
+                                        <div className={ui.cardFoot}>
+                                            <span className={style.cardAction}>
+                                                {item.social ? "Ver espaços" : "Ver quadras e horários"}
+                                            </span>
+                                            <span className={ui.spacer} />
+                                            <FontAwesomeIcon icon={faArrowRight} className={ui.muted} />
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </section>
 
                 <section className={ui.section} aria-labelledby="home-atalhos">
@@ -234,5 +326,12 @@ const Home = () => {
         </div>
     );
 }
+
+// useSearchParams (a aba vem da URL) exige um Suspense em volta na página.
+const Home = () => (
+    <Suspense fallback={<LoadingScreen />}>
+        <HomeContent />
+    </Suspense>
+);
 
 export default Home;

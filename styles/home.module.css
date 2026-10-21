@@ -61,3 +61,88 @@
   color: var(--ink-2);
   font-size: 13px;
 }
+
+/*
+ * Abas Esportes | Espaços sociais. Seletor segmentado: cada aba usa a cor do
+ * seu módulo (areaStyle: quadras = verde, social = laranja) quando ativa —
+ * a cor diz ONDE o sócio está, não é ação. Alvos de 44px (celular primeiro).
+ */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  max-width: 480px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color .15s, color .15s;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--grena);
+  outline-offset: 2px;
+}
+
+.tabActive,
+.tabActive:hover {
+  background: rgb(var(--c));
+  color: rgb(var(--ci));
+}
+
+.tabCount {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 18px;
+  background: rgb(var(--ci) / .12);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panelLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--grena-ink);
+}
+
+@media (max-width: 760px) {
+  .tabs {
+    max-width: none;
+  }
+
+  .tab {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+}
