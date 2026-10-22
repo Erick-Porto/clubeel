@@ -29,7 +29,7 @@
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.55.0",
     "@types/crypto-js": "^4.2.2",
-    "@types/node": "^20",
+    "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
