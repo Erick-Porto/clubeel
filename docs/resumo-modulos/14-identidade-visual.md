@@ -92,9 +92,9 @@ As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo d
 ```
 
 - A área `/aprovacao` tem casca própria (`aprovacao.module.css`, Server Components) e não usa `Header`/barra inferior; a busca da fila é um componente de cliente que só filtra o HTML já renderizado.
-- A tela da equipe do torneio (`/torneios/<id>/equipe`) tem casca própria (faixa na cor do módulo com logo, torneio, nome de quem lança e Sair; coluna de 760px, sem barra inferior): é usada no celular, na beira da quadra.
+- As telas da equipe do torneio (`/torneios/equipe` e `/torneios/<id>/equipe`) têm casca própria (`StaffShell`: faixa na cor do módulo com logo, título e uma ação; coluna de 760px, sem barra inferior): são usadas no celular, na beira da quadra.
 - A área `/assinar` também tem casca própria (`assinatura.module.css`): só o logo e "Assinatura de documentos", coluna de 680px, letra 17px, botões de 52px (público amplo, pouca familiaridade com celular). Avisos com `Note` dentro de `.aviso` (16px).
-- Login e "esqueci a senha" são páginas próprias (sem cabeçalho). No celular o login mostra o formulário num cartão translúcido sobre as fotos do carrossel (fixas ao fundo). O botão **RePET** do login usa as duas cores do módulo `replay` invertidas (tinta no fundo, tom claro no texto) para contrastar nos dois temas.
+- Login e "esqueci a senha" são páginas próprias (sem cabeçalho). No celular o login mostra o formulário num cartão translúcido sobre as fotos do carrossel (fixas ao fundo). A raiz sem sessão é a **página de boas-vindas** (`public-home.module.css`): fotos ao fundo com véu de `--canvas`, e as portas Entrar / RePET / Torneios usam as duas cores do seu módulo invertidas (`areaStyle`: tinta no fundo, tom claro no texto) para contrastar nos dois temas. O login termina num link "Voltar ao início".
 
 ## Pegadinhas
 

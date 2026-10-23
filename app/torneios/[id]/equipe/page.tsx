@@ -19,7 +19,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -32,12 +32,12 @@ import {
     faTrophy,
 } from "@fortawesome/free-solid-svg-icons";
 import ui from "../../../../styles/ui.module.css";
-import headerStyle from "../../../../styles/header.module.css";
 import style from "../../../../styles/tournament.module.css";
 import { Loading } from "../../../components/Common/loading";
 import ReplayNotice from "../../../components/Replay/ReplayNotice";
 import SocialFlashBox from "../../../components/Social/SocialFlashBox";
-import { Pill, areaStyle } from "../../../components/UI/ui";
+import { Pill } from "../../../components/UI/ui";
+import StaffShell from "../../../components/Tournament/StaffShell";
 import MatchCard from "../../../components/Tournament/MatchCard";
 import ScoreEditor from "../../../components/Tournament/ScoreEditor";
 import {
@@ -50,7 +50,6 @@ import {
     type TournamentMatch,
 } from "../../../../services/tournament-api";
 import { formatInstant, idFromParam, type TournamentFlash } from "../../../../utils/tournament";
-import { comBase } from "../../../../utils/base-path";
 
 interface StaffSession {
     code: string;
@@ -451,45 +450,31 @@ export default function StaffPage() {
     }
 
     return (
-        <div className={style.staffShell}>
-            <header className={style.staffTop} style={areaStyle("torneios")}>
-                <div className={style.staffTopInner}>
-                    <Image
-                        src={comBase("/images/logo-cfcsn-horiz.png")}
-                        alt="Clube dos Funcionários CSN"
-                        width={90}
-                        height={36}
-                        className={headerStyle.logoLight}
-                    />
-                    <Image
-                        src={comBase("/images/logo-cfcsn-w-horiz.png")}
-                        alt=""
-                        width={90}
-                        height={36}
-                        className={headerStyle.logoDark}
-                    />
-                    <div className={style.staffTitle}>
-                        <strong>{title}</strong>
-                        <span>
-                            {session
-                                ? `${session.operator}${validUntil ? ` · código vale até ${formatInstant(validUntil)}` : ""}`
-                                : "Equipe do clube"}
-                        </span>
-                    </div>
-                    {session && (
-                        <button
-                            type="button"
-                            className={`${ui.btn} ${ui.btnSm} ${ui.btnSecondary}`}
-                            onClick={() => leave()}
-                            aria-label="Sair do lançamento"
-                        >
-                            <FontAwesomeIcon icon={faRightFromBracket} /> Sair
-                        </button>
-                    )}
-                </div>
-            </header>
-
-            <main className={style.staffMain}>{body}</main>
-        </div>
+        <StaffShell
+            title={title}
+            subtitle={
+                session
+                    ? `${session.operator}${validUntil ? ` · código vale até ${formatInstant(validUntil)}` : ""}`
+                    : "Equipe do clube"
+            }
+            action={
+                session ? (
+                    <button
+                        type="button"
+                        className={`${ui.btn} ${ui.btnSm} ${ui.btnSecondary}`}
+                        onClick={() => leave()}
+                        aria-label="Sair do lançamento"
+                    >
+                        <FontAwesomeIcon icon={faRightFromBracket} /> Sair
+                    </button>
+                ) : (
+                    <Link href="/torneios/equipe" className={`${ui.btn} ${ui.btnSm} ${ui.btnSecondary}`}>
+                        Outro torneio
+                    </Link>
+                )
+            }
+        >
+            {body}
+        </StaffShell>
     );
 }

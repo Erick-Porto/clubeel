@@ -15,7 +15,10 @@ export default withAuth({
 
 export const config = { 
   matcher: [
-    "/",
+    // "/" fica FORA de propósito: sem sessão a raiz mostra a página de
+    // boas-vindas (Entrar, RePET, Torneios — app/components/Common/public-home.tsx);
+    // com sessão, a home do sócio. Tudo o que a home do sócio carrega exige
+    // sessão no proxy, então nada vaza para o visitante.
     "/profile",
     "/checkout",
     "/cart",

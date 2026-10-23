@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import CryptoJS from "crypto-js";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRight, faPlugCircleXmark, faRotateRight, faVideo } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faPlugCircleXmark, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import API_CONSUME from "../../../services/api-consume";
 import Link from "next/link";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
@@ -332,21 +332,14 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     ) : null}
 
                     {/*
-                      * Quem abre a raiz do site sem sessão é mandado para cá
-                      * pelo middleware. A galeria das quadras é aberta a
-                      * qualquer visitante, por decisão de negócio — sem este
-                      * caminho ela ficaria invisível para quem não tem conta.
+                      * As áreas abertas (RePET e torneios) ficam na página de
+                      * boas-vindas da raiz (public-home.tsx). Daqui só se volta
+                      * para lá — quem caiu no login vindo de uma página
+                      * protegida também enxerga que há o que ver sem conta.
                       */}
-                    <Link href="/replay" className={styles.replayEntry}>
-                        <span className={styles.replayEntryIcon} aria-hidden="true">
-                            <FontAwesomeIcon icon={faVideo} />
-                        </span>
-                        <span className={styles.replayEntryText}>
-                            <span className={styles.replayEntryHint}>Não precisa de conta</span>
-                            <strong className={styles.replayEntryTitle}>RePET</strong>
-                            <span className={styles.replayEntryLead}>Assista aos replays das quadras</span>
-                        </span>
-                        <FontAwesomeIcon icon={faArrowRight} className={styles.replayEntryArrow} />
+                    <Link href="/" className={styles.homeLink}>
+                        <FontAwesomeIcon icon={faArrowLeft} /> Voltar ao início
+                        <span className={styles.homeLinkHint}>RePET e torneios sem precisar de conta</span>
                     </Link>
                 </>
             )}
