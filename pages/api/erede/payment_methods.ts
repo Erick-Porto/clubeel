@@ -2,7 +2,13 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 import { eredeAuth, eredeBaseUrl, eredeConfigured } from "../../../utils/erede";
-import { AlreadyPaidError, computeAmountInCents, computeSocialBookingCharge } from "../../../utils/lara";
+import {
+    AlreadyPaidError,
+    computeAmountInCents,
+    computeSocialBookingCharge,
+    computeTournamentCharge,
+    TournamentChargeRefusal,
+} from "../../../utils/lara";
 import { rateLimit, getClientIp } from "../../../utils/rate-limit";
 import { guardRequest } from "../../../utils/sanitize";
 import { savePendingPayment } from "../../../utils/pending-payments";
@@ -57,16 +63,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!guardRequest(req, res)) return;
 
     try {
-        const { method, cardData, socialBookingId } = req.body;
+        const { method, cardData, socialBookingId, tournamentRegistrationIds } = req.body;
         let { scheduleIds } = req.body;
 
         // 3. O valor é SEMPRE recalculado no servidor — nunca vem do cliente.
         // Reserva de espaço social: o valor é o `total` da reserva lida na
         // Lara, e o agendamento cobrado é só o `schedule_id` dela (os
         // `scheduleIds` do corpo são ignorados — sem misturar com quadras).
+        // Inscrições de torneio: soma dos `amount` lidos na Lara, depois de
+        // conferir vaga e período (a vaga é de quem paga primeiro).
         let amount: number;
         let social: number | undefined;
-        if (socialBookingId !== undefined && socialBookingId !== null) {
+        let tournament: number[] | undefined;
+        if (tournamentRegistrationIds !== undefined && tournamentRegistrationIds !== null) {
+            let charge;
+            try {
+                charge = await computeTournamentCharge(tournamentRegistrationIds, accessToken);
+            } catch (chargeError: unknown) {
+                // Nada foi cobrado ainda. Recusa com código → a tela relê as
+                // inscrições; já paga (secretaria) tem código próprio.
+                if (chargeError instanceof AlreadyPaidError) {
+                    return res.status(409).json({ error: chargeError.message, reason: 'already_paid' });
+                }
+                if (chargeError instanceof TournamentChargeRefusal) {
+                    return res.status(409).json({ error: chargeError.message, reason: chargeError.reason });
+                }
+                throw chargeError;
+            }
+            amount = charge.amountCents;
+            scheduleIds = [];
+            tournament = charge.registrationIds;
+        } else if (socialBookingId !== undefined && socialBookingId !== null) {
             let charge;
             try {
                 charge = await computeSocialBookingCharge(socialBookingId, accessToken);
@@ -154,6 +181,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             method,
             createdAt: Date.now(),
             socialBookingId: social,
+            tournamentRegistrationIds: tournament,
         });
 
         return res.status(200).json(transactionData);

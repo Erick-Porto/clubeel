@@ -56,6 +56,7 @@ Texto sobre botão grená é sempre branco (`#fff`). `--pad` / `--pad-ink` (bran
 | `luz` | Luz da quadra | `#E3F0C0` / `#4A6508` | placar |
 | `perfil` | Perfil, avatar | `#DDE3F0` / `#34426A` | cartao |
 | `compras` | Aprovação de compras | `#ECE5DB` / `#6A4F2F` | compras |
+| `torneios` | Torneios | `#D6ECF6` / `#12567A` | — (**proposta do site**; escuro `#102836` / `#80C4E8`). Se o Lara publicar a cor de torneios, troque nos três blocos de `globals.css`. |
 
 As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo do Lara não as trazia); se o Lara publicar as dele, troque nos dois blocos escuros de `globals.css`. Para aplicar: `style={areaStyle("social")}` define `--c`/`--ci` (canais) e o CSS usa `rgb(var(--c))` / `rgb(var(--ci))`. Módulo novo: tokens `--a-<chave>-rgb`/`--a-<chave>-ink-rgb` nos **três** blocos de `globals.css` e a chave no tipo `Area` de `ui.tsx`.
 
@@ -91,6 +92,7 @@ As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo d
 ```
 
 - A área `/aprovacao` tem casca própria (`aprovacao.module.css`, Server Components) e não usa `Header`/barra inferior; a busca da fila é um componente de cliente que só filtra o HTML já renderizado.
+- A tela da equipe do torneio (`/torneios/<id>/equipe`) tem casca própria (faixa na cor do módulo com logo, torneio, nome de quem lança e Sair; coluna de 760px, sem barra inferior): é usada no celular, na beira da quadra.
 - A área `/assinar` também tem casca própria (`assinatura.module.css`): só o logo e "Assinatura de documentos", coluna de 680px, letra 17px, botões de 52px (público amplo, pouca familiaridade com celular). Avisos com `Note` dentro de `.aviso` (16px).
 - Login e "esqueci a senha" são páginas próprias (sem cabeçalho). No celular o login mostra o formulário num cartão translúcido sobre as fotos do carrossel (fixas ao fundo). O botão **RePET** do login usa as duas cores do módulo `replay` invertidas (tinta no fundo, tom claro no texto) para contrastar nos dois temas.
 

@@ -63,19 +63,21 @@
 }
 
 /*
- * Abas Esportes | Espaços sociais. Seletor segmentado: cada aba usa a cor do
- * seu módulo (areaStyle: quadras = verde, social = laranja) quando ativa —
+ * Abas Esportes | Espaços sociais | Torneios. Seletor segmentado: cada aba usa
+ * a cor do seu módulo (areaStyle: quadras = verde, social = laranja, torneios =
+ * azul) quando ativa —
  * a cor diz ONDE o sócio está, não é ação. Alvos de 44px (celular primeiro).
  */
 .tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
-  max-width: 480px;
+  max-width: 640px;
 }
 
 .tab {
@@ -144,5 +146,18 @@
   .tab {
     padding: 8px 10px;
     font-size: 14px;
+  }
+}
+
+/* Três abas num celular estreito: sem ícone, para o rótulo e a contagem caberem. */
+@media (max-width: 480px) {
+  .tab {
+    gap: 6px;
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
+  .tab > svg {
+    display: none;
   }
 }

@@ -28,7 +28,26 @@ const PUBLIC_ENDPOINTS: RegExp[] = [
     // Lara não devolve identificação de sócio nesses dois endpoints.
     /^replay\/places$/,
     /^replay\/places\/\d+\/videos$/,
+    // Torneios: lista, detalhe e chaveamento divulgado são abertos a qualquer
+    // visitante (a Lara só devolve o que está publicado; rascunho e cancelado
+    // respondem 404). O filtro `place_group_id` fica na query, fora do `path`.
+    /^tournaments$/,
+    /^tournaments\/\d+$/,
+    /^tournaments\/\d+\/categories\/\d+\/bracket$/,
+    // Lançamento de resultados pela equipe do clube: não usa login de sócio —
+    // a autorização é o código de lançamento do torneio, que vai no header
+    // `Tournament-Code` (repassado só nestas rotas; ver STAFF_ENDPOINTS).
+    /^tournaments\/\d+\/staff\/check$/,
+    /^tournaments\/\d+\/staff\/matches$/,
+    /^tournaments\/\d+\/staff\/matches\/\d+\/result$/,
 ];
+
+// Rotas da equipe do torneio: recebem o `Tournament-Code` e NÃO recebem o
+// Session de um sócio que por acaso esteja logado no mesmo navegador.
+const STAFF_ENDPOINT = /^tournaments\/\d+\/staff\//;
+// 8 letras e números, mostrado como ABCD-EFGH (maiúsculas, espaço e hífen
+// não importam para a Lara). Qualquer outra coisa não é repassada.
+const TOURNAMENT_CODE = /^[A-Za-z0-9 -]{1,20}$/;
 
 // Endpoints que exigem sessão autenticada.
 const AUTHENTICATED_ENDPOINTS: RegExp[] = [
@@ -61,6 +80,23 @@ const AUTHENTICATED_ENDPOINTS: RegExp[] = [
     /^social\/bookings$/,
     /^social\/bookings\/\d+$/,
     /^social\/bookings\/\d+\/guests$/,
+    // Torneios (sócio): o inscrito, o capitão e o convidado são sempre o dono
+    // do Session — nenhum corpo leva id/CPF de sócio (a Lara ignora). A busca
+    // de convidado recebe `title`/`cpf` na query e devolve uma `ref` opaca.
+    // `tournaments/payment` fica FORA de propósito: só o servidor chama
+    // (pages/api/success.ts), depois de verificar a transação na eRede.
+    /^tournaments\/\d+\/eligibility$/,
+    /^tournaments\/\d+\/registrations$/,
+    /^tournaments\/my-registrations$/,
+    /^tournaments\/registrations\/\d+$/,
+    /^tournaments\/my-teams$/,
+    /^tournaments\/categories\/\d+\/teams$/,
+    /^tournaments\/member-lookup$/,
+    /^tournaments\/teams\/\d+\/invites$/,
+    /^tournaments\/invites\/\d+$/,
+    /^tournaments\/my-invites$/,
+    /^tournaments\/invites\/\d+\/accept$/,
+    /^tournaments\/invites\/\d+\/decline$/,
 ];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -115,7 +151,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     headers.set("Accept", "application/json");
     headers.set("Authorization", `Bearer ${appToken}`);
 
-    if (accessToken) {
+    if (STAFF_ENDPOINT.test(pathString)) {
+        const rawCode = req.headers["tournament-code"];
+        const code = Array.isArray(rawCode) ? rawCode[0] : rawCode;
+        if (code && TOURNAMENT_CODE.test(code)) headers.set("Tournament-Code", code);
+    } else if (accessToken) {
         headers.set("Session", accessToken);
     }
 

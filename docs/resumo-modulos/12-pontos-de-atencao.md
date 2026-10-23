@@ -17,6 +17,9 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | `comBase(...)` em `fetch`, `src`, `callbackUrl`, cookie | A homologação roda sob `/homolog`; caminho absoluto sem `comBase` cai na produção (ver [01](01-infraestrutura-config.md#homologação-homolog)). |
 | Cookies do NextAuth com nome `*.homolog` | Só na homologação; evita colisão com a produção no mesmo domínio. |
 | Luz: reler a disponibilidade após cada POST | O estado "aceso" só pode vir da Lara (multi-dispositivo, outros sócios). |
+| Torneios: lista, detalhe e chaveamento fora do matcher | Decisão de negócio (públicos); a Lara só devolve o que está publicado. |
+| `TokenValidator` desligado em `/torneios/<id>/equipe` | A tela usa o código de lançamento; um login de sócio vencido no mesmo celular não pode tirá-la do ar. |
+| Torneios: 403 não desloga | É o `not_captain` da Lara (recusa de regra); só 401 sem `reason` leva ao login. |
 | Assinatura remota sem `NextAuthProvider`/`CartProvider` | Área isolada: não pode ler a sessão de sócio (`casca-do-site.tsx`). |
 | Assinatura: último item do `X-Forwarded-For`, não o primeiro | O primeiro é escrito pelo navegador e pode ser forjado; o IP vai para evidência jurídica. |
 | Assinatura: `--pad`/`--pad-ink` não trocam no tema escuro | O traço da assinatura vira imagem dentro do PDF branco. |
@@ -43,6 +46,13 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 - `DELETE social/bookings/{id}` é enviado sem corpo (sem motivo da desistência).
 - **"Já pago" sem código**: o 409 de `schedule/payment` para baixa manual não traz `reason`. O servidor decide relendo o estado (`schedulesArePaid` / `socialBookingIsPaid`), só quando o status é 409. Se a Lara passar a mandar um código, trocar a releitura por ele.
 - **Forma de pagamento das quadras**: `schedule/member/{id}` não traz `payment_method`; se algum dia o site exibir, os da secretaria começam com `manual_` (ver [05](05-checkout-pagamento.md)).
+
+## Torneios — pontos a confirmar com a Lara
+
+- **Limite de 10 tentativas/min do `staff/check`**: se for por IP, vale para a equipe inteira somada (todas as chamadas saem do servidor Next).
+- **Vaga conferida antes de cobrar** (`computeTournamentCharge`): pedido explícito do contrato. A Lara confere de novo no `tournaments/payment`; recusa ali → estorno.
+- **Reenvio do `tid` em 5xx** (`success.ts`): depende de a Lara manter o `tournaments/payment` idempotente por `tid` + inscrições.
+- Cor do módulo `torneios` é proposta do site (ver [14](14-identidade-visual.md)).
 
 ## Fuso horário (cuidado)
 

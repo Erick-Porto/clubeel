@@ -23,6 +23,12 @@ export interface PendingPayment {
    * com `reason` (ex.: `payment_mismatch`) em vez de "expired".
    */
   socialBookingId?: number;
+  /**
+   * Preenchido quando a cobrança é de inscrições de torneio: `scheduleIds` fica
+   * vazio e a confirmação vai para `tournaments/payment`, não para
+   * `schedule/payment`.
+   */
+  tournamentRegistrationIds?: number[];
 }
 
 // Generosa o suficiente para cobrir a confirmacao (normalmente quase

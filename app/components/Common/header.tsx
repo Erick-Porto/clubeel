@@ -17,6 +17,7 @@ import {
     faLightbulb,
     faRightFromBracket,
     faRightToBracket,
+    faTrophy,
     faUser,
     faVideo,
 } from '@fortawesome/free-solid-svg-icons';
@@ -25,7 +26,7 @@ import { ThemeSwitch } from './theme';
 import { initialsOf } from '../UI/ui';
 import { comBase } from '../../../utils/base-path';
 
-type ModuleKey = 'inicio' | 'social' | 'replay' | 'luz' | 'perfil';
+type ModuleKey = 'inicio' | 'social' | 'replay' | 'luz' | 'torneios' | 'perfil';
 
 interface NavItem {
     key: ModuleKey;
@@ -44,6 +45,7 @@ const NAV: NavItem[] = [
     { key: 'social', href: '/espacos-sociais', label: 'Espaços sociais', short: 'Espaços', icon: faChampagneGlasses },
     { key: 'replay', href: '/replay', label: 'Replay', short: 'Replay', icon: faVideo },
     { key: 'luz', href: '/luz', label: 'Luz da quadra', short: 'Luz', icon: faLightbulb },
+    { key: 'torneios', href: '/torneios', label: 'Torneios', short: 'Torneios', icon: faTrophy },
     { key: 'perfil', href: '/profile', label: 'Meu perfil', short: 'Perfil', icon: faUser },
 ];
 
@@ -52,6 +54,7 @@ function moduleOf(pathname: string): ModuleKey | null {
     if (pathname.startsWith('/espacos-sociais')) return 'social';
     if (pathname.startsWith('/replay') || pathname.startsWith('/meus-videos')) return 'replay';
     if (pathname.startsWith('/luz')) return 'luz';
+    if (pathname.startsWith('/torneios')) return 'torneios';
     if (pathname.startsWith('/profile')) return 'perfil';
     return null;
 }
@@ -175,6 +178,9 @@ export default function Header() {
                                         </Link>
                                         <Link href="/espacos-sociais/reservas" className={styles.menuItem} role="menuitem">
                                             <FontAwesomeIcon icon={faChampagneGlasses} /> Minhas reservas sociais
+                                        </Link>
+                                        <Link href="/torneios/inscricoes" className={styles.menuItem} role="menuitem">
+                                            <FontAwesomeIcon icon={faTrophy} /> Minhas inscrições em torneios
                                         </Link>
                                         <div className={styles.menuSection}>
                                             <span className={styles.menuLabel}>Tema</span>

@@ -49,6 +49,13 @@ interface CPParams {
      */
     socialBookingId?: number;
     onSocialResult?: (outcome: SocialPaymentOutcome) => void;
+    /**
+     * Quando presente, paga ESTAS inscrições de torneio (juntas). Igual ao modo
+     * social: o servidor relê as inscrições, confere vaga e período antes de
+     * cobrar e avisa a Lara com o `tid`; o desfecho vai para `onTournamentResult`.
+     */
+    tournamentRegistrationIds?: number[];
+    onTournamentResult?: (outcome: SocialPaymentOutcome) => void;
 }
 
 interface PixResponse {
@@ -67,8 +74,9 @@ interface CustomSession {
     accessToken?: string;
 }
 
-export default function CheckoutPayment({ socialBookingId, onSocialResult }: CPParams) {
-    const isSocial = socialBookingId !== undefined;
+export default function CheckoutPayment({ socialBookingId, onSocialResult, tournamentRegistrationIds, onTournamentResult }: CPParams) {
+    const isTournament = tournamentRegistrationIds !== undefined;
+    const isSocial = socialBookingId !== undefined || isTournament;
     const { data: sessionData } = useSession();
     const session = sessionData as CustomSession | null;
   // 2. Instanciar o router  
@@ -152,12 +160,16 @@ export default function CheckoutPayment({ socialBookingId, onSocialResult }: CPP
  * quadras (payment_methods → success), mas sem revalidar horários — o prazo é
  * o `payment_due_at`, conferido no servidor — e sem `scheduleIds`: só o id da
  * reserva vai, e o servidor descobre quanto cobrar e qual agendamento pagar.
+ *
+ * Inscrições de torneio vão pelo mesmo caminho, com `tournamentRegistrationIds`
+ * no lugar do id da reserva.
  */
 const handleSocialPayment = async () => {
     const finish = (outcome: SocialPaymentOutcome) => {
         setStatus({ type: outcome.type === "success" ? 'success' : 'error', msg: outcome.type === "success" ? 'Pagamento confirmado!' : outcome.message });
-        onSocialResult?.(outcome);
+        (isTournament ? onTournamentResult : onSocialResult)?.(outcome);
     };
+    const target = isTournament ? { tournamentRegistrationIds } : { socialBookingId };
 
     try {
         const response = await fetch(comBase('/api/erede/payment_methods'), {
@@ -169,7 +181,7 @@ const handleSocialPayment = async () => {
                     ...cardData,
                     number: cardData.number.replace(/\s/g, ''),
                 },
-                socialBookingId,
+                ...target,
             })
         });
         const transactionData = await response.json();
@@ -184,19 +196,19 @@ const handleSocialPayment = async () => {
         const saveOrderRes = await fetch(comBase('/api/success'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transactionData, socialBookingId, method })
+            body: JSON.stringify({ transactionData, ...target, method })
         });
         const saveResult = await saveOrderRes.json();
 
         if (saveOrderRes.ok) {
             finish({ type: 'success' });
-        } else if (saveOrderRes.status === 409) {
+        } else if (saveOrderRes.status === 409 || saveResult.reason) {
             finish({ type: 'refused', reason: saveResult.reason ?? null, message: saveResult.message || 'Pagamento não confirmado. O valor foi estornado.' });
         } else {
             finish({ type: 'error', message: saveResult.message || 'Não foi possível confirmar o pagamento.' });
         }
     } catch (error) {
-        console.error("Erro no pagamento da reserva social:", error instanceof Error ? error.message : error);
+        console.error(isTournament ? "Erro no pagamento da inscrição:" : "Erro no pagamento da reserva social:", error instanceof Error ? error.message : error);
         setStatus({ type: 'error', msg: 'Erro de comunicação.' });
     } finally {
         setLoading(false);
