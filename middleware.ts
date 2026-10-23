@@ -34,5 +34,12 @@ export const config = {
     // são todos do sócio (a Lara responde pelo Session dele).
     "/espacos-sociais",
     "/espacos-sociais/:path*",
+    // Torneios: só "minhas inscrições" e a tela do time são do sócio. Lista,
+    // detalhe e chaveamento (/torneios, /torneios/<id>, .../chaveamento/...)
+    // ficam FORA de propósito: são abertos a qualquer visitante. A tela da
+    // equipe (/torneios/<id>/equipe) também fica fora: usa o código de
+    // lançamento, não o login de sócio.
+    "/torneios/inscricoes",
+    "/torneios/times/:path*",
   ]
 }

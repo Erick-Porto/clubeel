@@ -9,6 +9,7 @@ import globalStyle from '../../styles/page.module.css';
 import ui from '../../styles/ui.module.css';
 import Appointments from "../components/Profile/appointments";
 import SocialPendingPaymentBanner from "../components/Social/SocialPendingPaymentBanner";
+import TournamentNoticeBanner from "../components/Tournament/TournamentNoticeBanner";
 import Header from "../components/Common/header";
 import { LoadingScreen } from "../components/Common/loading";
 import { useCart } from "../../context/CartContext";
@@ -129,6 +130,8 @@ useEffect(() => {
 
                 {/* Reserva social a pagar (inclusive a aprovada no balcão): em qualquer aba. */}
                 <SocialPendingPaymentBanner />
+                {/* Torneio: inscrição a pagar e convite de time recebido. */}
+                <TournamentNoticeBanner />
                 {view === 'profile' && <ProfileForm />}
                 {view === 'password' && <PasswordForm />}
                 {view === 'schedules' && <Appointments />}

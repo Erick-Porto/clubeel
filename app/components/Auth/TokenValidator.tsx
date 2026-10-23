@@ -31,6 +31,10 @@ export default function TokenValidator() {
     // porque validateBackendToken chama signOut({ callbackUrl: '/login' }).
     // Não altera nada no fluxo de agendamento: só desliga o validador fora dele.
     if (pathname?.startsWith('/aprovacao')) return;
+    // Mesma coisa na tela da equipe do torneio (/torneios/<id>/equipe): ela usa
+    // o código de lançamento, não o login de sócio, e é usada na beira da
+    // quadra — um login de sócio vencido no mesmo celular não pode tirá-la dali.
+    if (/^\/torneios\/[^/]+\/equipe(\/|$)/.test(pathname ?? '')) return;
 
     if (status === 'authenticated') {
       validateBackendToken();

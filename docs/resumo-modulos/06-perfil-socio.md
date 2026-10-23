@@ -18,7 +18,7 @@
 - Para a capa: `GET schedule/member/{id}` → `data.schedules` → agendamento mais recente → `GET place/{place_id}` → `image || horizontal_image`.
 - Envolto em `<Suspense>` (usa `useSearchParams`).
 
-- No topo do conteúdo (qualquer aba), `SocialPendingPaymentBanner`: uma faixa por reserva social com `can_pay` ("Você tem uma reserva aguardando pagamento até …" → detalhe). Ver [13](13-espacos-sociais.md).
+- No topo do conteúdo (qualquer aba), `SocialPendingPaymentBanner`: uma faixa por reserva social com `can_pay` ("Você tem uma reserva aguardando pagamento até …" → detalhe). Ver [13](13-espacos-sociais.md). Logo abaixo, `TournamentNoticeBanner`: convites de time recebidos e inscrições de torneio aguardando pagamento → `/torneios/inscricoes` (some sem nada ou se a leitura falhar). Ver [16](16-torneios.md).
 
 ## `ProfileForm` (Meus Dados)
 

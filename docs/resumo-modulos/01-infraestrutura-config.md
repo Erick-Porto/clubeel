@@ -36,12 +36,13 @@ Scripts (`package.json`): `dev` (`next dev --turbo`), `build`, `start`, `lint` (
 
 `matcher` atual (rotas que **exigem sessão de sócio**):
 ```
-/  /profile  /checkout  /cart  /places/:path*  /place/:path*  /meus-videos  /luz  /espacos-sociais  /espacos-sociais/:path*
+/  /profile  /checkout  /cart  /places/:path*  /place/:path*  /meus-videos  /luz  /espacos-sociais  /espacos-sociais/:path*  /torneios/inscricoes  /torneios/times/:path*
 ```
 Ficam **fora de propósito**:
 - `/replay` e `/replay/*` — galeria pública por decisão de negócio.
 - `/login`, `/forgot-password`.
 - `/aprovacao/**` — tem sessão própria (cookie `aprovacao_token`), ver [09](09-aprovacao-compras.md).
+- `/torneios`, `/torneios/<id>`, `/torneios/<id>/chaveamento/*` — abertos a visitante; `/torneios/<id>/equipe` usa o código de lançamento, não o login de sócio (ver [16](16-torneios.md)).
 - `/assinar/**` — assinatura remota, cookies próprios do link do e-mail, sem relação com sócio; ver [15](15-assinatura-remota.md). **Não** colocar no matcher: o `withAuth` leria a sessão de sócio.
 - `/api/**` — cada rota faz sua própria checagem.
 
@@ -74,7 +75,7 @@ Server component que envolve **todo o app** (inclusive `/aprovacao`):
   <CascaDoSite>                 app/components/casca-do-site.tsx — em /assinar renderiza só {children}
     <NextAuthProvider>          (SessionProvider)          app/components/provider.tsx
       <CartProvider>            (context/CartContext.tsx)
-        <TokenValidator />      (revalida token do sócio a cada 5 min; desligado em /aprovacao)
+        <TokenValidator />      (revalida token do sócio a cada 5 min; desligado em /aprovacao e em /torneios/<id>/equipe)
         {children}
       </CartProvider>
     </NextAuthProvider>

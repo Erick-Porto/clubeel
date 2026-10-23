@@ -72,6 +72,13 @@ Mesmo pipeline de servidor, disparado pelo detalhe da reserva (`/espacos-sociais
 - `success`: igual às quadras (eRede por `tid`, compara valor, estorna se divergir); o fallback sem cache recalcula pela reserva. `POST schedule/payment` vai com `schedule_ids: [schedule_id]` e `paid_amount` = total. Se a Lara recusar → **estorno** + **409** `{error: reason, reason, message}` (ex.: `payment_mismatch` — fora do estágio/prazo ou valor ≠ total; `already_paid` — ver acima).
 - O componente não navega: entrega `{type: 'success'|'refused'|'error'}` a `onSocialResult`, e a tela relê a reserva.
 
+## Pagamento de inscrições de torneio
+
+Mesmo pipeline, disparado por `TournamentPaymentPanel` com `<CheckoutPayment tournamentRegistrationIds onTournamentResult />` (uma ou várias inscrições pagas juntas). Detalhes em [16](16-torneios.md#pagamento-erede).
+
+- `payment_methods`: `computeTournamentCharge(ids, Session)` — inscrições lidas em `tournaments/my-registrations`, todas `pending_payment`, valor = soma dos `amount`; **relê o torneio e recusa antes de cobrar** sem `registration_open` ou com `vacancies_left <= 0` (a vaga é de quem paga primeiro). Recusa → 409 `{error, reason}` (`category_full`, `registration_closed`, `invalid_status`, `not_owner`, `already_paid`), nada vai à eRede. `savePendingPayment` guarda `tournamentRegistrationIds` (com `scheduleIds: []`).
+- `success`: depois da verificação na eRede, `POST tournaments/payment` `{registration_ids, payment_method, paid_amount, payment_integration_id: tid, paid_at}`. Em 5xx/rede **reenvia o mesmo `tid`** (até 3 tentativas; a Lara responde 200 com o mesmo pagamento) e, se ainda falhar, relê: tudo pago e não pela secretaria → sucesso, sem estorno. Recusa com `reason` (ex.: `category_full`) → **estorno** + 409 com o `reason`. O componente entrega `{type}` a `onTournamentResult`, como no modo social.
+
 ## Página `/checkout`
 
 - `total` = soma de `cart[].price`.
@@ -92,7 +99,7 @@ Lista itens (link para `/place/...?date=` via `URIGen`), botão de remover (`rem
 
 ## Invariantes de segurança (não quebrar)
 
-1. O cliente **nunca** envia `amount`; o servidor recalcula (quadras: soma dos pendentes; espaço social: `total` da reserva lida na Lara).
+1. O cliente **nunca** envia `amount`; o servidor recalcula (quadras: soma dos pendentes; espaço social: `total` da reserva lida na Lara; torneio: soma dos `amount` das inscrições lidas na Lara).
 2. A aprovação é decidida consultando a eRede por `tid`, **não** pelo corpo da requisição.
 3. `cardData` **nunca** é logado.
 4. `takePendingPayment` consome (apaga) o registro — impede reaproveitar a mesma `reference`.

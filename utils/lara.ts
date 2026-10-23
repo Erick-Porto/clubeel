@@ -220,3 +220,148 @@ export async function socialBookingIsPaid(bookingId: number, sessionToken: strin
     return false;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Torneios                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Recusa ANTES de cobrar, com o código da Lara (`category_full`,
+ * `registration_closed`, `invalid_status`): nada foi à eRede, e a tela relê as
+ * inscrições como faria com a recusa da própria Lara.
+ */
+export class TournamentChargeRefusal extends Error {
+  readonly reason: string;
+  constructor(reason: string, message: string) {
+    super(message);
+    this.name = 'TournamentChargeRefusal';
+    this.reason = reason;
+  }
+}
+
+export interface TournamentCharge {
+  registrationIds: number[];
+  amountCents: number;
+}
+
+type LaraObj = Record<string, unknown>;
+
+function laraObj(raw: unknown): LaraObj {
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as LaraObj) : {};
+}
+
+/** Inscrições do sócio dono do Session (`GET tournaments/my-registrations`). */
+async function fetchTournamentRegistrations(sessionToken: string): Promise<LaraObj[]> {
+  const res = await fetch(`${INTERNAL_API}/api/tournaments/my-registrations`, {
+    method: 'GET',
+    headers: laraHeaders(sessionToken),
+  });
+  if (!res.ok) throw new Error(`Falha ao carregar as inscrições (${res.status}).`);
+  return (extractArray(await res.json()) as unknown[]).map(laraObj);
+}
+
+function registrationTournamentId(registration: LaraObj): number {
+  return Number(laraObj(registration.tournament).id);
+}
+
+function registrationCategoryId(registration: LaraObj): number {
+  return Number(laraObj(registration.category).id);
+}
+
+/**
+ * Cobrança de inscrições de TORNEIO (uma ou várias, pagas juntas).
+ *
+ * O valor é a soma dos `amount` das inscrições lidas na Lara com o Session do
+ * sócio — inscrição de outro sócio nem aparece na lista, então não passa. Só
+ * entra o que está `pending_payment`; já paga (inclusive na secretaria) →
+ * AlreadyPaidError.
+ *
+ * As vagas são de quem PAGA primeiro: a inscrição não segura vaga. Por isso,
+ * antes de mandar o cartão para a eRede, o torneio é relido para conferir que
+ * o período de inscrição segue aberto e que cada categoria ainda tem vaga — é
+ * o que o contrato da Lara pede ("cobre na eRede só depois de conferir a
+ * vaga"). A Lara confere tudo de novo no `tournaments/payment`; se recusar
+ * depois da cobrança, o success.ts estorna.
+ */
+export async function computeTournamentCharge(
+  registrationIds: unknown,
+  sessionToken: string
+): Promise<TournamentCharge> {
+  if (!Array.isArray(registrationIds) || registrationIds.length === 0 || registrationIds.length > 50) {
+    throw new Error('Nenhuma inscrição informada.');
+  }
+  const ids = [...new Set(registrationIds.map((id) => Number(id)))];
+  if (ids.some((id) => !Number.isInteger(id) || id <= 0)) throw new Error('Inscrição inválida.');
+
+  const all = await fetchTournamentRegistrations(sessionToken);
+  const byId = new Map(all.map((registration) => [Number(registration.id), registration]));
+  const wanted = ids.map((id) => byId.get(id));
+  if (wanted.some((registration) => !registration)) {
+    throw new TournamentChargeRefusal('not_owner', 'Inscrição não encontrada.');
+  }
+  const registrations = wanted as LaraObj[];
+
+  if (registrations.some((registration) => registration.status === 'paid')) {
+    throw new AlreadyPaidError('Uma ou mais inscrições já estão pagas.');
+  }
+  if (registrations.some((registration) => registration.status !== 'pending_payment')) {
+    throw new TournamentChargeRefusal('invalid_status', 'Uma ou mais inscrições não estão aguardando pagamento.');
+  }
+
+  // Vaga e período: relê cada torneio envolvido (normalmente um só).
+  const tournamentIds = [...new Set(registrations.map(registrationTournamentId))];
+  for (const tournamentId of tournamentIds) {
+    if (!Number.isInteger(tournamentId) || tournamentId <= 0) throw new Error('Inscrição sem torneio.');
+    const res = await fetch(`${INTERNAL_API}/api/tournaments/${tournamentId}`, {
+      method: 'GET',
+      headers: laraHeaders(sessionToken),
+    });
+    if (!res.ok) throw new Error(`Falha ao carregar o torneio (${res.status}).`);
+    const raw = laraObj(await res.json());
+    const tournament = laraObj(raw.tournament ?? raw.data ?? raw);
+
+    if (tournament.registration_open !== true) {
+      throw new TournamentChargeRefusal('registration_closed', 'O período de inscrição deste torneio terminou.');
+    }
+
+    const categories = (extractArray(tournament.categories) as unknown[]).map(laraObj);
+    for (const registration of registrations.filter((r) => registrationTournamentId(r) === tournamentId)) {
+      const category = categories.find((c) => Number(c.id) === registrationCategoryId(registration));
+      if (!category) throw new TournamentChargeRefusal('category_not_found', 'Categoria não encontrada no torneio.');
+      // `null` = sem limite de vagas.
+      const left = category.vacancies_left;
+      if (left !== null && left !== undefined && Number(left) <= 0) {
+        const name = category.name ? ` ${String(category.name)}` : '';
+        throw new TournamentChargeRefusal('category_full', `As vagas da categoria${name} acabaram.`);
+      }
+    }
+  }
+
+  const totalReais = registrations.reduce((sum, registration) => sum + (Number(registration.amount) || 0), 0);
+  const cents = Math.round(totalReais * 100);
+  if (!Number.isFinite(cents) || cents <= 0) throw new Error('Valor total inválido.');
+
+  return { registrationIds: ids, amountCents: cents };
+}
+
+/**
+ * Depois de a Lara recusar (ou de a resposta se perder): as inscrições estão
+ * todas pagas agora, e por onde? `manual` = alguma foi paga na secretaria
+ * (`payment.manual`). Decide pelo estado, não pelo texto. Erro na leitura
+ * conta como "não pagas".
+ */
+export async function tournamentPaymentState(
+  registrationIds: number[],
+  sessionToken: string
+): Promise<{ allPaid: boolean; manual: boolean }> {
+  try {
+    const all = await fetchTournamentRegistrations(sessionToken);
+    const byId = new Map(all.map((registration) => [Number(registration.id), registration]));
+    const wanted = registrationIds.map((id) => byId.get(id));
+    const allPaid = wanted.length > 0 && wanted.every((registration) => registration?.status === 'paid');
+    const manual = wanted.some((registration) => laraObj(registration?.payment).manual === true);
+    return { allPaid, manual };
+  } catch {
+    return { allPaid: false, manual: false };
+  }
+}

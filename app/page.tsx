@@ -13,6 +13,7 @@ import {
     faChevronRight,
     faMagnifyingGlass,
     faTableTennisPaddleBall,
+    faTrophy,
     faVideo,
 } from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../styles/page.module.css";
@@ -26,6 +27,8 @@ import HomeLightingBanner from "./components/Lighting/HomeLightingBanner";
 import ReplayNotice from "./components/Replay/ReplayNotice";
 import { Media, PageHeader, SearchBar, areaStyle, matchesSearch, type Area } from "./components/UI/ui";
 import { fetchSocialGroups } from "../services/social-api";
+import { fetchTournaments } from "../services/tournament-api";
+import { tournamentHref } from "../utils/tournament";
 import { placeImageUrl } from "../utils/lighting";
 
 // O mapa interativo (MapBanner), a seção "Social" antiga e o tutorial da home
@@ -45,29 +48,33 @@ interface ApiPlaceData {
 }
 
 /**
- * Abas da home: esportes (quadras) e espaços sociais. A aba fica na URL
- * (`?area=social`) para dar para mandar o link direto; sem parâmetro, Esportes.
+ * Abas da home: esportes (quadras), espaços sociais e torneios. A aba fica na
+ * URL (`?area=social`, `?area=torneios`) para dar para mandar o link direto;
+ * sem parâmetro, Esportes. Aba sem nada para mostrar (ou cuja leitura falhou)
+ * não aparece.
  */
-type HomeTab = 'quadras' | 'social';
+type HomeTab = 'quadras' | 'social' | 'torneios';
 
-const TABS: { key: HomeTab; label: string; icon: typeof faVideo }[] = [
-    { key: 'quadras', label: 'Esportes', icon: faTableTennisPaddleBall },
-    { key: 'social', label: 'Espaços sociais', icon: faChampagneGlasses },
+const TABS: { key: HomeTab; label: string; icon: typeof faVideo; action: string; search: string }[] = [
+    { key: 'quadras', label: 'Esportes', icon: faTableTennisPaddleBall, action: 'Ver quadras e horários', search: 'Buscar esporte' },
+    { key: 'social', label: 'Espaços sociais', icon: faChampagneGlasses, action: 'Ver espaços', search: 'Buscar espaço social' },
+    { key: 'torneios', label: 'Torneios', icon: faTrophy, action: 'Ver torneio', search: 'Buscar torneio' },
 ];
 
-/** Um cartão da home: um esporte (leva às quadras) ou um grupo de espaço social. */
+/** Um cartão da home: um esporte (leva às quadras), um grupo de espaço social ou um torneio. */
 interface HomeItem {
     key: string;
     name: string;
     image: string | null;
     href: string;
-    social: boolean;
+    area: HomeTab;
 }
 
 const SHORTCUTS: { href: string; title: string; text: string; icon: typeof faVideo; area: Area }[] = [
     { href: '/profile?tab=schedules', title: 'Meus agendamentos', text: 'Carrinho, horários confirmados e anteriores', icon: faCalendarCheck, area: 'perfil' },
     { href: '/meus-videos', title: 'Meus vídeos', text: 'Replays gravados nas suas reservas', icon: faVideo, area: 'replay' },
     { href: '/espacos-sociais/reservas', title: 'Minhas reservas sociais', text: 'Análise, pagamento e convidados', icon: faChampagneGlasses, area: 'social' },
+    { href: '/torneios/inscricoes', title: 'Minhas inscrições em torneios', text: 'Pagamento, times e convites', icon: faTrophy, area: 'torneios' },
 ];
 
 const HomeContent = () => {
@@ -76,6 +83,7 @@ const HomeContent = () => {
     // Espaços sociais ficam na aba própria, um cartão por grupo
     // (Churrasqueiras, Salões...), levando à vitrine deles.
     const [socialItems, setSocialItems] = useState<HomeItem[]>([]);
+    const [tournamentItems, setTournamentItems] = useState<HomeItem[]>([]);
     const [query, setQuery] = useState("");
 
     const { data: session, status } = useSession();
@@ -138,7 +146,20 @@ const HomeContent = () => {
                     name: group.name,
                     image: placeImageUrl(group.image_horizontal) ?? placeImageUrl(group.image_vertical),
                     href: '/espacos-sociais',
-                    social: true,
+                    area: 'social',
+                }))
+            );
+        });
+        // Torneios: a mesma lista pública de /torneios, na ordem da Lara.
+        fetchTournaments().then((result) => {
+            if (!result.ok) return;
+            setTournamentItems(
+                result.data.map((tournament) => ({
+                    key: `torneio-${tournament.id}`,
+                    name: tournament.title,
+                    image: tournament.image_url,
+                    href: tournamentHref(tournament.title, tournament.id),
+                    area: 'torneios',
                 }))
             );
         });
@@ -151,32 +172,42 @@ const HomeContent = () => {
                 name: place.name,
                 image: place.image_horizontal || place.image_vertical || null,
                 href: `/places/${place.name.replace(/\s+/g, '-').toLowerCase()}-${place.id}`,
-                social: false,
+                area: 'quadras' as const,
             })), [places]);
 
-    // Sem grupo social (ou se a leitura falhou) não há abas: a home fica só
-    // com os esportes, como antes.
-    const hasSocial = socialItems.length > 0;
-    const tab: HomeTab = hasSocial && searchParams?.get('area') === 'social' ? 'social' : 'quadras';
-    const tabItems = tab === 'social' ? socialItems : sports;
-    const otherItems = tab === 'social' ? sports : socialItems;
+    const itemsOf: Record<HomeTab, HomeItem[]> = { quadras: sports, social: socialItems, torneios: tournamentItems };
+    // Esportes sempre; as outras abas só com algo para mostrar. Com uma aba só
+    // (nada de social nem de torneio, ou leituras que falharam) não há abas: a
+    // home fica só com os esportes, como antes.
+    const tabs = TABS.filter((entry) => entry.key === 'quadras' || itemsOf[entry.key].length > 0);
+    const hasTabs = tabs.length > 1;
+    const requested = searchParams?.get('area');
+    const tab: HomeTab = tabs.find((entry) => entry.key === requested)?.key ?? 'quadras';
+    const current = TABS.find((entry) => entry.key === tab)!;
+    const tabItems = itemsOf[tab];
 
-    const matches = (item: HomeItem) => matchesSearch(query, item.name, item.social ? 'espaço social' : 'esporte quadra');
+    const searchText: Record<HomeTab, string> = { quadras: 'esporte quadra', social: 'espaço social', torneios: 'torneio' };
+    const matches = (item: HomeItem) => matchesSearch(query, item.name, searchText[item.area]);
     const visible = tabItems.filter(matches);
-    // Nada nesta aba, mas a busca acha na outra: oferece trocar.
-    const otherMatches = query && visible.length === 0 ? otherItems.filter(matches).length : 0;
+    // Nada nesta aba, mas a busca acha em outra: oferece trocar.
+    const otherTab = query && visible.length === 0
+        ? tabs.find((entry) => entry.key !== tab && itemsOf[entry.key].some(matches))
+        : undefined;
+    const otherMatches = otherTab ? itemsOf[otherTab.key].filter(matches).length : 0;
 
     const selectTab = (next: HomeTab) => {
         if (next === tab) return;
         // replace: trocar de aba não empilha histórico; o basePath (/homolog) o Next põe sozinho.
-        router.replace(next === 'social' ? '/?area=social' : '/', { scroll: false });
+        router.replace(next === 'quadras' ? '/' : `/?area=${next}`, { scroll: false });
     };
 
     // Setas trocam de aba, como pede o padrão de abas (role=tablist).
     const onTabKey = (event: KeyboardEvent<HTMLDivElement>) => {
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
         event.preventDefault();
-        const next = tab === 'quadras' ? 'social' : 'quadras';
+        const index = tabs.findIndex((entry) => entry.key === tab);
+        const step = event.key === 'ArrowRight' ? 1 : -1;
+        const next = tabs[(index + step + tabs.length) % tabs.length].key;
         selectTab(next);
         document.getElementById(`home-tab-${next}`)?.focus();
     };
@@ -192,19 +223,19 @@ const HomeContent = () => {
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader
                     title={firstName ? <>Olá, <span className={style.name}>{firstName.toLowerCase()}</span></> : "Início"}
-                    lead={hasSocial
-                        ? "Escolha um esporte para reservar horário ou um espaço social para o seu evento."
+                    lead={hasTabs
+                        ? "Escolha um esporte para reservar horário, um espaço social para o seu evento ou um torneio para se inscrever."
                         : "Escolha um esporte para ver as quadras e os horários livres."}
                 />
 
                 <HomeLightingBanner />
 
                 <section className={ui.section} aria-label="Áreas do clube">
-                    {hasSocial && (
+                    {hasTabs && (
                         <div className={style.tabs} role="tablist" aria-label="Áreas do clube" onKeyDown={onTabKey}>
-                            {TABS.map((entry) => {
+                            {tabs.map((entry) => {
                                 const active = entry.key === tab;
-                                const count = entry.key === 'social' ? socialItems.length : sports.length;
+                                const count = itemsOf[entry.key].length;
                                 return (
                                     <button
                                         key={entry.key}
@@ -220,7 +251,7 @@ const HomeContent = () => {
                                     >
                                         <FontAwesomeIcon icon={entry.icon} />
                                         <span>{entry.label}</span>
-                                        {(entry.key === 'social' || placesLoaded) && (
+                                        {(entry.key !== 'quadras' || placesLoaded) && (
                                             <span className={style.tabCount}>{count}</span>
                                         )}
                                     </button>
@@ -232,22 +263,26 @@ const HomeContent = () => {
                     <div
                         id="home-panel"
                         className={style.panel}
-                        role={hasSocial ? 'tabpanel' : undefined}
-                        aria-labelledby={hasSocial ? `home-tab-${tab}` : 'home-areas'}
+                        role={hasTabs ? 'tabpanel' : undefined}
+                        aria-labelledby={hasTabs ? `home-tab-${tab}` : 'home-areas'}
                     >
                         <div className={style.searchRow}>
                             <SearchBar
                                 id="busca-home"
                                 value={query}
                                 onChange={setQuery}
-                                placeholder={tab === 'social' ? 'Buscar espaço social' : 'Buscar esporte'}
+                                placeholder={current.search}
                             />
-                            {hasSocial ? (
-                                tab === 'social' && (
+                            {hasTabs ? (
+                                tab === 'social' ? (
                                     <Link href="/espacos-sociais" className={style.panelLink}>
                                         Ver vitrine completa <FontAwesomeIcon icon={faArrowRight} />
                                     </Link>
-                                )
+                                ) : tab === 'torneios' ? (
+                                    <Link href="/torneios" className={style.panelLink}>
+                                        Ver todos os torneios <FontAwesomeIcon icon={faArrowRight} />
+                                    </Link>
+                                ) : null
                             ) : (
                                 <span className={ui.label} id="home-areas">Áreas esportivas</span>
                             )}
@@ -263,16 +298,16 @@ const HomeContent = () => {
                             <ReplayNotice
                                 icon={faMagnifyingGlass}
                                 title={`Nada encontrado para “${query}”`}
-                                description={otherMatches > 0
-                                    ? `Não está em ${TABS.find((entry) => entry.key === tab)?.label}, mas a busca achou ${otherMatches} em ${TABS.find((entry) => entry.key !== tab)?.label}.`
+                                description={otherTab
+                                    ? `Não está em ${current.label}, mas a busca achou ${otherMatches} em ${otherTab.label}.`
                                     : "Confira a grafia ou limpe a busca."}
-                                action={otherMatches > 0 ? (
+                                action={otherTab ? (
                                     <button
                                         type="button"
                                         className={`${ui.btn} ${ui.btnSecondary}`}
-                                        onClick={() => selectTab(tab === 'social' ? 'quadras' : 'social')}
+                                        onClick={() => selectTab(otherTab.key)}
                                     >
-                                        Ver em {TABS.find((entry) => entry.key !== tab)?.label}
+                                        Ver em {otherTab.label}
                                     </button>
                                 ) : undefined}
                             />
@@ -283,15 +318,15 @@ const HomeContent = () => {
                                         <Media
                                             src={item.image}
                                             alt={`Foto de ${item.name}`}
-                                            area={item.social ? 'social' : 'quadras'}
-                                            icon={item.social ? faChampagneGlasses : faTableTennisPaddleBall}
+                                            area={item.area}
+                                            icon={TABS.find((entry) => entry.key === item.area)!.icon}
                                         />
                                         <div className={ui.cardBody}>
                                             <h3 className={ui.cardTitle}>{item.name}</h3>
                                         </div>
                                         <div className={ui.cardFoot}>
                                             <span className={style.cardAction}>
-                                                {item.social ? "Ver espaços" : "Ver quadras e horários"}
+                                                {TABS.find((entry) => entry.key === item.area)!.action}
                                             </span>
                                             <span className={ui.spacer} />
                                             <FontAwesomeIcon icon={faArrowRight} className={ui.muted} />

@@ -37,9 +37,13 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 
 ### Allowlist atual
 
-**Públicos** (sem sessão): `login`, `register`, `check-member`, `change-password`, `replay/places`, `replay/places/{id}/videos`.
+**Públicos** (sem sessão): `login`, `register`, `check-member`, `change-password`, `replay/places`, `replay/places/{id}/videos`, `tournaments`, `tournaments/{id}`, `tournaments/{id}/categories/{id}/bracket`, `tournaments/{id}/staff/check`, `tournaments/{id}/staff/matches`, `tournaments/{id}/staff/matches/{id}/result`.
 
-**Autenticados**: `verify-token`, `schedule(/*)`, `place/{x}`, `places(/*)`, `member/update`, `replay/my-videos`, `lighting/availability`, `lighting/groups`, `lighting/groups/{id}/places`, `lighting/places/{id}/activate`, `lighting/release`, `lighting/activations`, `social/groups`, `social/groups/{id}/places`, `social/availability`, `social/beverages`, `social/furniture`, `social/limits`, `social/bookings`, `social/bookings/{id}`, `social/bookings/{id}/guests`.
+**Rotas da equipe do torneio** (`tournaments/{id}/staff/*`): o proxy repassa o header `Tournament-Code` (só se casar com `^[A-Za-z0-9 -]{1,20}$`) e **não** repassa o `Session` — a autorização ali é o código de lançamento.
+
+**Autenticados**: `verify-token`, `schedule(/*)`, `place/{x}`, `places(/*)`, `member/update`, `replay/my-videos`, `lighting/availability`, `lighting/groups`, `lighting/groups/{id}/places`, `lighting/places/{id}/activate`, `lighting/release`, `lighting/activations`, `social/groups`, `social/groups/{id}/places`, `social/availability`, `social/beverages`, `social/furniture`, `social/limits`, `social/bookings`, `social/bookings/{id}`, `social/bookings/{id}/guests`, `tournaments/{id}/eligibility`, `tournaments/{id}/registrations`, `tournaments/my-registrations`, `tournaments/registrations/{id}`, `tournaments/my-teams`, `tournaments/categories/{id}/teams`, `tournaments/member-lookup`, `tournaments/teams/{id}/invites`, `tournaments/invites/{id}`, `tournaments/my-invites`, `tournaments/invites/{id}/accept`, `tournaments/invites/{id}/decline`.
+
+`tournaments/payment` fica **fora** da allowlist: só o servidor chama (`success.ts`).
 
 > Para expor um endpoint novo da Lara ao navegador **é obrigatório** adicioná-lo aqui, com a regex mais fechada possível (um caminho por regex, `\d+` para ids).
 
@@ -67,6 +71,9 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 | `lighting/*` | GET/POST | Luz da quadra | proxy |
 | `social/*` (groups, availability, beverages, furniture, limits, bookings; `PUT bookings/{id}` edita a pré-reserva) | GET/POST/PUT/DELETE | Espaços sociais ([13](13-espacos-sociais.md)) | proxy |
 | `social/bookings/{id}` | GET | `utils/lara.computeSocialBookingCharge` (valor a cobrar) e `socialBookingIsPaid` (checagem de "já pago") | servidor |
+| `tournaments/*` (lista, detalhe, chaveamento, elegibilidade, inscrições, times, convites, equipe) | GET/POST/PUT/DELETE | Torneios ([16](16-torneios.md)) | proxy |
+| `tournaments/payment` | POST | `pages/api/success.ts` | servidor |
+| `tournaments/my-registrations`, `tournaments/{id}` | GET | `utils/lara.computeTournamentCharge` (valor e vaga antes de cobrar), `tournamentPaymentState` | servidor |
 | `webhooks/whatsapp` | POST | webhook | servidor |
 | `aprovacao/login`, `aprovacao/ordens`, `aprovacao/ordens/{cd}`, `aprovacao/ordens/{cd}/decidir` | POST/GET | área de aprovação | servidor (sem token de app; `Authorization` = JWT do diretor) |
 | `assinatura/remota/{link,abrir,sessao,identidade,respostas,anexos,anexos/{id},pdf,visualizado,assinar,recusar,encerrar}` | vários | assinatura remota | servidor, pelas rotas `/assinar/api/*` (fora do proxy e da allowlist; `Authorization` = `LARA_SIGNATURE_API_TOKEN`) — ver [15](15-assinatura-remota.md) |

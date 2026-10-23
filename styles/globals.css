@@ -49,6 +49,8 @@
   --a-luz-rgb: 227 240 192;      --a-luz-ink-rgb: 74 101 8;
   --a-perfil-rgb: 221 227 240;   --a-perfil-ink-rgb: 52 66 106;
   --a-compras-rgb: 236 229 219;  --a-compras-ink-rgb: 106 79 47;
+  /* Torneios: proposta do site (o Lara ainda não tem esta cor) — ver doc 14. */
+  --a-torneios-rgb: 214 236 246; --a-torneios-ink-rgb: 18 86 122;
 
   --shadow-card: 0 1px 2px rgb(30 18 21 / .05), 0 4px 14px rgb(30 18 21 / .05);
   --shadow-pop: 0 12px 40px rgb(30 18 21 / .18), 0 2px 6px rgb(30 18 21 / .08);
@@ -151,6 +153,7 @@
     --a-luz-rgb: 38 48 13;       --a-luz-ink-rgb: 185 214 94;
     --a-perfil-rgb: 28 34 54;    --a-perfil-ink-rgb: 169 184 230;
     --a-compras-rgb: 45 37 28;   --a-compras-ink-rgb: 213 187 152;
+    --a-torneios-rgb: 16 40 54;  --a-torneios-ink-rgb: 128 196 232;
     --shadow-card: 0 1px 2px rgb(0 0 0 / .3), 0 4px 14px rgb(0 0 0 / .25);
     --shadow-pop: 0 12px 40px rgb(0 0 0 / .55);
   }
@@ -185,6 +188,7 @@
   --a-luz-rgb: 38 48 13;       --a-luz-ink-rgb: 185 214 94;
   --a-perfil-rgb: 28 34 54;    --a-perfil-ink-rgb: 169 184 230;
   --a-compras-rgb: 45 37 28;   --a-compras-ink-rgb: 213 187 152;
+  --a-torneios-rgb: 16 40 54;  --a-torneios-ink-rgb: 128 196 232;
   --shadow-card: 0 1px 2px rgb(0 0 0 / .3), 0 4px 14px rgb(0 0 0 / .25);
   --shadow-pop: 0 12px 40px rgb(0 0 0 / .55);
 }
