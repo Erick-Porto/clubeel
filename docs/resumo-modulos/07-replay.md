@@ -22,7 +22,7 @@ O sócio aperta um botão na quadra e o lance recente é gravado pela Lara. Cada
 - O selo **"Vídeo de reserva"** (`has_member`) diz só que houve reserva — a API **não** informa de quem, de propósito. Não tente inferir.
 - A `url` do vídeo **nunca deve ser persistida** (vira 404 quando o arquivo expira).
 - Todas as chamadas usam `skipAuthCheck: true`: um 401 não pode derrubar um visitante; em `/meus-videos` o 401 vira o estado "Sua sessão expirou" com botão de login (`/login?callbackUrl=%2Fmeus-videos`).
-- Entrada sem conta: botão **RePET** na tela de login → `/replay` (ver [02](02-autenticacao-socio.md)).
+- Entrada sem conta: porta **RePET** na página de boas-vindas da raiz (`/` sem sessão) → `/replay` (ver [02](02-autenticacao-socio.md)).
 - `/meus-videos` é o destino do link enviado por e-mail: middleware → login com `callbackUrl` → volta direto.
 
 ## Serviço (`replay-api.ts`)

@@ -7,6 +7,7 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | Item | Por quê |
 |---|---|
 | `/replay` e `replay/places*` sem login | Decisão de negócio (galeria pública). |
+| `/` fora do matcher do middleware | Sem sessão a raiz é a página de boas-vindas (Entrar, RePET, Torneios); a home do sócio só carrega dados com sessão. |
 | Replay usa `skipAuthCheck` | Um 401 não pode deslogar visitante; em "Meus vídeos" vira estado de tela. |
 | `TokenValidator` desligado em `/aprovacao` | Sessões independentes. |
 | `decidir` sem `revalidatePath` | Revalidar trocaria a tela de resultado por "fora da fila" (ver [09](09-aprovacao-compras.md)). |
@@ -18,7 +19,7 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | Cookies do NextAuth com nome `*.homolog` | Só na homologação; evita colisão com a produção no mesmo domínio. |
 | Luz: reler a disponibilidade após cada POST | O estado "aceso" só pode vir da Lara (multi-dispositivo, outros sócios). |
 | Torneios: lista, detalhe e chaveamento fora do matcher | Decisão de negócio (públicos); a Lara só devolve o que está publicado. |
-| `TokenValidator` desligado em `/torneios/<id>/equipe` | A tela usa o código de lançamento; um login de sócio vencido no mesmo celular não pode tirá-la do ar. |
+| `TokenValidator` desligado em `/torneios/equipe` e `/torneios/<id>/equipe` | A tela usa o código de lançamento; um login de sócio vencido no mesmo celular não pode tirá-la do ar. |
 | Torneios: 403 não desloga | É o `not_captain` da Lara (recusa de regra); só 401 sem `reason` leva ao login. |
 | Assinatura remota sem `NextAuthProvider`/`CartProvider` | Área isolada: não pode ler a sessão de sócio (`casca-do-site.tsx`). |
 | Assinatura: último item do `X-Forwarded-For`, não o primeiro | O primeiro é escrito pelo navegador e pode ser forjado; o IP vai para evidência jurídica. |

@@ -10,7 +10,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleExclamation, faMagnifyingGlass, faRotateRight, faTrophy } from "@fortawesome/free-solid-svg-icons";
+import Link from "next/link";
+import {
+    faCircleExclamation,
+    faClipboardList,
+    faMagnifyingGlass,
+    faRotateRight,
+    faTrophy,
+} from "@fortawesome/free-solid-svg-icons";
 import globalStyle from "../../styles/page.module.css";
 import ui from "../../styles/ui.module.css";
 import style from "../../styles/tournament.module.css";
@@ -142,6 +149,12 @@ export default function TournamentsPage() {
                 <PageHeader
                     title="Torneios"
                     lead="Escolha um torneio para ver as categorias, o regulamento e, nas inscrições abertas, inscrever-se. Sócios titulares e dependentes podem participar."
+                    actions={
+                        // Para a equipe do clube que lança resultados (com o código da organização).
+                        <Link href="/torneios/equipe" className={`${ui.btn} ${ui.btnSm} ${ui.btnSecondary}`}>
+                            <FontAwesomeIcon icon={faClipboardList} /> Área da equipe
+                        </Link>
+                    }
                 />
                 {body}
             </main>

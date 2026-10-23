@@ -90,7 +90,7 @@ Regras de ouro dessa arquitetura:
 
 ## 5. Fluxo principal do sócio (ponta a ponta)
 
-1. Acessa `/` sem sessão → `middleware.ts` redireciona para `/login?callbackUrl=...`.
+1. Acessa `/` sem sessão → **página de boas-vindas** (`public-home.tsx`: Entrar, RePET, Torneios; `/` fica fora do matcher). Rota protegida sem sessão → `middleware.ts` redireciona para `/login?callbackUrl=...`.
 2. Login (`AuthSidebar`): CPF + senha → **senha vira SHA-256 no cliente** → `signIn('credentials')` → `authorize` chama `POST login` na Lara → JWT NextAuth guarda `accessToken` da Lara + dados do sócio.
 3. Home (`/`): `GET places/group` → grade de esportes (categoria `esportiva`). Banner da luz aparece se a Lara disser que há quadra aberta.
 4. `/places/<esporte>-<id>`: seletor de datas + `POST places/` (`group_id`, `member_id`, `date`) → quadras com `available_slots` e limite do sócio. Repolling 30 s.

@@ -22,6 +22,7 @@ import style from "../styles/home.module.css";
 import Footer from "./components/Common/footer";
 import Header from "./components/Common/header";
 import { LoadingScreen } from "./components/Common/loading";
+import PublicHome from "./components/Common/public-home";
 import API_CONSUME from "../services/api-consume";
 import HomeLightingBanner from "./components/Lighting/HomeLightingBanner";
 import ReplayNotice from "./components/Replay/ReplayNotice";
@@ -213,6 +214,9 @@ const HomeContent = () => {
     };
 
     if (status === "loading") return <LoadingScreen />;
+    // Sem sessão a raiz é a página de boas-vindas (Entrar, RePET, Torneios):
+    // `/` saiu do matcher do middleware de propósito.
+    if (status === "unauthenticated") return <PublicHome />;
 
     const firstName = session?.user?.name?.split(' ')[0];
 

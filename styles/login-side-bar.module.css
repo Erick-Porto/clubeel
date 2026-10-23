@@ -162,85 +162,30 @@
 }
 
 /*
- * RePET: atalho grande para a galeria pública de replays. Fundo e texto são as
- * duas cores do módulo replay invertidas (tinta no fundo, tom claro no texto),
- * o que mantém o contraste nos dois temas.
+ * Volta para a página de boas-vindas da raiz, onde ficam as áreas abertas
+ * (RePET e torneios). Fica no fim do painel.
  */
-.replayEntry {
+.homeLink {
   margin-top: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
-  min-height: 84px;
-  padding: 16px 18px;
-  border-radius: var(--radius-card);
-  background:
-    radial-gradient(120% 140% at 100% 0%, rgb(var(--a-replay-rgb) / .28) 0%, transparent 60%),
-    rgb(var(--a-replay-ink-rgb));
-  color: rgb(var(--a-replay-rgb));
-  box-shadow: var(--shadow-card);
-  text-decoration: none;
-  transition: transform .15s, box-shadow .15s;
-}
-
-.replayEntry:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-pop);
-}
-
-.replayEntry:focus-visible {
-  outline: 3px solid var(--grena-tint);
-  outline-offset: 3px;
-}
-
-.replayEntryIcon {
-  flex: none;
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  background: rgb(var(--a-replay-rgb));
-  color: rgb(var(--a-replay-ink-rgb));
-}
-
-.replayEntryText {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.replayEntryHint {
-  font-size: 11px;
+  gap: 4px 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  opacity: .85;
+  color: var(--grena-ink);
 }
 
-.replayEntryTitle {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -.02em;
+.homeLink:hover {
+  text-decoration: underline;
 }
 
-.replayEntryLead {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.replayEntryArrow {
-  flex: none;
-  font-size: 18px;
-  transition: transform .15s;
-}
-
-.replayEntry:hover .replayEntryArrow {
-  transform: translateX(3px);
+.homeLinkHint {
+  flex-basis: 100%;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink-3);
 }
 
 /*
@@ -269,7 +214,7 @@
     margin-bottom: 4px;
   }
 
-  .replayEntry {
+  .homeLink {
     margin-top: 6px;
   }
 }

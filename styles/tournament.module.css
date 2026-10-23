@@ -1031,3 +1031,15 @@
 .fullWidth {
   width: 100%;
 }
+
+/* Escolha do torneio na entrada da equipe: cartão inteiro clicável. */
+.staffPick {
+  flex-direction: row;
+  align-items: center;
+  padding-right: 16px;
+}
+
+.pillSlot {
+  display: inline-flex;
+  align-self: flex-start;
+}

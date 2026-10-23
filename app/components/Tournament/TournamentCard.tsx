@@ -11,10 +11,12 @@ import { formatDayRange, formatInstant, tournamentHref, tournamentStatusLabel } 
 
 /** Selo do torneio: inscrições abertas (pela Lara), em andamento ou encerrado. */
 export function TournamentStatusPill({ tournament }: { tournament: Tournament }) {
-    if (tournament.registration_open) return <Pill kind="ok" icon={faPenToSquare}>Inscrições abertas</Pill>;
-    if (tournament.status === "in_progress") return <Pill kind="info">{tournamentStatusLabel(tournament.status)}</Pill>;
-    if (tournament.status === "finished") return <Pill kind="off">{tournamentStatusLabel(tournament.status)}</Pill>;
-    return null;
+    let pill: React.ReactNode = null;
+    if (tournament.registration_open) pill = <Pill kind="ok" icon={faPenToSquare}>Inscrições abertas</Pill>;
+    else if (tournament.status === "in_progress") pill = <Pill kind="info">{tournamentStatusLabel(tournament.status)}</Pill>;
+    else if (tournament.status === "finished") pill = <Pill kind="off">{tournamentStatusLabel(tournament.status)}</Pill>;
+    // O invólucro impede o selo de esticar dentro de cartões em coluna.
+    return pill ? <span className={style.pillSlot}>{pill}</span> : null;
 }
 
 /** Cartão do torneio na lista e na home: imagem, nome, modalidade, datas e selo. */

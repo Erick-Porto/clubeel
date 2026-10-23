@@ -37,7 +37,8 @@
   - Matrícula normalizada no blur: `^\d{5}$` (associado), `^\d{4}FCN$` (funcionário), `^\d{5}ESC$` (escolinha); outro formato → erro.
   - Chama `API_CONSUME('POST','register', {}, {title, cpf, birthDate: 'AAAA-MM-DD', password: SHA256})` **via proxy** (`register` é endpoint público na allowlist) e em seguida faz `signIn`.
 - `?maintenance=true` na URL força a tela de manutenção.
-- **Botão RePET**: abaixo do formulário (login e cadastro; some na tela de manutenção) há um botão grande, na cor do módulo replay, "Não precisa de conta · RePET · Assista aos replays das quadras" → `/replay`. É a entrada pública para a galeria a partir do login (quem abre a raiz sem sessão cai aqui pelo middleware).
+- **Voltar ao início**: no fim do painel (login e cadastro; some na tela de manutenção) um link "Voltar ao início · RePET e torneios sem precisar de conta" → `/`. As entradas públicas (RePET, Torneios) ficam na **página de boas-vindas** da raiz (`app/components/Common/public-home.tsx`), não mais num cartão do login.
+- **Página de boas-vindas** (`/` sem sessão): fotos do carrossel fixas ao fundo com véu na cor da tela, "Bem-vindo!" e três portas do mesmo tamanho, cada uma nas cores do seu módulo invertidas — **Entrar** (sócio, `inicio`) → `/login`, **RePET** (`replay`) → `/replay`, **Torneios** (`torneios`) → `/torneios` — e o rodapé. Botão "Entrar" também no topo. No celular as portas viram linhas empilhadas.
 - **Visual**: no desktop, painel à esquerda + carrossel de fotos à direita. No celular (≤900px) o carrossel fica **fixo ao fundo** e o painel vira um cartão translúcido por cima (`auth.module.css` + `login-side-bar.module.css`).
 
 `/login` (`app/login/page.tsx`): se já autenticado, redireciona para `safeCallbackUrl(callbackUrl)`. Envolto em `<Suspense>` porque usa `useSearchParams` (sem isso o build quebra).
