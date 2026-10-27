@@ -79,6 +79,14 @@ Mesmo pipeline, disparado por `TournamentPaymentPanel` com `<CheckoutPayment tou
 - `payment_methods`: `computeTournamentCharge(ids, Session)` — inscrições lidas em `tournaments/my-registrations`, todas `pending_payment`, valor = soma dos `amount`; **relê o torneio e recusa antes de cobrar** sem `registration_open` ou com `vacancies_left <= 0` (a vaga é de quem paga primeiro). Recusa → 409 `{error, reason}` (`category_full`, `registration_closed`, `invalid_status`, `not_owner`, `already_paid`), nada vai à eRede. `savePendingPayment` guarda `tournamentRegistrationIds` (com `scheduleIds: []`).
 - `success`: depois da verificação na eRede, `POST tournaments/payment` `{registration_ids, payment_method, paid_amount, payment_integration_id: tid, paid_at}`. Em 5xx/rede **reenvia o mesmo `tid`** (até 3 tentativas; a Lara responde 200 com o mesmo pagamento) e, se ainda falhar, relê: tudo pago e não pela secretaria → sucesso, sem estorno. Recusa com `reason` (ex.: `category_full`) → **estorno** + 409 com o `reason`. O componente entrega `{type}` a `onTournamentResult`, como no modo social.
 
+## Pagamento de pedidos de ingressos
+
+Mesmo pipeline, disparado por `TicketOrderView` com `<CheckoutPayment ticketOrderId ticketGuest onTicketResult />`. Detalhes em [17](17-ingressos.md#pagamento-erede).
+
+- **Não sócio sem login**: com `ticketGuest: true`, `payment_methods` e `success` **não exigem sessão** — exigem o cookie httpOnly do pedido (`ingresso_pedido_<id>`, gravado na criação ou pelo link do e-mail). Sem cookie → 404 `order_not_found`. É a única exceção à regra "pagamento exige sessão".
+- `payment_methods`: `computeTicketCharge(id, payer)` lê o pedido (`tickets/orders/{id}` com `Session` ou `tickets/guest-orders/{id}` com `Ticket-Order-Token`); pago → `already_paid`, não pendente → `invalid_status`, 404 → `order_not_found` (409, nada vai à eRede). Valor = `total`. O `hold_until` não é conferido (a Lara aceita pagamento atrasado se houver lugar). `savePendingPayment` guarda `ticketOrderId` (`userId = ticket-guest:<id>` no não sócio).
+- `success`: `POST tickets/(guest-)orders/{id}/payment` `{payment_method, paid_amount, payment_integration_id: tid, paid_at}`; 5xx/rede → reenvia o mesmo `tid` (até 3) e relê o pedido; recusa (`hold_expired` — lugares acabaram depois do prazo —, `invalid_status`, `payment_mismatch`) → **estorno** + 409 com o `reason`.
+
 ## Página `/checkout`
 
 - `total` = soma de `cart[].price`.
@@ -99,7 +107,7 @@ Lista itens (link para `/place/...?date=` via `URIGen`), botão de remover (`rem
 
 ## Invariantes de segurança (não quebrar)
 
-1. O cliente **nunca** envia `amount`; o servidor recalcula (quadras: soma dos pendentes; espaço social: `total` da reserva lida na Lara; torneio: soma dos `amount` das inscrições lidas na Lara).
+1. O cliente **nunca** envia `amount`; o servidor recalcula (quadras: soma dos pendentes; espaço social: `total` da reserva lida na Lara; torneio: soma dos `amount` das inscrições lidas na Lara; ingressos: `total` do pedido lido na Lara).
 2. A aprovação é decidida consultando a eRede por `tid`, **não** pelo corpo da requisição.
 3. `cardData` **nunca** é logado.
 4. `takePendingPayment` consome (apaga) o registro — impede reaproveitar a mesma `reference`.

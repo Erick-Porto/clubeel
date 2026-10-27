@@ -5,7 +5,7 @@
  * mostrarem as mesmas abas, na mesma ordem.
  */
 
-import { faChampagneGlasses, faTrophy, faVideo } from "@fortawesome/free-solid-svg-icons";
+import { faChampagneGlasses, faTicket, faTrophy, faVideo } from "@fortawesome/free-solid-svg-icons";
 import { ModuleCover } from "./ui";
 
 export function ReplayCover() {
@@ -52,6 +52,26 @@ export function TournamentCover() {
             tabs={[
                 { label: "Torneios", href: "/torneios" },
                 { label: "Minhas inscrições", href: "/torneios/inscricoes" },
+            ]}
+        />
+    );
+}
+
+/**
+ * Ingressos de eventos. A vitrine e a compra são abertas (o não sócio compra
+ * sem login); "Meus ingressos" é do sócio — o não sócio abre o pedido pelo
+ * link do e-mail.
+ */
+export function TicketCover() {
+    return (
+        <ModuleCover
+            area="ingressos"
+            icon={faTicket}
+            title="Ingressos"
+            lead="Eventos do clube: compra, QR Code e ingressos em PDF."
+            tabs={[
+                { label: "Eventos", href: "/ingressos" },
+                { label: "Meus ingressos", href: "/ingressos/meus" },
             ]}
         />
     );

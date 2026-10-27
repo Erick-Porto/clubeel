@@ -17,16 +17,20 @@ import {
     faLightbulb,
     faRightFromBracket,
     faRightToBracket,
+    faTableCellsLarge,
+    faTicket,
     faTrophy,
     faUser,
     faVideo,
+    faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { useCart } from '../../../context/CartContext';
 import { ThemeSwitch } from './theme';
-import { initialsOf } from '../UI/ui';
+import { areaStyle, initialsOf } from '../UI/ui';
 import { comBase } from '../../../utils/base-path';
 
-type ModuleKey = 'inicio' | 'social' | 'replay' | 'luz' | 'torneios' | 'perfil';
+// As chaves são as mesmas do `Area` (cor de cada módulo, ui.tsx).
+type ModuleKey = 'inicio' | 'social' | 'replay' | 'luz' | 'torneios' | 'ingressos' | 'perfil';
 
 interface NavItem {
     key: ModuleKey;
@@ -37,8 +41,12 @@ interface NavItem {
 }
 
 /**
- * Módulos do app (decisão de navegação do rebrand v4): os mesmos no topo
- * (desktop) e na barra inferior (celular). As quadras são a própria home.
+ * Módulos do app: no topo (desktop) todos, menos o perfil (que está no menu do
+ * usuário). As quadras são a própria home.
+ *
+ * No celular a barra inferior ficou com três botões — Início, Menu e Perfil —
+ * porque os módulos não cabiam mais lado a lado; "Menu" abre uma folha com a
+ * grade dos módulos (decisão de navegação na entrada dos ingressos).
  */
 const NAV: NavItem[] = [
     { key: 'inicio', href: '/', label: 'Início', short: 'Início', icon: faHouse },
@@ -46,8 +54,12 @@ const NAV: NavItem[] = [
     { key: 'replay', href: '/replay', label: 'Replay', short: 'Replay', icon: faVideo },
     { key: 'luz', href: '/luz', label: 'Luz da quadra', short: 'Luz', icon: faLightbulb },
     { key: 'torneios', href: '/torneios', label: 'Torneios', short: 'Torneios', icon: faTrophy },
+    { key: 'ingressos', href: '/ingressos', label: 'Ingressos', short: 'Ingressos', icon: faTicket },
     { key: 'perfil', href: '/profile', label: 'Meu perfil', short: 'Perfil', icon: faUser },
 ];
+
+/** Os módulos da folha "Menu" do celular (Início e Perfil estão na própria barra). */
+const SHEET = NAV.filter((item) => item.key !== 'inicio' && item.key !== 'perfil');
 
 function moduleOf(pathname: string): ModuleKey | null {
     if (pathname === '/' || pathname.startsWith('/places') || pathname.startsWith('/place/') || pathname.startsWith('/checkout')) return 'inicio';
@@ -55,12 +67,15 @@ function moduleOf(pathname: string): ModuleKey | null {
     if (pathname.startsWith('/replay') || pathname.startsWith('/meus-videos')) return 'replay';
     if (pathname.startsWith('/luz')) return 'luz';
     if (pathname.startsWith('/torneios')) return 'torneios';
+    if (pathname.startsWith('/ingressos')) return 'ingressos';
     if (pathname.startsWith('/profile')) return 'perfil';
     return null;
 }
 
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
+    // Folha de módulos da barra inferior (celular).
+    const [sheetOpen, setSheetOpen] = useState(false);
     const { data: session } = useSession();
     const { cart } = useCart();
     const pathname = usePathname() ?? '';
@@ -83,11 +98,22 @@ export default function Header() {
         };
     }, [menuOpen]);
 
-    // Fecha o menu ao trocar de página.
+    useEffect(() => {
+        if (!sheetOpen) return;
+        const handleKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setSheetOpen(false);
+        };
+        document.addEventListener('keydown', handleKey);
+        return () => document.removeEventListener('keydown', handleKey);
+    }, [sheetOpen]);
+
+    // Fecha o menu e a folha ao trocar de página.
     useEffect(() => {
         setMenuOpen(false);
+        setSheetOpen(false);
     }, [pathname]);
 
+    const inSheet = SHEET.some((item) => item.key === current);
     const firstName = session?.user?.name?.split(' ')[0] ?? '';
     const cartCount = cart?.length ?? 0;
 
@@ -124,8 +150,9 @@ export default function Header() {
                                 className={`${styles.navLink} ${current === item.key ? styles.navLinkActive : ''}`}
                                 aria-current={current === item.key ? 'page' : undefined}
                             >
-                                <FontAwesomeIcon icon={item.icon} />
-                                {item.label}
+                                <FontAwesomeIcon icon={item.icon} className={styles.navIcon} />
+                                <span className={styles.navLong}>{item.label}</span>
+                                <span className={styles.navShort}>{item.short}</span>
                             </Link>
                         ))}
                     </nav>
@@ -182,6 +209,9 @@ export default function Header() {
                                         <Link href="/torneios/inscricoes" className={styles.menuItem} role="menuitem">
                                             <FontAwesomeIcon icon={faTrophy} /> Minhas inscrições em torneios
                                         </Link>
+                                        <Link href="/ingressos/meus" className={styles.menuItem} role="menuitem">
+                                            <FontAwesomeIcon icon={faTicket} /> Meus ingressos
+                                        </Link>
                                         <div className={styles.menuSection}>
                                             <span className={styles.menuLabel}>Tema</span>
                                             <ThemeSwitch />
@@ -206,21 +236,77 @@ export default function Header() {
                 </div>
             </header>
 
-            {/* Barra inferior de módulos (só no celular). `data-bottom-nav` reserva o espaço dela no body. */}
-            <nav className={styles.bottomNav} aria-label="Módulos" data-bottom-nav>
-                {NAV.map((item) => (
+            {/* Barra inferior (só no celular): Início, Menu (folha com os módulos) e Perfil.
+                `data-bottom-nav` reserva o espaço dela no body. */}
+            {sheetOpen && <div className={styles.sheetVeil} onClick={() => setSheetOpen(false)} aria-hidden="true" />}
+            {sheetOpen && (
+                <div id="menu-modulos" className={styles.sheet} role="dialog" aria-modal="true" aria-label="Módulos">
+                    <div className={styles.sheetHead}>
+                        <span className={styles.sheetTitle}>Módulos</span>
+                        <button type="button" className={styles.sheetClose} onClick={() => setSheetOpen(false)} aria-label="Fechar">
+                            <FontAwesomeIcon icon={faXmark} />
+                        </button>
+                    </div>
+                    <nav className={styles.sheetGrid} aria-label="Módulos">
+                        {SHEET.map((item) => (
+                            <Link
+                                key={item.key}
+                                href={item.href}
+                                className={`${styles.sheetItem} ${current === item.key ? styles.sheetItemActive : ''}`}
+                                aria-current={current === item.key ? 'page' : undefined}
+                                style={areaStyle(item.key)}
+                            >
+                                <span className={styles.sheetIcon}>
+                                    <FontAwesomeIcon icon={item.icon} />
+                                </span>
+                                {item.label}
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
+            )}
+            <nav className={styles.bottomNav} aria-label="Navegação" data-bottom-nav>
+                <Link
+                    href="/"
+                    className={`${styles.bottomItem} ${current === 'inicio' && !sheetOpen ? styles.bottomItemActive : ''}`}
+                    aria-current={current === 'inicio' ? 'page' : undefined}
+                >
+                    <span className={styles.bottomIcon}>
+                        <FontAwesomeIcon icon={faHouse} />
+                    </span>
+                    Início
+                </Link>
+                <button
+                    type="button"
+                    className={`${styles.bottomItem} ${sheetOpen || inSheet ? styles.bottomItemActive : ''}`}
+                    onClick={() => setSheetOpen((open) => !open)}
+                    aria-expanded={sheetOpen}
+                    aria-controls="menu-modulos"
+                >
+                    <span className={styles.bottomIcon}>
+                        <FontAwesomeIcon icon={sheetOpen ? faXmark : faTableCellsLarge} />
+                    </span>
+                    Menu
+                </button>
+                {session?.user ? (
                     <Link
-                        key={item.key}
-                        href={item.href}
-                        className={`${styles.bottomItem} ${current === item.key ? styles.bottomItemActive : ''}`}
-                        aria-current={current === item.key ? 'page' : undefined}
+                        href="/profile"
+                        className={`${styles.bottomItem} ${current === 'perfil' && !sheetOpen ? styles.bottomItemActive : ''}`}
+                        aria-current={current === 'perfil' ? 'page' : undefined}
                     >
                         <span className={styles.bottomIcon}>
-                            <FontAwesomeIcon icon={item.icon} />
+                            <FontAwesomeIcon icon={faUser} />
                         </span>
-                        {item.short}
+                        Perfil
                     </Link>
-                ))}
+                ) : (
+                    <Link href="/login" className={styles.bottomItem}>
+                        <span className={styles.bottomIcon}>
+                            <FontAwesomeIcon icon={faRightToBracket} />
+                        </span>
+                        Entrar
+                    </Link>
+                )}
             </nav>
         </>
     );

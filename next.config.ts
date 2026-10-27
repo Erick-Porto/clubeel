@@ -22,6 +22,16 @@ const HEADERS_ASSINATURA = [
   { key: "X-Frame-Options", value: "DENY" },
 ];
 
+// Pedido de ingresso do não sócio (/ingressos/pedido/<id>?token=…): o link do
+// e-mail chega com o token do pedido na URL. A página troca o token por um
+// cookie e o tira da URL, mas até lá ele não pode vazar no Referer (a imagem
+// do evento pode vir de outro servidor), ir para o cache nem para buscadores.
+const HEADERS_PEDIDO_INGRESSO = [
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+  { key: "Cache-Control", value: "no-store, max-age=0" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+];
+
 const nextConfig: NextConfig = {
   reactStrictMode: false,
   ...(basePath ? { basePath } : {}),
@@ -29,6 +39,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/assinar", headers: HEADERS_ASSINATURA },
       { source: "/assinar/:path*", headers: HEADERS_ASSINATURA },
+      { source: "/ingressos/pedido/:path*", headers: HEADERS_PEDIDO_INGRESSO },
     ];
   },
   images: {

@@ -29,6 +29,13 @@ export interface PendingPayment {
    * `schedule/payment`.
    */
   tournamentRegistrationIds?: number[];
+  /**
+   * Preenchido quando a cobrança é de um pedido de ingressos: `scheduleIds`
+   * fica vazio e a confirmação vai para `tickets/(guest-)orders/{id}/payment`.
+   * No pedido do não sócio, `userId` é `ticket-guest:<id do pedido>`.
+   */
+  ticketOrderId?: number;
+  ticketGuest?: boolean;
 }
 
 // Generosa o suficiente para cobrir a confirmacao (normalmente quase

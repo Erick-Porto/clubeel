@@ -44,5 +44,12 @@ export const config = {
     // lançamento, não o login de sócio.
     "/torneios/inscricoes",
     "/torneios/times/:path*",
+    // Ingressos: só "Meus ingressos" (e o pedido do sócio) é do sócio. A
+    // vitrine, a página do evento e a compra (/ingressos/<id>/comprar) ficam
+    // FORA: o não sócio compra sem login. O pedido do não sócio
+    // (/ingressos/pedido/<id>) e o "perdi o link" também ficam fora — quem abre
+    // é o link do e-mail (token do pedido, cookie httpOnly).
+    "/ingressos/meus",
+    "/ingressos/meus/:path*",
   ]
 }
