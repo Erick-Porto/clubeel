@@ -6,13 +6,14 @@
 ## 1. O que é
 
 Front-end web do **Clube dos Funcionários da CSN (CFCSN)**, Volta Redonda/RJ — produção em `espacos.clubedosfuncionarios.com.br`.
-É uma aplicação **Next.js 15 (React 19, TypeScript)** que serve sete produtos distintos:
+É uma aplicação **Next.js 15 (React 19, TypeScript)** que serve oito produtos distintos:
 
 | Produto | Público | Rotas | Doc |
 |---|---|---|---|
 | **Agendamento de quadras** (reserva + carrinho + pagamento por cartão) | Sócio logado | `/`, `/places/[slug]`, `/place/[slug]`, `/checkout`, `/profile` | [04](04-agendamento-quadras.md), [05](05-checkout-pagamento.md), [06](06-perfil-socio.md) |
 | **Espaços sociais** (churrasqueiras/salões: pré-reserva → análise da secretaria → pagamento; dia inteiro) | Sócio logado | `/espacos-sociais`, `/espacos-sociais/[grupo]/[espaco]`, `/espacos-sociais/reservas[/id]` | [13](13-espacos-sociais.md) |
 | **Torneios** (inscrição por categoria + pagamento eRede, times/capitão, chaveamento, resultados lançados pela equipe com código) | Lista, detalhe, chaveamento: qualquer visitante · inscrição e times: sócio · lançamento: equipe com código | `/torneios`, `/torneios/[id]`, `/torneios/[id]/chaveamento/[categoria]`, `/torneios/[id]/equipe`, `/torneios/inscricoes`, `/torneios/times/[id]` | [16](16-torneios.md) |
+| **Ingressos de eventos** (vitrine, compra do sócio para o título e do não sócio sem login, pagamento eRede, QR Code/PDF, vários dias) | Vitrine, evento e compra: qualquer visitante · "Meus ingressos": sócio · pedido do não sócio: link do e-mail | `/ingressos`, `/ingressos/[id]`, `/ingressos/[id]/comprar`, `/ingressos/pedido/[id]`, `/ingressos/meus[/id]`, `/ingressos/perdi-o-link` | [17](17-ingressos.md) |
 | **Replay** (vídeos curtos gravados nas quadras, guardados 7 dias) | Galeria: qualquer visitante · "Meus vídeos": sócio | `/replay`, `/replay/[slug]`, `/meus-videos` | [07](07-replay.md) |
 | **Luz da quadra** (sócio acende/prolonga/devolve a luz pelo celular no uso livre) | Sócio logado | `/luz` (+ banner na home e card no perfil) | [08](08-luz-da-quadra.md) |
 | **Aprovação de compras** (diretoria aprova/reprova ordens de compra do ERP Questor) | Diretor (sessão própria, sem relação com sócio) | `/aprovacao/**` | [09](09-aprovacao-compras.md) |
@@ -38,6 +39,7 @@ Next.js (servidor, DMZ) ──────────────────�
    ├─ pages/api/success.ts             verifica na eRede + confirma Lara│
    ├─ pages/api/whatsapp/webhook.ts    Poli Digital → Lara              │
    ├─ app/api/replay/media/[...path]   stream de vídeo (Range) da Lara  │
+   ├─ pages/api/ingressos/*            pedido do não sócio (token→cookie)│
    ├─ app/aprovacao/** (Server Components + Server Actions) → Lara      │
    └─ app/(assinatura)/assinar/api/*  Route Handlers, token próprio │
                                                                          ▼
@@ -50,7 +52,7 @@ Regras de ouro dessa arquitetura:
 2. **`INTERNAL_LARA_API_TOKEN` nunca pode chegar ao bundle do cliente.** Variáveis sem prefixo `NEXT_PUBLIC_` são `undefined` no browser.
 3. **Todo endpoint novo da Lara usado pelo cliente precisa entrar na allowlist** de [`pages/api/backend/[...path].ts`](../../pages/api/backend/[...path].ts) (`PUBLIC_ENDPOINTS` ou `AUTHENTICATED_ENDPOINTS`). Fora da lista → 403.
 4. **Valor de cobrança nunca vem do cliente** — é recalculado no servidor (`utils/lara.ts → computeAmountInCents`).
-5. **Módulos novos (Replay, Luz, Aprovação, Espaços sociais, Torneios, Assinatura remota) seguem "o front não decide nada"**: janela, limite, permissão, status vêm da Lara; o front só formata e exibe a mensagem que ela mandou (`error`/`reason`). Não reimplemente regra de negócio no front.
+5. **Módulos novos (Replay, Luz, Aprovação, Espaços sociais, Torneios, Ingressos, Assinatura remota) seguem "o front não decide nada"**: janela, limite, permissão, status vêm da Lara; o front só formata e exibe a mensagem que ela mandou (`error`/`reason`). Não reimplemente regra de negócio no front.
 
 ## 3. Mapa de diretórios
 
@@ -61,7 +63,7 @@ Regras de ouro dessa arquitetura:
 | `app/components/` | Componentes por domínio: `Auth`, `Checkout`, `Common`, `Lighting`, `Profile`, `Replay`, `Schedules`, `Social` | [11](11-ui-compartilhada.md) e por domínio |
 | `app/hooks/` | `useIsMobile` (≤1024px), `useLightingAvailability` | [11](11-ui-compartilhada.md), [08](08-luz-da-quadra.md) |
 | `pages/api/` | Pages Router — **só rotas de API** (auth, proxy, pagamento, webhook) | [02](02-autenticacao-socio.md), [03](03-proxy-backend-seguranca.md), [05](05-checkout-pagamento.md), [10](10-webhook-whatsapp.md) |
-| `services/` | Clientes HTTP: `api-consume` (genérico), `replay-api`, `lighting-api`, `social-api`, `tournament-api`, `aprovacao-api` e `assinatura-api` (server-only) | [03](03-proxy-backend-seguranca.md) e por domínio |
+| `services/` | Clientes HTTP: `api-consume` (genérico), `replay-api`, `lighting-api`, `social-api`, `tournament-api`, `ticket-api`, `aprovacao-api` e `assinatura-api` (server-only) | [03](03-proxy-backend-seguranca.md) e por domínio |
 | `context/` | `CartContext` (carrinho = agendamentos pendentes status 3) | [04](04-agendamento-quadras.md) |
 | `utils/` | Helpers: segurança (`sanitize`, `rate-limit`, `callback-url`), pagamento (`erede`, `lara`, `pending-payments`, `bank-identifier`), formatação (`replay`, `lighting`, `uriGen`) | por domínio |
 | `styles/` | CSS Modules (um por componente/tela) + `globals.css` (tokens de cor grená) | [11](11-ui-compartilhada.md) |
@@ -87,10 +89,11 @@ Regras de ouro dessa arquitetura:
 14. [14-identidade-visual.md](14-identidade-visual.md) — rebrand v4: tokens, tema escuro, cores de módulo, peças de UI (`app/components/UI/`), modelo de tela, pegadinhas.
 15. [15-assinatura-remota.md](15-assinatura-remota.md) — assinatura de documentos pelo link do e-mail: área isolada, cookies httpOnly, IP de quem assina, etapas, testes.
 16. [16-torneios.md](16-torneios.md) — torneios: lista/detalhe públicos, elegibilidade, inscrição e pagamento eRede, times e convites, chaveamento, tela da equipe com código de lançamento.
+17. [17-ingressos.md](17-ingressos.md) — ingressos de eventos: vitrine, compra do sócio (título) e do não sócio (sem login, token do pedido em cookie httpOnly), cupom, pagamento eRede com estorno no `hold_expired`, QR/PDF, vários dias.
 
 ## 5. Fluxo principal do sócio (ponta a ponta)
 
-1. Acessa `/` sem sessão → **página de boas-vindas** (`public-home.tsx`: Entrar, RePET, Torneios; `/` fica fora do matcher). Rota protegida sem sessão → `middleware.ts` redireciona para `/login?callbackUrl=...`.
+1. Acessa `/` sem sessão → **página de boas-vindas** (`public-home.tsx`: Entrar, RePET, Torneios, Ingressos; `/` fica fora do matcher). Rota protegida sem sessão → `middleware.ts` redireciona para `/login?callbackUrl=...`.
 2. Login (`AuthSidebar`): CPF + senha → **senha vira SHA-256 no cliente** → `signIn('credentials')` → `authorize` chama `POST login` na Lara → JWT NextAuth guarda `accessToken` da Lara + dados do sócio.
 3. Home (`/`): `GET places/group` → grade de esportes (categoria `esportiva`). Banner da luz aparece se a Lara disser que há quadra aberta.
 4. `/places/<esporte>-<id>`: seletor de datas + `POST places/` (`group_id`, `member_id`, `date`) → quadras com `available_slots` e limite do sócio. Repolling 30 s.

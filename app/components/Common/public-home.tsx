@@ -4,8 +4,8 @@
  * Página inicial para quem chega SEM sessão (a raiz `/` saiu do matcher do
  * middleware). Antes o visitante caía direto no login e as áreas abertas
  * (RePET e torneios) ficavam escondidas atrás de um cartão no fim do
- * formulário. Agora são três portas do mesmo tamanho: o sócio entra; RePET e
- * torneios não precisam de conta.
+ * formulário. Agora são quatro portas do mesmo tamanho: o sócio entra; RePET,
+ * torneios e ingressos não precisam de conta.
  *
  * As fotos do clube (o mesmo carrossel do login) ficam fixas ao fundo, com um
  * véu na cor da tela para o texto ler bem nos dois temas.
@@ -15,7 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRight, faRightToBracket, faTrophy, faUser, faVideo } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight, faRightToBracket, faTicket, faTrophy, faUser, faVideo } from "@fortawesome/free-solid-svg-icons";
 import style from "../../../styles/public-home.module.css";
 import Carousel from "./carousel";
 import Footer from "./footer";
@@ -59,6 +59,15 @@ const DOORS: Door[] = [
         title: "Torneios",
         lead: "Categorias, chaveamento e resultados dos torneios do clube.",
         action: "Ver torneios",
+    },
+    {
+        href: "/ingressos",
+        area: "ingressos",
+        icon: faTicket,
+        hint: "Não precisa de conta",
+        title: "Ingressos",
+        lead: "Eventos do clube: compre sem cadastro. Sócio paga menos com a conta dele.",
+        action: "Ver eventos",
     },
 ];
 

@@ -56,6 +56,15 @@ interface CPParams {
      */
     tournamentRegistrationIds?: number[];
     onTournamentResult?: (outcome: SocialPaymentOutcome) => void;
+    /**
+     * Quando presente, paga ESTE pedido de ingressos. O servidor relê o pedido
+     * na Lara (valor = `total`) e avisa a Lara com o `tid`. `ticketGuest` = o
+     * pedido é de não sócio: não exige sessão — vale o token do pedido, no
+     * cookie httpOnly deste aparelho.
+     */
+    ticketOrderId?: number;
+    ticketGuest?: boolean;
+    onTicketResult?: (outcome: SocialPaymentOutcome) => void;
 }
 
 interface PixResponse {
@@ -74,9 +83,18 @@ interface CustomSession {
     accessToken?: string;
 }
 
-export default function CheckoutPayment({ socialBookingId, onSocialResult, tournamentRegistrationIds, onTournamentResult }: CPParams) {
+export default function CheckoutPayment({
+    socialBookingId,
+    onSocialResult,
+    tournamentRegistrationIds,
+    onTournamentResult,
+    ticketOrderId,
+    ticketGuest = false,
+    onTicketResult,
+}: CPParams) {
     const isTournament = tournamentRegistrationIds !== undefined;
-    const isSocial = socialBookingId !== undefined || isTournament;
+    const isTicket = ticketOrderId !== undefined;
+    const isSocial = socialBookingId !== undefined || isTournament || isTicket;
     const { data: sessionData } = useSession();
     const session = sessionData as CustomSession | null;
   // 2. Instanciar o router  
@@ -162,14 +180,18 @@ export default function CheckoutPayment({ socialBookingId, onSocialResult, tourn
  * reserva vai, e o servidor descobre quanto cobrar e qual agendamento pagar.
  *
  * Inscrições de torneio vão pelo mesmo caminho, com `tournamentRegistrationIds`
- * no lugar do id da reserva.
+ * no lugar do id da reserva; pedidos de ingressos, com `ticketOrderId`.
  */
 const handleSocialPayment = async () => {
     const finish = (outcome: SocialPaymentOutcome) => {
         setStatus({ type: outcome.type === "success" ? 'success' : 'error', msg: outcome.type === "success" ? 'Pagamento confirmado!' : outcome.message });
-        (isTournament ? onTournamentResult : onSocialResult)?.(outcome);
+        (isTicket ? onTicketResult : isTournament ? onTournamentResult : onSocialResult)?.(outcome);
     };
-    const target = isTournament ? { tournamentRegistrationIds } : { socialBookingId };
+    const target = isTicket
+        ? { ticketOrderId, ticketGuest }
+        : isTournament
+          ? { tournamentRegistrationIds }
+          : { socialBookingId };
 
     try {
         const response = await fetch(comBase('/api/erede/payment_methods'), {
@@ -208,7 +230,7 @@ const handleSocialPayment = async () => {
             finish({ type: 'error', message: saveResult.message || 'Não foi possível confirmar o pagamento.' });
         }
     } catch (error) {
-        console.error(isTournament ? "Erro no pagamento da inscrição:" : "Erro no pagamento da reserva social:", error instanceof Error ? error.message : error);
+        console.error(isTicket ? "Erro no pagamento dos ingressos:" : isTournament ? "Erro no pagamento da inscrição:" : "Erro no pagamento da reserva social:", error instanceof Error ? error.message : error);
         setStatus({ type: 'error', msg: 'Erro de comunicação.' });
     } finally {
         setLoading(false);
@@ -216,7 +238,8 @@ const handleSocialPayment = async () => {
 };
 
 const handlePayment = async () => {
-    if (!session?.accessToken || !session?.user?.id) {
+    // O não sócio compra ingresso sem login: não há sessão a exigir.
+    if (!(isTicket && ticketGuest) && (!session?.accessToken || !session?.user?.id)) {
         toast.error("Sessão expirada ou dados incompletos. Por favor, faça login novamente.");
         await signOut({ callbackUrl: comBase('/login'), redirect: true });
         return;

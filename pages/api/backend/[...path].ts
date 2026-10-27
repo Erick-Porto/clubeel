@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 import { guardRequest } from "../../../utils/sanitize";
+import { getClientIp, rateLimit } from "../../../utils/rate-limit";
+import { readGuestToken } from "../../../utils/ticket-guest";
 
 interface SessionWithToken {
     accessToken?: string;
@@ -40,6 +42,29 @@ const PUBLIC_ENDPOINTS: RegExp[] = [
     /^tournaments\/\d+\/staff\/check$/,
     /^tournaments\/\d+\/staff\/matches$/,
     /^tournaments\/\d+\/staff\/matches\/\d+\/result$/,
+    // Ingressos: vitrine e cupom são abertos (o não sócio compra sem login).
+    // O pedido do não sócio é autorizado pelo token do pedido (header
+    // `Ticket-Order-Token`, montado aqui a partir do cookie httpOnly — ver
+    // GUEST_ORDER_ENDPOINT). Criar o pedido sem login, pagar e baixar o PDF
+    // ficam FORA: rotas próprias do servidor (pages/api/ingressos/*, success.ts).
+    /^tickets\/events$/,
+    /^tickets\/events\/\d+$/,
+    /^tickets\/events\/\d+\/coupon-check$/,
+    /^tickets\/guest-orders\/resend-link$/,
+    /^tickets\/guest-orders\/\d+$/,
+];
+
+// Pedido de ingresso do não sócio: recebe o `Ticket-Order-Token` do cookie
+// deste pedido e NÃO recebe o Session de um sócio logado no mesmo navegador.
+const GUEST_ORDER_ENDPOINT = /^tickets\/guest-orders\/(\d+)$/;
+
+// Limites por IP de quem chama, na frente dos da Lara: lá eles contam por IP,
+// e todas as chamadas chegam do mesmo IP (este servidor) — sem isto, uma pessoa
+// esgotaria o limite de todo mundo.
+const RATE_LIMITS: Array<[RegExp, number]> = [
+    [/^tickets\/events\/\d+\/coupon-check$/, 20],
+    [/^tickets\/guest-orders\/resend-link$/, 5],
+    [/^tickets\/my-title$/, 30],
 ];
 
 // Rotas da equipe do torneio: recebem o `Tournament-Code` e NÃO recebem o
@@ -97,6 +122,14 @@ const AUTHENTICATED_ENDPOINTS: RegExp[] = [
     /^tournaments\/my-invites$/,
     /^tournaments\/invites\/\d+\/accept$/,
     /^tournaments\/invites\/\d+\/decline$/,
+    // Ingressos (sócio): o comprador é sempre o dono do Session. As pessoas do
+    // título vão no pedido pela `ref` opaca da Lara (`my-title`), nunca por
+    // CPF. O `event_id` do `my-title` fica na query, fora do `path`.
+    // `tickets/orders/{id}/payment` e `/pdf` ficam FORA: só o servidor chama.
+    /^tickets\/my-title$/,
+    /^tickets\/events\/\d+\/orders$/,
+    /^tickets\/my-orders$/,
+    /^tickets\/orders\/\d+$/,
 ];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -117,6 +150,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isAuthenticated = AUTHENTICATED_ENDPOINTS.some((re) => re.test(pathString));
     if (!isPublic && !isAuthenticated) {
         return res.status(403).json({ error: "Endpoint não permitido." });
+    }
+
+    const limit = RATE_LIMITS.find(([re]) => re.test(pathString));
+    if (limit) {
+        const rl = rateLimit(`proxy:${limit[0].source}:${getClientIp(req)}`, limit[1], 60_000);
+        if (!rl.ok) {
+            res.setHeader('Retry-After', String(rl.retryAfter));
+            return res.status(429).json({ message: "Muitas tentativas. Tente novamente em instantes." });
+        }
     }
 
     // Endpoints autenticados EXIGEM sessão válida — sem sessão, não repassa o
@@ -151,10 +193,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     headers.set("Accept", "application/json");
     headers.set("Authorization", `Bearer ${appToken}`);
 
+    const guestOrder = GUEST_ORDER_ENDPOINT.exec(pathString);
     if (STAFF_ENDPOINT.test(pathString)) {
         const rawCode = req.headers["tournament-code"];
         const code = Array.isArray(rawCode) ? rawCode[0] : rawCode;
         if (code && TOURNAMENT_CODE.test(code)) headers.set("Tournament-Code", code);
+    } else if (guestOrder) {
+        // Sem cookie deste pedido o header não vai, e a Lara responde 404.
+        const orderToken = readGuestToken(req, Number(guestOrder[1]));
+        if (orderToken) headers.set("Ticket-Order-Token", orderToken);
     } else if (accessToken) {
         headers.set("Session", accessToken);
     }

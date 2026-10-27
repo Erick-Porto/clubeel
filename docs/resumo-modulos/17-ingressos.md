@@ -1,0 +1,105 @@
+# 17 — Ingressos de eventos (`/ingressos`)
+
+Venda de ingressos dos eventos do clube: vitrine, página do evento, compra do **sócio** (para as pessoas do título dele, preço de sócio) e do **não sócio** (sem login e sem cadastro), pagamento na eRede, "meus ingressos" com QR Code, código e PDF, "perdi o link" e eventos de vários dias (diária × passaporte). Backend: rotas `api/tickets/*` da Lara. Contrato: versões v1 a v4 (v2 cupom, v3 compra para o título, v4 vários dias).
+
+**Princípio do módulo**: o front não decide nada. Lote, preço, estoque, limite por pedido, lotação de cada dia, cupom, total e situação vêm da Lara. Recusas são tratadas pelo **`reason`**, nunca pelo texto; a `message` da Lara é exibida como veio. Depois de cada ação a tela **relê** (evento, título, pedido).
+
+## Regras de negócio (todas da Lara)
+
+- O evento tem **tipos** (Pista, Mesa…) vendidos em **lotes**; a Lara já devolve o lote à venda agora (`lot`) com `price_member` e `price_non_member`. `members_only` ou `price_non_member: null` = só sócio. O lote vira sozinho; a compra **relê o evento** ao abrir.
+- Ingresso **nominal** (nome + CPF de quem entra). Um por CPF por evento — no evento de vários dias, um por CPF **por dia**; diária × passaporte da mesma pessoa não pode.
+- **Sócio** (titular ou dependente, logado): compra para as pessoas do título (`my-title`), pelo preço de sócio; o nome é o do cadastro; `max_per_order` não vale. Pessoa de fora do título: compra como não sócio (ou pelo login dela, se for sócia).
+- **Não sócio**: dados de quem compra + nome/CPF de cada ingresso, até `max_per_order`. CPF de sócio → `holder_is_member`.
+- O pedido **guarda os lugares** até `hold_until` (hoje 10 min). Pagamento depois do prazo ainda pode ser aceito se houver lugar; se não houver, `hold_expired` e o site **estorna**.
+- **Cupom** (v2): o desconto é da Lara; cupom de 100% deixa o pedido já pago (sem eRede).
+- Desistir pelo site só antes de pagar. E-mails (confirmação, cancelamento, link) são da Lara. Check-in é na portaria, pela Lara.
+- Pedido da secretaria (`origin: "secretaria"`, pago por fora ou `courtesy`) aparece em "meus ingressos" como qualquer outro; cortesia mostra "Cortesia" no lugar do valor.
+
+## Arquivos
+
+| Arquivo | Papel |
+|---|---|
+| [app/ingressos/page.tsx](../../app/ingressos/page.tsx) | Vitrine (pública): cartões, busca; encerrados no fim |
+| [app/ingressos/[id]/page.tsx](../../app/ingressos/[id]/page.tsx) | Evento (público): detalhes, regras, tipos com o lote e os dois preços; vários dias em blocos por dia + passaporte em destaque |
+| [app/ingressos/[id]/comprar/page.tsx](../../app/ingressos/[id]/comprar/page.tsx) | Compra (pública): relê o evento; sócio logado → `MemberCheckout`; sem login ou `?modo=nao-socio` → `GuestCheckout` |
+| [app/ingressos/pedido/[id]/page.tsx](../../app/ingressos/pedido/[id]/page.tsx) | Pedido do não sócio (link do e-mail e confirmação) |
+| [app/ingressos/meus/page.tsx](../../app/ingressos/meus/page.tsx) | Meus ingressos (sócio): `my-orders`, busca |
+| [app/ingressos/meus/[id]/page.tsx](../../app/ingressos/meus/[id]/page.tsx) | Pedido do sócio |
+| [app/ingressos/perdi-o-link/page.tsx](../../app/ingressos/perdi-o-link/page.tsx) | "Perdi o link": CPF + e-mail → `resend-link` |
+| [app/components/Ticket/](../../app/components/Ticket/) | `EventCard` (+ `EventStatusPill`), `TicketTypeCard`, `MemberCheckout`, `GuestCheckout`, `CouponField`, `HoldCountdown`, `TicketOrderView` |
+| [services/ticket-api.ts](../../services/ticket-api.ts) | Contratos, normalização e chamadas |
+| [utils/ticket.ts](../../utils/ticket.ts) | Datas no fuso de Brasília, preço por público, agrupamento por dia, rótulos, prévia do cupom, CPF, títulos por `reason` |
+| [utils/ticket-guest.ts](../../utils/ticket-guest.ts) | (servidor) cookie httpOnly com o token do pedido do não sócio |
+| [pages/api/ingressos/pedidos/index.ts](../../pages/api/ingressos/pedidos/index.ts) | (servidor) cria o pedido do não sócio e guarda o token |
+| [pages/api/ingressos/pedidos/[id]/abrir.ts](../../pages/api/ingressos/pedidos/[id]/abrir.ts) | (servidor) link do e-mail: confere o token e grava o cookie |
+| [pages/api/ingressos/pedidos/[id]/pdf.ts](../../pages/api/ingressos/pedidos/[id]/pdf.ts) | (servidor) PDF do pedido (não sócio pelo cookie; sócio pelo Session) |
+| [utils/lara.ts](../../utils/lara.ts) | `computeTicketCharge`, `ticketOrderIsPaid`, `ticketOrderRoute`, `TicketChargeRefusal` (servidor) |
+| [styles/ticket.module.css](../../styles/ticket.module.css) | Estilos do módulo |
+
+URLs: `/ingressos/<titulo>-<id>` e `/ingressos/<id>` (só o número final importa), `/ingressos/<id>/comprar[?modo=nao-socio]`, `/ingressos/pedido/<id>[?token=…]`, `/ingressos/meus`, `/ingressos/meus/<id>`, `/ingressos/perdi-o-link`. No `matcher` do middleware ficam **só** `/ingressos/meus` e `/ingressos/meus/:path*`.
+
+## O não sócio e o `access_token`
+
+A Lara devolve o `access_token` do pedido do não sócio **uma única vez**, na criação. Ele **nunca chega ao JavaScript do navegador**:
+
+1. `GuestCheckout` → `POST /api/ingressos/pedidos` (rota do site; limite 10/min por IP de quem compra) → `POST tickets/events/{id}/guest-orders`. O servidor grava o token no cookie **httpOnly** `ingresso_pedido_<id>` (`Path=/api` — `/homolog/api` na homologação —, `SameSite=Lax`, `Secure` em produção, 180 dias), tira o token do corpo e devolve o pedido. A tela vai para `/ingressos/pedido/<id>`.
+2. As rotas do pedido (`GET`/`DELETE tickets/guest-orders/{id}`) vão pelo **proxy**, que põe `Ticket-Order-Token` a partir do cookie daquele pedido e **não** repassa o `Session` de um sócio logado no mesmo navegador.
+3. Pagamento (`payment_methods`/`success`) e PDF leem o mesmo cookie no servidor.
+4. **Link do e-mail** (`/ingressos/pedido/{id}?token=…`): a página manda o token para `POST /api/ingressos/pedidos/{id}/abrir` (limite 20/min), que confere na Lara e grava o cookie; a página tira o token da URL (`router.replace`) na mesma hora. A rota tem `Referrer-Policy: no-referrer`, `Cache-Control: no-store` e `X-Robots-Tag: noindex` (`next.config.ts`) e está no `robots.ts`.
+5. Sem cookie (outro aparelho, cookie apagado) ou token errado → `order_not_found` → a página oferece "Perdi o link".
+
+O cookie só vale para `/api`: as páginas não o recebem.
+
+## Endpoints e quem chama
+
+| Endpoint (Lara, `/api/…`) | Via | Chamado por |
+|---|---|---|
+| `GET tickets/events`, `GET tickets/events/{id}` | proxy, público | vitrine, evento, compra |
+| `POST tickets/events/{id}/coupon-check` | proxy, público (limite 20/min por IP no proxy) | `CouponField` |
+| `POST tickets/guest-orders/resend-link` | proxy, público (limite 5/min) | perdi o link |
+| `GET`/`DELETE tickets/guest-orders/{id}` | proxy, público + `Ticket-Order-Token` do cookie | pedido do não sócio |
+| `GET tickets/my-title?event_id=` | proxy, autenticado (limite 30/min) | `MemberCheckout` |
+| `POST tickets/events/{id}/orders`, `GET tickets/my-orders`, `GET`/`DELETE tickets/orders/{id}` | proxy, autenticado | compra e pedidos do sócio |
+| `POST tickets/events/{id}/guest-orders` | rota do site `/api/ingressos/pedidos` | `GuestCheckout` |
+| `GET tickets/guest-orders/{id}` (conferir o token do link) | rota do site `…/abrir` | pedido do não sócio |
+| `GET tickets/(guest-)orders/{id}/pdf` | rota do site `…/pdf` | `TicketOrderView` |
+| `POST tickets/(guest-)orders/{id}/payment`, `GET tickets/(guest-)orders/{id}` | **só o servidor** (`success.ts`, `utils/lara.ts`) | pagamento |
+
+Tratamento de 401 em `ticket-api.ts` (interceptor genérico desligado): público e não sócio nunca deslogam; rotas de sócio com 401 sem `reason` → toast + `signOut` para o login. Falha: `{ok:false, status, kind, reason, error, context, fieldErrors}` (mesmo formato de torneios e espaços sociais).
+
+## Pagamento (eRede)
+
+Mesmo pipeline dos outros módulos ([05](05-checkout-pagamento.md)), com `ticketOrderId` (+ `ticketGuest` no não sócio):
+
+1. `TicketOrderView` → `CheckoutPayment ticketOrderId ticketGuest onTicketResult`. Valor exibido é informativo.
+2. `POST /api/erede/payment_methods`: sócio exige sessão; **não sócio exige o cookie do pedido** (no lugar da sessão — o anti-oráculo de cartão continua: precisa de um pedido real pendente criado neste aparelho, e há o limite de 10/min). `computeTicketCharge` lê o pedido na Lara (com `Session` ou `Ticket-Order-Token`): pago → `already_paid`; outra situação que não `pending_payment` → `invalid_status`; 404 → `order_not_found` — recusas 409 **sem ir à eRede**. Valor = `round(total × 100)`. O prazo (`hold_until`) **não** é conferido aqui (a Lara aceita pagamento atrasado se houver lugar). `savePendingPayment` guarda `ticketOrderId` (no não sócio, `userId = ticket-guest:<id>`).
+3. `POST /api/success`: verifica a transação na eRede pelo `tid`, compara o valor e chama `POST tickets/(guest-)orders/{id}/payment` `{payment_method, paid_amount (= total exato), payment_integration_id: tid, paid_at}`.
+   - **5xx/rede**: reenvia o **mesmo `tid`** até 3 vezes (a Lara responde 200 no reenvio). Ainda falhando, relê o pedido: pago → sucesso, sem estorno.
+   - **Recusa** → **estorno** e 409 com o `reason`. `hold_expired` → "Os ingressos esgotaram enquanto o pagamento era feito. O valor foi estornado." Sem `reason`/`invalid_status` e pedido pago → `already_paid`.
+4. A tela relê o pedido e mostra o aviso pelo `reason`.
+
+Cupom de 100%: o pedido já nasce pago; a tela do pedido mostra os ingressos direto (sem botão Pagar).
+
+## Telas
+
+Visual v4 ([14](14-identidade-visual.md)), módulo `ingressos` (rosa-magenta, cor proposta pelo site). Capa `TicketCover` com abas **Eventos** / **Meus ingressos**.
+
+- **Vitrine**: cartões (imagem ou ingresso na cor do módulo, "N dias" e as datas "13/02 a 14/02" no evento de vários dias, selo: Vendas abertas / Vendas a partir de… / Vendas encerradas / Esgotado (`capacity_left` 0) / Evento encerrado), data e local, "a partir de" (menor preço à venda para quem vê). Busca.
+- **Evento**: hero (quando — "13/02 a 14/02" no evento de vários dias —, local, janela de vendas, lugares restantes), descrição, regras (`<details>`), tipos com lote e os dois preços (o de quem vê realçado; visitante vê "Sócio? Entre para pagar R$ y"), selo "Últimos ingressos" com `remaining ≤ 10` (número escolhido pelo site, só apresentação), tipo indisponível com "Próximo lote a partir de…" e os preços dele. Vários dias: passaporte em destaque ("vale todos os dias", só se houver tipo `passport`) e um bloco por dia (`label` + horário; "Dia esgotado" com `capacity_left` 0 do dia). Botão Comprar e barra fixa com "a partir de".
+- **Compra do sócio**: pessoas do título (`is_me` primeiro, titular/dependente, CPF mascarado) com caixa "comprar" e o tipo; `has_ticket` desabilita ("Já tem ingresso"). Vários dias: Diárias (uma caixa por dia, com o tipo daquele dia; `days_taken` desabilita o dia) ou Passaporte (desabilitado se tem algum dia). Cupom, resumo (nome + tipo + preço, prévia do desconto), barra "Reservar e pagar". Atalho **"Comprar para quem não é do seu título"** → compra de não sócio (`?modo=nao-socio`). Recusa com `context.index` marca a pessoa do item (ou pelo CPF mascarado); `already_has_ticket` com `context.day_id` diz o dia ("já tem ingresso em Sáb 13/02"; `null` → "já tem passaporte"); `already_has_ticket`/`invalid_holder`/`holder_not_in_title` relêem o título; `sold_out`/`capacity_full`/`sales_closed`/`type_not_found`/`members_only` relêem o evento.
+- **Compra do não sócio**: aviso "É sócio? Entre…" (ou, no atalho do sócio, "Voltar à compra de sócio"); dados de quem compra (nome, CPF, telefone, e-mail); um bloco por ingresso (tipo com o dia no rótulo, nome, CPF; "É para mim" copia os dados de quem compra); até `max_per_order`. No cliente: dígitos do CPF e CPF repetido (só em diárias de dias diferentes). Erros de campo do Laravel (`tickets.0.holder_cpf`) e `context.index`/`context.field` marcam o campo; `holder_is_member` → "o sócio compra pelo login de sócio"; `already_has_ticket` sem índice destaca o ingresso cujo CPF bate com o `context.cpf` mascarado. A mensagem de CPF repetido só cita passaporte se o evento tiver passaporte.
+- **Pedido** (`TicketOrderView`, sócio e não sócio): selo + nº, evento, aviso por situação (`expired` → "Comprar de novo"; `withdrawn`; `cancelled` + `payment.refunded_amount`; `paid`), contador até `hold_until` (ao zerar relê o pedido; o botão Pagar continua enquanto a Lara disser `pending_payment`), resumo (preço por ingresso — lotes podem diferir —, "de R$ 80,00 por R$ 72,00", linha "Desconto (cupom X)", "Cortesia"), Pagar/Desistir (com confirmação), e pago: ingressos com QR (SVG da Lara sobre `--pad`, branco nos dois temas), código grande (`ING-…`), "Diária · Sáb 13/02"/"Passaporte · todos os dias", entradas registradas ("Entrou em Sáb 13/02, 21:14") e **Baixar PDF**. Passaporte com `status: "used"` antes do fim do evento (maior `ends_at` do evento e dos dias) mostra "Válido nos outros dias", não "Utilizado"; na diária e no evento sem dias, `used` é "Utilizado".
+- **Meus ingressos**: cartões por pedido (evento, situação, nº de ingressos e pessoas, valor ou "Cortesia"). Busca.
+- **Perdi o link**: CPF + e-mail → sempre "Se houver pedido com esse CPF e e-mail, enviamos o link."
+
+## Integração com o resto do app
+
+- Navegação: item **Ingressos** no topo (desktop) e na folha "Menu" do celular; "Meus ingressos" no menu do usuário; porta **Ingressos** na página de boas-vindas ([header.tsx](../../app/components/Common/header.tsx), [public-home.tsx](../../app/components/Common/public-home.tsx)). A entrada do módulo trouxe a **nova barra inferior** do celular (Início · Menu · Perfil) — ver [11](11-ui-compartilhada.md).
+
+## Pontos a confirmar com a Lara
+
+- **Limites por IP** (`guest-orders` 10/min, `coupon-check` 20/min, `resend-link` 5/min, `my-title` 30/min): todas as chamadas chegam do mesmo IP (o servidor do site). O site põe limites por IP de quem chama na frente, mas, se a Lara contar só pelo IP da conexão, o limite dela vale para **todo mundo somado**. Combinar: a Lara confiar num header do site (`X-Forwarded-For`/`X-Real-IP`) ou liberar o IP do servidor.
+- **`payment_method`**: o contrato mostra `"credit"`; o site também oferece débito e manda `"debit"`. Confirmar se a Lara aceita.
+- **Formato do `access_token`**: o site aceita até 512 caracteres `[A-Za-z0-9|._~+/=-]`. Token fora disso não é gravado (o pedido não paga pelo site, mas o link do e-mail chega).
+- **`payment.refunded_amount`** é o único campo de `payment` usado; o resto do objeto não está no contrato.
+- Envelopes: a normalização aceita lista pura, `{<chave>: [...]}` e `{data: [...]}`, e objetos puros ou em `event`/`order`/`coupon`/`data`.

@@ -36,7 +36,7 @@ Scripts (`package.json`): `dev` (`next dev --turbo`), `build`, `start`, `lint` (
 
 `matcher` atual (rotas que **exigem sessão de sócio**):
 ```
-/profile  /checkout  /cart  /places/:path*  /place/:path*  /meus-videos  /luz  /espacos-sociais  /espacos-sociais/:path*  /torneios/inscricoes  /torneios/times/:path*
+/profile  /checkout  /cart  /places/:path*  /place/:path*  /meus-videos  /luz  /espacos-sociais  /espacos-sociais/:path*  /torneios/inscricoes  /torneios/times/:path*  /ingressos/meus  /ingressos/meus/:path*
 ```
 Ficam **fora de propósito**:
 - `/replay` e `/replay/*` — galeria pública por decisão de negócio.
@@ -45,6 +45,7 @@ Ficam **fora de propósito**:
 - `/` — sem sessão, a raiz mostra a página de boas-vindas (`app/components/Common/public-home.tsx`); com sessão, a home do sócio. Tudo o que a home do sócio carrega exige sessão no proxy.
 - `/torneios`, `/torneios/<id>`, `/torneios/<id>/chaveamento/*` — abertos a visitante; `/torneios/equipe` e `/torneios/<id>/equipe` usam o código de lançamento, não o login de sócio (ver [16](16-torneios.md)).
 - `/assinar/**` — assinatura remota, cookies próprios do link do e-mail, sem relação com sócio; ver [15](15-assinatura-remota.md). **Não** colocar no matcher: o `withAuth` leria a sessão de sócio.
+- `/ingressos`, `/ingressos/<id>`, `/ingressos/<id>/comprar` — o não sócio compra sem login; `/ingressos/pedido/<id>` e `/ingressos/perdi-o-link` — abertos pelo link do e-mail (token do pedido em cookie httpOnly); ver [17](17-ingressos.md).
 - `/api/**` — cada rota faz sua própria checagem.
 
 > `/cart` está no matcher mas **não existe página** `/cart` (o carrinho vive em `/profile?tab=schedules` e `/checkout`).

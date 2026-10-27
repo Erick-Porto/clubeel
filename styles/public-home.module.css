@@ -135,7 +135,14 @@
 .doors {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Quatro portas: em telas médias, duas por linha. */
+@media (max-width: 1180px) {
+  .doors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .door {

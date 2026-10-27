@@ -365,3 +365,100 @@ export async function tournamentPaymentState(
     return { allPaid: false, manual: false };
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Ingressos de eventos                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Quem está pagando o pedido de ingresso: o sócio (header `Session`) ou o não
+ * sócio (header `Ticket-Order-Token`, lido do cookie httpOnly do pedido — ver
+ * utils/ticket-guest.ts). As rotas da Lara são outras em cada caso.
+ */
+export type TicketPayer =
+  | { kind: 'member'; sessionToken: string }
+  | { kind: 'guest'; orderToken: string };
+
+/** Endpoint (relativo a `/api`) e headers do pedido, conforme quem paga. */
+export function ticketOrderRoute(orderId: number, payer: TicketPayer): { path: string; headers: Record<string, string> } {
+  return payer.kind === 'guest'
+    ? { path: `tickets/guest-orders/${orderId}`, headers: { 'Ticket-Order-Token': payer.orderToken } }
+    : { path: `tickets/orders/${orderId}`, headers: { Session: payer.sessionToken } };
+}
+
+/**
+ * Recusa ANTES de cobrar (`invalid_status`, `order_not_found`): nada foi à
+ * eRede, e a tela relê o pedido como faria com a recusa da própria Lara.
+ */
+export class TicketChargeRefusal extends Error {
+  readonly reason: string;
+  constructor(reason: string, message: string) {
+    super(message);
+    this.name = 'TicketChargeRefusal';
+    this.reason = reason;
+  }
+}
+
+async function fetchTicketOrder(orderId: number, payer: TicketPayer): Promise<LaraObj> {
+  const route = ticketOrderRoute(orderId, payer);
+  const res = await fetch(`${INTERNAL_API}/api/${route.path}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${APP_TOKEN}`,
+      ...route.headers,
+    },
+  });
+  // Pedido alheio ou token errado: a Lara responde 404 `order_not_found`.
+  if (res.status === 404) throw new TicketChargeRefusal('order_not_found', 'Pedido não encontrado.');
+  if (!res.ok) throw new Error(`Falha ao carregar o pedido (${res.status}).`);
+  const raw = laraObj(await res.json());
+  return laraObj(raw.order ?? raw.data ?? raw);
+}
+
+export interface TicketCharge {
+  orderId: number;
+  amountCents: number;
+}
+
+/**
+ * Cobrança de um pedido de INGRESSOS (sócio ou não sócio).
+ *
+ * O valor é o `total` do pedido lido na Lara — preço, lote e cupom já foram
+ * decididos lá; o site cobra exatamente o `total` (a Lara exige `paid_amount`
+ * igual a ele). Só cobra pedido `pending_payment`. O prazo (`hold_until`) NÃO
+ * é conferido aqui: pagamento que chega depois do prazo ainda pode ser aceito
+ * se houver lugar — quem decide é a Lara no `…/payment` (`hold_expired`, e
+ * então o success.ts estorna).
+ *
+ * Pago (inclusive o de cupom de 100%, que já nasce pago) → AlreadyPaidError.
+ */
+export async function computeTicketCharge(orderId: unknown, payer: TicketPayer): Promise<TicketCharge> {
+  const id = Number(orderId);
+  if (!Number.isInteger(id) || id <= 0) throw new Error('Pedido inválido.');
+
+  const order = await fetchTicketOrder(id, payer);
+
+  if (order.status === 'paid') throw new AlreadyPaidError('Este pedido já está pago.');
+  if (order.status !== 'pending_payment') {
+    throw new TicketChargeRefusal('invalid_status', 'Este pedido não está aguardando pagamento.');
+  }
+
+  const cents = Math.round(Number(order.total) * 100);
+  if (!Number.isFinite(cents) || cents <= 0) throw new Error('Valor total inválido.');
+
+  return { orderId: id, amountCents: cents };
+}
+
+/**
+ * Depois de a Lara recusar (ou de a resposta se perder): o pedido está pago
+ * agora? Erro na leitura conta como "não".
+ */
+export async function ticketOrderIsPaid(orderId: number, payer: TicketPayer): Promise<boolean> {
+  try {
+    return (await fetchTicketOrder(orderId, payer)).status === 'paid';
+  } catch {
+    return false;
+  }
+}

@@ -84,7 +84,7 @@ Visual v4 ([14](14-identidade-visual.md)), módulo `torneios` (azul, cor propost
 
 ## Integração com o resto do app
 
-- Navegação: item **Torneios** no topo e na barra inferior (6 itens) e "Minhas inscrições em torneios" no menu do usuário ([header.tsx](../../app/components/Common/header.tsx)).
+- Navegação: item **Torneios** no topo e na folha "Menu" da barra inferior do celular e "Minhas inscrições em torneios" no menu do usuário ([header.tsx](../../app/components/Common/header.tsx)).
 - Home: aba **Torneios** (`/?area=torneios`) com um cartão por torneio, e atalho "Minhas inscrições em torneios". Abas sem itens não aparecem.
 - Perfil: `TournamentNoticeBanner` (convites recebidos e inscrições a pagar) ao lado do aviso dos espaços sociais.
 

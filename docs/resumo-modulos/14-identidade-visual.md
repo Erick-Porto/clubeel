@@ -57,6 +57,7 @@ Texto sobre botão grená é sempre branco (`#fff`). `--pad` / `--pad-ink` (bran
 | `perfil` | Perfil, avatar | `#DDE3F0` / `#34426A` | cartao |
 | `compras` | Aprovação de compras | `#ECE5DB` / `#6A4F2F` | compras |
 | `torneios` | Torneios | `#D6ECF6` / `#12567A` | — (**proposta do site**; escuro `#102836` / `#80C4E8`). Se o Lara publicar a cor de torneios, troque nos três blocos de `globals.css`. |
+| `ingressos` | Ingressos de eventos | `#F9E0F0` / `#8A1F6E` | — (**proposta do site**, rosa-magenta; escuro `#33142A` / `#F09AD3`). Se o Lara publicar a cor de ingressos, troque nos três blocos de `globals.css`. |
 
 As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo do Lara não as trazia); se o Lara publicar as dele, troque nos dois blocos escuros de `globals.css`. Para aplicar: `style={areaStyle("social")}` define `--c`/`--ci` (canais) e o CSS usa `rgb(var(--c))` / `rgb(var(--ci))`. Módulo novo: tokens `--a-<chave>-rgb`/`--a-<chave>-ink-rgb` nos **três** blocos de `globals.css` e a chave no tipo `Area` de `ui.tsx`.
 
@@ -80,7 +81,7 @@ As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo d
 
 ```tsx
 <div className={globalStyle.page}>          {/* page.module.css: casca em coluna, rodapé no fim */}
-  <Header />                                {/* topo + barra inferior no celular */}
+  <Header />                                {/* topo + barra inferior (Início · Menu · Perfil) no celular */}
   <SocialCover />                           {/* só em módulo com abas */}
   <main className={`${globalStyle.main} ${ui.page}`}>   {/* miolo 1200px, gutter 16px */}
     <PageHeader backHref="/…" kicker="…" title="…" lead="…" actions={…} />
@@ -102,6 +103,7 @@ As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo d
 - **`--grena` é cor; `--grena-rgb` são canais.** `rgba(var(--grena-rgb), .3)` (com vírgula) não funciona: use `rgb(var(--grena-rgb) / .3)`.
 - **Texto grená sobre superfície** usa `--grena-ink`, não `--grena` (no escuro o grená fica escuro demais para texto).
 - **Classe montada com variável** num CSS Module não existe; para a cor do módulo use `areaStyle()`.
-- **Barra inferior**: elementos fixos no rodapé devem ficar acima dela (`bottom: var(--bottom-nav-height)`), como a barra de ação dos horários e o envio da pré-reserva.
+- **Barra inferior**: elementos fixos no rodapé devem ficar acima dela (`bottom: var(--bottom-nav-height)`), como a barra de ação dos horários e o envio da pré-reserva. Ela tem só Início, Menu e Perfil; **módulo novo entra no `NAV` do `header.tsx`** e aparece sozinho no topo e na folha "Menu".
+- **QR Code** (ingressos): fica sobre `--pad` (branco nos dois temas), como o quadro de assinatura — no escuro um QR sobre fundo escuro não lê.
 - **Tutorial**: os `id`s alvo (ver [11](11-ui-compartilhada.md)) não podem mudar ao redesenhar uma tela.
 - **`text-transform: capitalize`** em datas vira "De Outubro De"; para só a primeira letra use `ui.capFirst`.

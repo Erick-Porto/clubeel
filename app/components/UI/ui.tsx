@@ -22,7 +22,7 @@ import ui from "../../../styles/ui.module.css";
  * sempre grená. Para um módulo novo: tokens --a-<chave>-rgb e
  * --a-<chave>-ink-rgb nos três blocos de globals.css e a chave aqui.
  */
-export type Area = "inicio" | "quadras" | "social" | "replay" | "luz" | "perfil" | "compras" | "torneios";
+export type Area = "inicio" | "quadras" | "social" | "replay" | "luz" | "perfil" | "compras" | "torneios" | "ingressos";
 
 /** Variáveis `--c`/`--ci` (canais do fundo e da tinta do módulo) para estilo inline. */
 export function areaStyle(area: Area): CSSProperties {

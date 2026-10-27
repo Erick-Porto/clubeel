@@ -7,7 +7,7 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | Item | Por quê |
 |---|---|
 | `/replay` e `replay/places*` sem login | Decisão de negócio (galeria pública). |
-| `/` fora do matcher do middleware | Sem sessão a raiz é a página de boas-vindas (Entrar, RePET, Torneios); a home do sócio só carrega dados com sessão. |
+| `/` fora do matcher do middleware | Sem sessão a raiz é a página de boas-vindas (Entrar, RePET, Torneios, Ingressos); a home do sócio só carrega dados com sessão. |
 | Replay usa `skipAuthCheck` | Um 401 não pode deslogar visitante; em "Meus vídeos" vira estado de tela. |
 | `TokenValidator` desligado em `/aprovacao` | Sessões independentes. |
 | `decidir` sem `revalidatePath` | Revalidar trocaria a tela de resultado por "fora da fila" (ver [09](09-aprovacao-compras.md)). |

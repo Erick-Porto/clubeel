@@ -65,6 +65,21 @@
   transition: background-color .15s, color .15s;
 }
 
+.navShort {
+  display: none;
+}
+
+/* Telas médias: com sete módulos, os nomes longos não cabem; ficam os curtos. */
+@media (max-width: 1180px) {
+  .navLong { display: none; }
+  .navShort { display: inline; }
+}
+
+@media (max-width: 960px) {
+  .navIcon { display: none; }
+  .navLink { padding: 8px 10px; }
+}
+
 .navLink:hover {
   background: var(--subtle);
   color: var(--ink);
@@ -324,7 +339,7 @@
 
   .bottomNav {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     position: fixed;
     left: 0;
     right: 0;
@@ -338,6 +353,9 @@
   }
 
   .bottomItem {
+    border: 0;
+    background: none;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -367,5 +385,97 @@
 
   .bottomItemActive .bottomIcon {
     background: var(--grena-tint);
+  }
+}
+
+/* ------------------------------------------ Folha "Menu" (só no celular) */
+
+.sheet,
+.sheetVeil {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .sheetVeil {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    background: rgb(var(--ink-rgb) / .35);
+  }
+
+  .sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--bottom-nav-height) + 8px);
+    z-index: 999;
+    padding: 14px 14px 16px;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    box-shadow: var(--shadow-pop);
+    border: 1px solid var(--line);
+  }
+
+  .sheetHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sheetTitle {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-3);
+  }
+
+  .sheetClose {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--subtle);
+    color: var(--ink-2);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  .sheetGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  /* Cada módulo com a sua cor (areaStyle define --c/--ci). */
+  .sheetItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 92px;
+    padding: 12px 6px;
+    border-radius: 16px;
+    border: 2px solid transparent;
+    background: rgb(var(--c));
+    color: rgb(var(--ci));
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .sheetItemActive {
+    border-color: rgb(var(--ci));
+  }
+
+  .sheetIcon {
+    font-size: 22px;
   }
 }
