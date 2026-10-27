@@ -76,7 +76,8 @@ function PriceText({ ticket, courtesy }: { ticket: OrderTicket; courtesy: boolea
     return <span>{formatBRL(ticket.amount)}</span>;
 }
 
-function TicketCard({ ticket, order }: { ticket: OrderTicket; order: TicketOrder }) {
+/** Um ingresso pago: titular, situação, QR, código e as entradas. Também na lista do "Meus ingressos" do não sócio. */
+export function TicketCard({ ticket, order }: { ticket: OrderTicket; order: TicketOrder }) {
     const validity = validityText(ticket);
     const entries = entryTexts(ticket, order.event.days);
     const over = eventIsOver(order.event);
@@ -127,6 +128,21 @@ function TicketCard({ ticket, order }: { ticket: OrderTicket; order: TicketOrder
             )}
         </article>
     );
+}
+
+/** Baixa o PDF do pedido (o servidor escolhe a rota: cookie do pedido ou sessão do sócio). */
+export async function saveOrderPdf(orderId: number): Promise<TicketResult<null>> {
+    const result = await downloadOrderPdf(orderId);
+    if (!result.ok) return result;
+    const url = URL.createObjectURL(result.data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ingressos-pedido-${orderId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    return { ok: true, status: result.status, data: null };
 }
 
 export default function TicketOrderView({ order, kind, onReload, onWithdraw }: TicketOrderViewProps) {
@@ -185,21 +201,12 @@ export default function TicketOrderView({ order, kind, onReload, onWithdraw }: T
     const downloadPdf = async () => {
         if (downloading) return;
         setDownloading(true);
-        const result = await downloadOrderPdf(order.id);
+        const result = await saveOrderPdf(order.id);
         setDownloading(false);
         if (!result.ok) {
             showFlash(refusalFlash(result, "Não foi possível baixar o PDF"));
             if (result.reason === "invalid_status") await onReload();
-            return;
         }
-        const url = URL.createObjectURL(result.data);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `ingressos-pedido-${order.id}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 10_000);
     };
 
     const pending = order.status === "pending_payment";

@@ -286,6 +286,13 @@ export function couponPreviewDiscount(coupon: CouponPreview | null, typeId: numb
     return Math.min(price, Math.max(0, Math.round(raw * 100) / 100));
 }
 
+/** "carla@email.com" → "c***@email.com" (para dizer para onde foi o código). */
+export function maskEmail(email: string): string {
+    const [user, domain] = email.trim().split("@");
+    if (!user || !domain) return email.trim();
+    return `${user[0]}***@${domain}`;
+}
+
 /* -------------------------------------------------------------------- CPF */
 
 /**
@@ -391,6 +398,9 @@ const REASON_TITLES: Record<string, string> = {
     coupon_invalid: "Cupom inválido",
     coupon_not_applicable: "Esse cupom não vale para este pedido",
     coupon_exhausted: "Cupom esgotado",
+    access_code_invalid: "Código incorreto",
+    access_code_expired: "Este código não vale mais",
+    access_expired: "Seu acesso venceu",
 };
 
 /** Texto de apoio quando a Lara não mandou mensagem. */

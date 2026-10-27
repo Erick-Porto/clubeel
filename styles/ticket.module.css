@@ -742,3 +742,13 @@
   flex-direction: column;
   gap: 14px;
 }
+
+/* Código de 6 dígitos do "Meus ingressos" do não sócio. */
+.otp {
+  max-width: 220px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  letter-spacing: .3em;
+  text-align: center;
+}

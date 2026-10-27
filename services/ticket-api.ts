@@ -693,3 +693,74 @@ export async function downloadOrderPdf(orderId: number): Promise<TicketResult<Bl
         return failure({ data: null, status: 503, ok: false });
     }
 }
+
+/* ------------------------------------------- "Meus ingressos" do não sócio */
+
+/**
+ * Quem comprou sem ser sócio vê TODOS os pedidos dele com CPF + e-mail da
+ * compra + um código de 6 dígitos que a Lara manda para esse e-mail (o QR é a
+ * entrada no evento: saber CPF e e-mail não basta). O token do acesso (2 horas)
+ * e os tokens de cada pedido ficam em cookies httpOnly, pelas rotas
+ * `/api/ingressos/acesso/*`; o navegador nunca os vê.
+ */
+
+export interface GuestAccessList {
+    buyer: { name: string; cpf: string | null; email: string | null } | null;
+    /** Do mais novo ao mais antigo (até 50), em todas as situações. */
+    orders: TicketOrder[];
+}
+
+/** Passo 1 — sempre 200 com a mesma mensagem, exista compra ou não. */
+export async function requestAccessCode(
+    cpf: string,
+    email: string
+): Promise<TicketResult<{ message: string | null; expiresInMinutes: number | null }>> {
+    const response = await publicCall("POST", "tickets/guest-access/code", { cpf, email: email.trim() });
+    if (!response.ok) return failure(response);
+    const body = asObj(response.data);
+    return {
+        ok: true,
+        status: response.status,
+        data: { message: toStringOrNull(body.message), expiresInMinutes: toNumberOrNull(body.expires_in_minutes) },
+    };
+}
+
+/** Passo 2 — recusas: `access_code_invalid` (`context.attempts_left`) e `access_code_expired`. */
+export async function verifyAccessCode(cpf: string, email: string, code: string): Promise<TicketResult<null>> {
+    const response = await siteCall("POST", "/api/ingressos/acesso/entrar", { cpf, email: email.trim(), code });
+    if (!response.ok) return failure(response);
+    return { ok: true, status: response.status, data: null };
+}
+
+/** Passo 3 — sem acesso, vencido ou adulterado: 401 `access_expired`. */
+export async function fetchAccessOrders(): Promise<TicketResult<GuestAccessList>> {
+    const response = await siteCall("GET", "/api/ingressos/acesso/pedidos");
+    if (!response.ok) return failure(response);
+    const body = asObj(response.data);
+    const buyer = objOrNull(body.buyer);
+    return {
+        ok: true,
+        status: response.status,
+        data: {
+            buyer: buyer
+                ? { name: String(buyer.name ?? ""), cpf: toStringOrNull(buyer.cpf), email: toStringOrNull(buyer.email) }
+                : null,
+            orders: listOf(body.orders, "orders").map(toOrder),
+        },
+    };
+}
+
+/**
+ * Grava o cookie do pedido (a partir do acesso) para abrir, pagar ou baixar o
+ * PDF pelas rotas de sempre do pedido do não sócio.
+ */
+export async function openAccessOrder(orderId: number): Promise<TicketResult<TicketOrder>> {
+    const response = await siteCall("POST", `/api/ingressos/acesso/pedidos/${id(orderId)}/abrir`);
+    if (!response.ok) return failure(response);
+    return { ok: true, status: response.status, data: toOrder(response.data) };
+}
+
+/** "Sair": apaga o cookie do acesso. */
+export async function leaveAccess(): Promise<void> {
+    await siteCall("POST", "/api/ingressos/acesso/sair");
+}

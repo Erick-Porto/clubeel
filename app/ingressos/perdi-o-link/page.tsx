@@ -96,7 +96,9 @@ export default function LostLinkPage() {
                             {pending ? "Enviando..." : "Reenviar o link"}
                         </button>
                         <p className={style.hint}>
-                            É sócio? Seus ingressos estão em <Link href="/ingressos/meus" className={ui.linkButton}>Meus ingressos</Link>.
+                            Quer ver todos os seus pedidos de uma vez? Use{" "}
+                            <Link href="/ingressos/meus" className={ui.linkButton}>Meus ingressos</Link> (CPF, e-mail e um
+                            código enviado por e-mail). Sócio vê os ingressos pelo login.
                         </p>
                     </form>
                 )}

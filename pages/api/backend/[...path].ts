@@ -52,6 +52,10 @@ const PUBLIC_ENDPOINTS: RegExp[] = [
     /^tickets\/events\/\d+\/coupon-check$/,
     /^tickets\/guest-orders\/resend-link$/,
     /^tickets\/guest-orders\/\d+$/,
+    // "Meus ingressos" do não sócio, passo 1: pedir o código por e-mail (a Lara
+    // responde sempre igual). Conferir o código e listar os pedidos ficam FORA:
+    // rotas próprias (pages/api/ingressos/acesso/*), que guardam o token.
+    /^tickets\/guest-access\/code$/,
 ];
 
 // Pedido de ingresso do não sócio: recebe o `Ticket-Order-Token` do cookie
@@ -64,6 +68,7 @@ const GUEST_ORDER_ENDPOINT = /^tickets\/guest-orders\/(\d+)$/;
 const RATE_LIMITS: Array<[RegExp, number]> = [
     [/^tickets\/events\/\d+\/coupon-check$/, 20],
     [/^tickets\/guest-orders\/resend-link$/, 5],
+    [/^tickets\/guest-access\/code$/, 5],
     [/^tickets\/my-title$/, 30],
 ];
 

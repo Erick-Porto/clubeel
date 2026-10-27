@@ -85,3 +85,73 @@ export function writeGuestToken(res: NextApiResponse, orderId: number, token: st
 export function clearGuestToken(res: NextApiResponse, orderId: number): void {
     appendSetCookie(res, serialize(cookieName(orderId), "", 0));
 }
+
+/* -------------------------------------------------------------------------- */
+/* Acesso do não sócio a todos os pedidos (CPF + e-mail + código)              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Token de "Meus ingressos" do não sócio (`POST tickets/guest-access/verify`):
+ * vale 2 horas (`expires_at`) e vai no header `Ticket-Access-Token`. Fica num
+ * cookie httpOnly com o mesmo path dos tokens de pedido e vence junto com ele.
+ *
+ * Os tokens de CADA pedido que vêm na lista NÃO viram cookie de uma vez (até
+ * 50 cookies estourariam o header `Cookie`): o de um pedido só é gravado
+ * quando a pessoa abre, paga ou baixa o PDF dele (ver `acesso/pedidos/[id]/abrir`).
+ */
+const ACCESS_COOKIE = "ingresso_acesso";
+const ACCESS_MAX_AGE_S = 2 * 60 * 60;
+
+export function readAccessToken(req: NextApiRequest): string | null {
+    const value = req.cookies?.[ACCESS_COOKIE];
+    return isGuestToken(value) ? value : null;
+}
+
+/** Vence no `expires_at` da Lara (nunca depois de 2 horas). */
+export function writeAccessToken(res: NextApiResponse, token: string, expiresAt: unknown): void {
+    const until = typeof expiresAt === "string" ? Date.parse(expiresAt) : NaN;
+    const seconds = Number.isNaN(until) ? ACCESS_MAX_AGE_S : Math.floor((until - Date.now()) / 1000);
+    appendSetCookie(res, serialize(ACCESS_COOKIE, token, Math.max(0, Math.min(ACCESS_MAX_AGE_S, seconds))));
+}
+
+export function clearAccessToken(res: NextApiResponse): void {
+    appendSetCookie(res, serialize(ACCESS_COOKIE, "", 0));
+}
+
+/** Chamada à Lara pelas rotas do site (JSON); falha de conexão vira 502. */
+export async function callLara(
+    method: "GET" | "POST",
+    path: string,
+    headers: Record<string, string> = {},
+    body?: unknown
+): Promise<{ status: number; data: Record<string, unknown> | null }> {
+    try {
+        const response = await fetch(`${process.env.INTERNAL_LARA_API_URL}/api/${path}`, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${process.env.INTERNAL_LARA_API_TOKEN}`,
+                ...headers,
+            },
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+        let data: Record<string, unknown> | null = null;
+        try {
+            const parsed = await response.json();
+            data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+        } catch {
+            data = null;
+        }
+        return { status: response.status, data };
+    } catch (error: unknown) {
+        console.error(`[ingressos] falha de conexão com a Lara (${path.split("/").slice(0, 2).join("/")}):`, error instanceof Error ? error.message : error);
+        return { status: 502, data: { message: "Não foi possível falar com o servidor. Tente de novo em instantes." } };
+    }
+}
+
+/** Resposta do 401 do acesso (sem cookie, vencido ou adulterado). */
+export const ACCESS_EXPIRED = {
+    message: "Seu acesso venceu. Informe o CPF e o e-mail de novo.",
+    reason: "access_expired",
+};
