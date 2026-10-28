@@ -72,6 +72,7 @@ const RATE_LIMITS: Array<[RegExp, number]> = [
     [/^tickets\/events\/\d+\/coupon-check$/, 20],
     // O mapa aberto relê a cada `refresh_after` (hoje 15 s): ~4 por minuto por pessoa.
     [/^tickets\/events\/\d+\/maps\/\d+$/, 120],
+    [/^tickets\/events\/\d+\/maps\/\d+\/member$/, 120],
     [/^tickets\/guest-orders\/resend-link$/, 5],
     [/^tickets\/guest-access\/code$/, 5],
     [/^tickets\/my-title$/, 30],
@@ -140,6 +141,8 @@ const AUTHENTICATED_ENDPOINTS: RegExp[] = [
     /^tickets\/events\/\d+\/orders$/,
     /^tickets\/my-orders$/,
     /^tickets\/orders\/\d+$/,
+    // Mapa visto pelo sócio: a cativa da matrícula dele (do Session) vem livre.
+    /^tickets\/events\/\d+\/maps\/\d+\/member$/,
 ];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

@@ -225,6 +225,16 @@ export function seatBlockTitle(event: Pick<TicketEvent, "maps">): string {
 
 export const SEAT_NOT_ENTRY = "Não é entrada: cada pessoa compra a própria entrada à parte.";
 
+/**
+ * [cativas] "sáb., 13/02 às 18:00" — quando as cativas não compradas viram lugar
+ * comum. `null` sem prazo ou se o prazo já passou (aí a Lara já liberou).
+ */
+export function captiveReleaseText(iso: string | null, now = Date.now()): string | null {
+    const time = parse(iso);
+    if (time === null || time <= now) return null;
+    return `${formatShortDate(iso)} às ${formatTime(iso)}`;
+}
+
 /** "3 ingressos" ou "2 ingressos · 1 lugar marcado" (listas de pedidos). */
 export function orderCountText(tickets: Pick<OrderTicket, "kind">[]): string {
     const seats = tickets.filter((ticket) => ticket.kind === "seat").length;
@@ -462,6 +472,7 @@ const REASON_TITLES: Record<string, string> = {
     seat_taken: "Esse lugar acabou de ser reservado",
     day_required: "Não foi possível abrir o mapa",
     map_not_found: "Mapa não encontrado",
+    seat_captive: "Esse lugar está indisponível",
 };
 
 /** Texto de apoio quando a Lara não mandou mensagem. */
@@ -484,6 +495,7 @@ const REASON_FALLBACKS: Record<string, string> = {
     seat_wrong_type: "Atualizamos o mapa: escolha outro lugar.",
     seat_taken: "Escolha outro.",
     map_not_found: "O mapa saiu de venda. Atualizamos o evento.",
+    seat_captive: "Atualizamos o mapa: escolha outro lugar.",
 };
 
 export interface TicketFlash {
@@ -511,7 +523,12 @@ export function refusalFlash(failure: TicketFailure, fallbackTitle = "Não deu c
         const left = failure.context.remaining;
         title = `Este cupom vale para mais ${left} ingresso${left === 1 ? "" : "s"}`;
     }
-    const text = failure.error && failure.kind !== "server" ? failure.error : REASON_FALLBACKS[reason] ?? failure.error;
+    // [cativas] `seat_captive`: o texto é sempre o do site — a mensagem da Lara
+    // pode dizer que é cativa, e quem não é o dono não precisa saber.
+    const text =
+        failure.error && failure.kind !== "server" && reason !== "seat_captive"
+            ? failure.error
+            : REASON_FALLBACKS[reason] ?? failure.error;
     return { tone: failure.kind === "rule" ? "neutral" : "alert", title, text: text ?? "" };
 }
 
@@ -534,7 +551,8 @@ export const EVENT_RELOAD_REASONS = new Set([
     "seat_not_found",
     "seat_wrong_type",
     "map_not_found",
+    "seat_captive",
 ]);
 
 /** [lugares] Recusas de lugar: a tela volta ao mapa (relido). */
-export const SEAT_REASONS = new Set(["seat_required", "seat_not_found", "seat_wrong_type", "seat_taken"]);
+export const SEAT_REASONS = new Set(["seat_required", "seat_not_found", "seat_wrong_type", "seat_taken", "seat_captive"]);
