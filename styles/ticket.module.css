@@ -1028,6 +1028,25 @@
 }
 .seatTaken text { fill: rgb(var(--danger-rgb)); }
 
+/* [cativas] A cativa da matrícula de quem está logado: livre e em destaque. */
+.seatMine ellipse, .seatMine rect {
+  fill: rgb(var(--star-rgb) / .28);
+  stroke: rgb(var(--star-rgb));
+  stroke-width: 3;
+}
+.seatMine text { fill: var(--ink); font-weight: 800; }
+
+.seatMineNote {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-field);
+  background: rgb(var(--star-rgb) / .16);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+}
+.seatMineNote svg { color: rgb(var(--star-rgb)); }
+
 .swatch {
   display: inline-block;
   width: 14px;
@@ -1042,6 +1061,7 @@
 .swatch.seatHeld { background: rgb(var(--warn-soft-rgb)); border-color: rgb(var(--warn-rgb)); }
 .swatch.seatSold { background: var(--line-strong); border-color: var(--ink-3); }
 .swatch.seatOff { background: var(--subtle); border-color: var(--line); border-style: dashed; }
+.swatch.seatMine { background: rgb(var(--star-rgb) / .28); border-color: rgb(var(--star-rgb)); }
 
 /* O ingresso do lugar no pedido: o lugar em destaque. */
 .seatTicketName {

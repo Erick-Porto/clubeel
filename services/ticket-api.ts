@@ -154,8 +154,11 @@ export interface SeatMapArea {
     color: string;
 }
 
-/** `free` (pode escolher), `held` (alguém está pagando), `sold`, `unavailable`. */
-export type SeatStatus = "free" | "held" | "sold" | "unavailable" | string;
+/**
+ * `free` (pode escolher), `held` (alguém está pagando), `sold`, `unavailable`,
+ * `captive` (mesa cativa de outra matrícula, ainda não liberada).
+ */
+export type SeatStatus = "free" | "held" | "sold" | "unavailable" | "captive" | string;
 
 export interface SeatMapSeat {
     id: number;
@@ -172,6 +175,10 @@ export interface SeatMapSeat {
     status: SeatStatus;
     /** O tipo que vende o lugar no dia (o preço é o do lote dele). */
     type_id: number | null;
+    /** [cativas] Cativa ainda guardada para uma matrícula (de quem for). */
+    captive: boolean;
+    /** [cativas] A cativa é da matrícula do sócio logado (só no mapa do sócio; vem `free`). */
+    captive_mine: boolean;
 }
 
 export interface SeatMapType {
@@ -193,6 +200,8 @@ export interface SeatMap {
     day: OrderTicketDay | null;
     /** Segundos até reler o mapa. */
     refresh_after: number;
+    /** [cativas] Quando as cativas não compradas viram lugar comum (`null` = sem prazo). Só informativo. */
+    captive_release_at: string | null;
     areas: SeatMapArea[];
     types: SeatMapType[];
     seats: SeatMapSeat[];
@@ -446,6 +455,7 @@ function toSeatMap(raw: unknown): SeatMap {
         day: toOrderDay(obj.day),
         // Piso de 5 s: um `refresh_after` zerado não vira martelada na Lara.
         refresh_after: Math.max(5, toNumber(obj.refresh_after, 15)),
+        captive_release_at: toStringOrNull(obj.captive_release_at),
         areas: listOf(obj.areas, "areas").map((item) => {
             const area = asObj(item);
             return {
@@ -483,6 +493,8 @@ function toSeatMap(raw: unknown): SeatMap {
                 places: toNumber(seat.places),
                 status: String(seat.status ?? "unavailable"),
                 type_id: toNumberOrNull(seat.type_id),
+                captive: seat.captive === true,
+                captive_mine: seat.captive_mine === true,
             };
         }),
     };
@@ -730,10 +742,20 @@ export async function fetchEvent(eventId: number): Promise<TicketResult<TicketEv
  * [lugares] O mapa com a situação de cada lugar agora. `dayId` é obrigatório no
  * evento de vários dias (o `day_id` do tipo): sem ele, 422 `day_required`.
  * Mapa que nenhum tipo à venda usa: 404 `map_not_found`.
+ *
+ * [cativas] `asMember`: o sócio logado lê a rota `/member` (com o Session), em
+ * que a cativa da matrícula dele vem `free` com `captive_mine`. Visitante e não
+ * sócio leem a pública, em que toda cativa guardada vem `captive`.
  */
-export async function fetchSeatMap(eventId: number, mapId: number, dayId: number | null): Promise<TicketResult<SeatMap>> {
+export async function fetchSeatMap(
+    eventId: number,
+    mapId: number,
+    dayId: number | null,
+    asMember = false
+): Promise<TicketResult<SeatMap>> {
     const query = dayId !== null ? `?${new URLSearchParams({ day_id: String(dayId) })}` : "";
-    const response = await publicCall("GET", `tickets/events/${id(eventId)}/maps/${id(mapId)}${query}`);
+    const path = `tickets/events/${id(eventId)}/maps/${id(mapId)}${asMember ? "/member" : ""}${query}`;
+    const response = asMember ? await memberCall("GET", path) : await publicCall("GET", path);
     if (!response.ok) return failure(response);
     return { ok: true, status: response.status, data: toSeatMap(response.data) };
 }

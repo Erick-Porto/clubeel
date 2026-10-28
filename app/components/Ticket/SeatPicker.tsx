@@ -14,6 +14,12 @@
  * duas vezes é a Lara, no pedido (`seat_taken`). Enquanto o mapa está aberto e
  * visível ele é relido a cada `refresh_after` segundos; se um lugar escolhido
  * deixou de estar livre, sai do carrinho com o aviso.
+ *
+ * [cativas] Mesa cativa: guardada para uma matrícula até a liberação. O site
+ * não sabe de quem é — a Lara diz em cada lugar. O sócio logado lê o mapa pela
+ * rota do sócio, em que a cativa da matrícula dele vem livre (`captive_mine`) e
+ * aparece em destaque. A cativa de outra matrícula (`captive`) aparece só como
+ * "Indisponível": quem não é o dono não precisa saber que é cativa.
  */
 
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
@@ -26,6 +32,7 @@ import {
     faMagnifyingGlassPlus,
     faMap,
     faRotateRight,
+    faStar,
     faTrashCan,
     faXmark,
 } from "@fortawesome/free-solid-svg-icons";
@@ -42,6 +49,7 @@ import {
 } from "../../../services/ticket-api";
 import {
     SEAT_NOT_ENTRY,
+    captiveReleaseText,
     formatBRL,
     isBuyable,
     isMembersOnly,
@@ -67,12 +75,16 @@ export interface SeatPick {
 }
 
 export const SEAT_TAKEN_TEXT = "Esse lugar acabou de ser reservado. Escolha outro.";
+// [cativas] Sem dizer que é cativa: para os outros, o lugar está só indisponível.
+export const SEAT_CAPTIVE_TEXT = "Esse lugar está indisponível. Escolha outro.";
 
 interface SheetState {
     mapId: number;
     dayId: number | null;
     /** Lugares que a Lara acabou de recusar (`seat_taken`): marcados no mapa. */
     justTaken: number[];
+    /** Aviso ao abrir (a recusa que trouxe de volta ao mapa). */
+    notice: string | null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -83,8 +95,8 @@ export function useSeatCart() {
     const [seats, setSeats] = useState<SeatPick[]>([]);
     const [sheet, setSheet] = useState<SheetState | null>(null);
 
-    const openMap = useCallback((mapId: number, dayId: number | null, justTaken: number[] = []) => {
-        setSheet({ mapId, dayId, justTaken });
+    const openMap = useCallback((mapId: number, dayId: number | null, justTaken: number[] = [], notice: string | null = null) => {
+        setSheet({ mapId, dayId, justTaken, notice });
     }, []);
 
     const openFor = useCallback(
@@ -127,7 +139,18 @@ export function useSeatCart() {
                       : [];
                 const first = seats.find((item) => ids.includes(item.seatId));
                 removeMany(ids);
-                if (first) openMap(first.mapId, first.dayId, ids);
+                if (first) openMap(first.mapId, first.dayId, ids, SEAT_TAKEN_TEXT);
+                return;
+            }
+            // [cativas] Cativa de outra matrícula: o mapa relido já a mostra
+            // indisponível. Não se diz que é cativa.
+            if (reason === "seat_captive") {
+                const seatId = Number(failure.context.seat_id);
+                const pick = seats.find((item) => item.seatId === seatId) ?? byIndex;
+                if (pick) {
+                    removeMany([pick.seatId]);
+                    openMap(pick.mapId, pick.dayId, [], SEAT_CAPTIVE_TEXT);
+                }
                 return;
             }
             if (reason === "seat_not_found" || reason === "seat_wrong_type") {
@@ -284,12 +307,13 @@ export function SeatSection({ event, kind, cart, max, renderHolder, errors, disa
 
             {cart.sheet && (
                 <SeatMapSheet
-                    key={`${cart.sheet.mapId}-${cart.sheet.dayId}-${cart.sheet.justTaken.join(",")}`}
+                    key={`${cart.sheet.mapId}-${cart.sheet.dayId}-${cart.sheet.justTaken.join(",")}-${cart.sheet.notice ?? ""}`}
                     event={event}
                     kind={kind}
                     mapId={cart.sheet.mapId}
                     dayId={cart.sheet.dayId}
                     justTaken={cart.sheet.justTaken}
+                    initialNotice={cart.sheet.notice}
                     picks={cart.seats}
                     max={max}
                     onToggle={cart.toggle}
@@ -310,6 +334,8 @@ const STATUS_TEXT: Record<string, string> = {
     held: "Reservado — alguém está pagando",
     sold: "Vendido",
     unavailable: "Indisponível",
+    // [cativas] Cativa de outra matrícula: para quem vê, só indisponível.
+    captive: "Indisponível",
 };
 
 const AREA_COLORS = new Set(["stage", "water", "green", "service", "warn"]);
@@ -320,6 +346,7 @@ interface SeatMapSheetProps {
     mapId: number;
     dayId: number | null;
     justTaken: number[];
+    initialNotice: string | null;
     picks: SeatPick[];
     max: number | null;
     onToggle: (pick: SeatPick) => void;
@@ -327,12 +354,12 @@ interface SeatMapSheetProps {
     onClose: () => void;
 }
 
-function SeatMapSheet({ event, kind, mapId, dayId, justTaken, picks, max, onToggle, onLost, onClose }: SeatMapSheetProps) {
+function SeatMapSheet({ event, kind, mapId, dayId, justTaken, initialNotice, picks, max, onToggle, onLost, onClose }: SeatMapSheetProps) {
     const titleId = useId();
     const [map, setMap] = useState<SeatMap | null>(null);
     const [error, setError] = useState<TicketFailure | null>(null);
     const [focused, setFocused] = useState<number | null>(null);
-    const [notice, setNotice] = useState<string | null>(justTaken.length > 0 ? SEAT_TAKEN_TEXT : null);
+    const [notice, setNotice] = useState<string | null>(initialNotice);
     const [taken, setTaken] = useState<number[]>(justTaken);
     const closeRef = useRef<HTMLButtonElement>(null);
     const pointerDown = useRef<{ x: number; y: number } | null>(null);
@@ -345,7 +372,8 @@ function SeatMapSheet({ event, kind, mapId, dayId, justTaken, picks, max, onTogg
     }, [picks]);
 
     const load = useCallback(async () => {
-        const result = await fetchSeatMap(event.id, mapId, dayId);
+        // [cativas] O sócio lê o mapa dele (a cativa da matrícula vem livre).
+        const result = await fetchSeatMap(event.id, mapId, dayId, kind === "member");
         if (!result.ok) {
             // Com o mapa já na tela, uma releitura que falhou só espera a próxima.
             setError(result);
@@ -363,7 +391,7 @@ function SeatMapSheet({ event, kind, mapId, dayId, justTaken, picks, max, onTogg
             setNotice(SEAT_TAKEN_TEXT);
         }
         return result.data;
-    }, [event.id, mapId, dayId, onLost]);
+    }, [event.id, mapId, dayId, kind, onLost]);
 
     // Primeira leitura e releitura a cada `refresh_after`, só com a tela visível.
     useEffect(() => {
@@ -470,9 +498,14 @@ function SeatMapSheet({ event, kind, mapId, dayId, justTaken, picks, max, onTogg
     const focusedSeat = map?.seats.find((seat) => seat.id === focused) ?? null;
     const mine = picks.filter((pick) => pick.mapId === mapId && pick.dayId === dayId);
 
+    const release = captiveReleaseText(map?.captive_release_at ?? null);
+    const isMine = (seat: SeatMapSeat) => seat.captive_mine && seat.status === "free";
+    const myCaptives = map?.seats.filter(isMine) ?? [];
+
     const seatStatusText = (seat: SeatMapSeat) => {
-        if (isPicked(seat.id)) return "Escolhido";
+        if (isPicked(seat.id)) return isMine(seat) ? "Escolhido · sua mesa cativa" : "Escolhido";
         if (taken.includes(seat.id) && seat.status !== "free") return "Acabou de ser reservado";
+        if (isMine(seat)) return `Sua mesa cativa${release ? ` — garanta até ${release}` : ""}`;
         const type = typeOf(seat);
         if (seat.status === "free" && kind === "guest" && type && isMembersOnly(type.lot)) return "Só para sócios";
         if (seat.status === "free" && priceOf(seat) === null) return "Indisponível";
@@ -581,7 +614,9 @@ function SeatMapSheet({ event, kind, mapId, dayId, justTaken, picks, max, onTogg
                                         : taken.includes(seat.id) && seat.status !== "free"
                                           ? style.seatTaken
                                           : canPick
-                                            ? style.seatFree
+                                            ? isMine(seat)
+                                                ? style.seatMine
+                                                : style.seatFree
                                             : seat.status === "held"
                                               ? style.seatHeld
                                               : seat.status === "sold"
@@ -645,6 +680,13 @@ function SeatMapSheet({ event, kind, mapId, dayId, justTaken, picks, max, onTogg
                 <footer className={style.seatSheetFoot}>
                     <div aria-live="polite">
                         {notice && <p className={style.seatNotice}>{notice}</p>}
+                        {myCaptives.length > 0 && (
+                            <p className={style.seatMineNote}>
+                                <FontAwesomeIcon icon={faStar} /> Sua mesa cativa:{" "}
+                                {myCaptives.map((seat) => seatName(typeOf(seat)?.name ?? "", seat.label)).join(", ")}
+                                {release ? ` — garanta até ${release}` : ""}.
+                            </p>
+                        )}
                         {focusedSeat && (
                             <div className={style.seatDetail}>
                                 <strong>
@@ -663,6 +705,9 @@ function SeatMapSheet({ event, kind, mapId, dayId, justTaken, picks, max, onTogg
                         <li><span className={`${style.swatch} ${style.seatHeld}`} /> Reservado</li>
                         <li><span className={`${style.swatch} ${style.seatSold}`} /> Vendido</li>
                         <li><span className={`${style.swatch} ${style.seatOff}`} /> Indisponível</li>
+                        {myCaptives.length > 0 && (
+                            <li><span className={`${style.swatch} ${style.seatMine}`} /> Sua mesa cativa</li>
+                        )}
                     </ul>
                     <div className={style.rowBetween}>
                         <span className={style.hint}>
