@@ -11,6 +11,12 @@
  * tipo daquele dia) ou o passaporte. Quem já tem ingresso num dia (`days_taken`)
  * não escolhe a diária dele; quem tem qualquer dia não escolhe o passaporte.
  * Se cruza com outra diária ou se o dia lotou, quem decide é a Lara no pedido.
+ *
+ * [lugares] Mesas/bistrôs/camarotes num bloco próprio: o lugar é escolhido no
+ * mapa e fica no nome de um responsável do título (padrão: o próprio sócio). O
+ * "um ingresso por pessoa" não vale para o lugar, e o `max_per_order` vale para
+ * os lugares também do sócio. Os itens de lugar vão DEPOIS das entradas no
+ * pedido (é por essa ordem que o `context.index` das recusas é lido).
  */
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +29,7 @@ import { Note } from "../UI/ui";
 import { Loading } from "../Common/loading";
 import SocialFlashBox from "../Social/SocialFlashBox";
 import CouponField from "./CouponField";
+import { SeatSection, itemsCountText, seatLimitTitle, useSeatCart } from "./SeatPicker";
 import {
     createMemberOrder,
     fetchMyTitle,
@@ -37,6 +44,7 @@ import {
 import {
     COUPON_REASONS,
     EVENT_RELOAD_REASONS,
+    SEAT_REASONS,
     couponPreviewDiscount,
     formatBRL,
     formatDayHours,
@@ -44,8 +52,10 @@ import {
     isBuyable,
     isSilent,
     orderHref,
+    placesText,
     priceFor,
     refusalFlash,
+    seatName,
     typeLabel,
     type TicketFlash,
 } from "../../../utils/ticket";
@@ -82,6 +92,10 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
     const [couponError, setCouponError] = useState<string | null>(null);
     const [flash, setFlash] = useState<TicketFlash | null>(null);
     const [pending, setPending] = useState(false);
+    const cart = useSeatCart();
+    /** Lugar → `ref` do responsável (sem entrada = o próprio sócio). */
+    const [seatHolders, setSeatHolders] = useState<Record<number, string>>({});
+    const [seatErrors, setSeatErrors] = useState<Record<number, string>>({});
     const busy = useRef(false);
     const flashRef = useRef<HTMLDivElement>(null);
 
@@ -124,7 +138,8 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
         event.multi_day ? event.days.every((day) => person.days_taken.includes(day.id)) : person.has_ticket;
 
     // Itens do pedido e, em paralelo, de quem é cada um (para o `context.index` das recusas).
-    const { items, owners, lines } = useMemo(() => {
+    // As entradas vêm primeiro; os lugares, depois (`entryCount` marca a divisa).
+    const { items, owners, lines, entryCount } = useMemo(() => {
         const items: MemberTicketItem[] = [];
         const owners: string[] = [];
         const lines: { key: string; name: string; label: string; price: number; discount: number }[] = [];
@@ -155,8 +170,26 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
                 }
             }
         }
-        return { items, owners, lines };
-    }, [title, picks, event, coupon]);
+        const entryCount = items.length;
+        const me = title?.people.find((person) => person.is_me);
+        for (const seat of cart.seats) {
+            const holder = title?.people.find((person) => person.ref === seatHolders[seat.seatId]) ?? me;
+            items.push(
+                !holder || holder.is_me
+                    ? { type_id: seat.typeId, seat_id: seat.seatId }
+                    : { type_id: seat.typeId, seat_id: seat.seatId, holder_ref: holder.ref }
+            );
+            owners.push(`seat:${seat.seatId}`);
+            lines.push({
+                key: `seat-${seat.seatId}`,
+                name: holder?.name ?? "",
+                label: `${seatName(seat.typeName, seat.label)} · ${placesText(seat.places)} (não é entrada)`,
+                price: seat.price,
+                discount: couponPreviewDiscount(coupon, seat.typeId, seat.price, "member"),
+            });
+        }
+        return { items, owners, lines, entryCount };
+    }, [title, picks, event, coupon, cart.seats, seatHolders]);
 
     const total = lines.reduce((sum, line) => sum + line.price - line.discount, 0);
 
@@ -180,6 +213,7 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
         setPending(true);
         setFlash(null);
         setCouponError(null);
+        setSeatErrors({});
         try {
             const result = await createMemberOrder(event.id, items, coupon?.code ?? null);
             if (result.ok) {
@@ -195,15 +229,22 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
             }
             // Marca a pessoa do item recusado (índice do item no pedido) ou pelo CPF mascarado.
             const index = Number(result.context.index);
-            const byIndex = Number.isInteger(index) ? owners[index] : undefined;
-            const byCpf = title.people.find((person) => person.cpf && person.cpf === result.context.cpf)?.ref;
+            const owner = Number.isInteger(index) ? owners[index] : undefined;
+            const seatAt = (i: number) => (i >= entryCount ? cart.seats[i - entryCount] : undefined);
+            const seatPick = Number.isInteger(index) ? seatAt(index) : undefined;
+            const byIndex = owner && !owner.startsWith("seat:") ? owner : undefined;
+            const byCpf = seatPick ? undefined : title.people.find((person) => person.cpf && person.cpf === result.context.cpf)?.ref;
             const ref = byIndex ?? byCpf;
+            const itemFlash = refusalFlash(result, "", event.days);
             if (ref) {
-                const personFlash = refusalFlash(result, "", event.days);
-                setPersonErrors({ [ref]: reason === "already_has_ticket" ? personFlash.title : personFlash.text || personFlash.title });
+                setPersonErrors({ [ref]: reason === "already_has_ticket" ? itemFlash.title : itemFlash.text || itemFlash.title });
             }
+            // [lugares] Recusa de um lugar: marca o lugar e, nas de mapa, volta ao mapa relido.
+            if (seatPick && reason !== "seat_taken") setSeatErrors({ [seatPick.seatId]: itemFlash.text || itemFlash.title });
+            if (SEAT_REASONS.has(reason) || reason === "map_not_found") cart.handleRefusal(result, seatAt);
 
-            showFlash(refusalFlash(result, "Não foi possível criar o pedido", event.days));
+            const flashData = refusalFlash(result, "Não foi possível criar o pedido", event.days);
+            showFlash({ ...flashData, title: seatLimitTitle(result, cart.seats.length) ?? flashData.title });
             if (TITLE_RELOAD_REASONS.has(reason)) await loadTitle();
             if (EVENT_RELOAD_REASONS.has(reason)) await onEventReload();
         } finally {
@@ -424,6 +465,36 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
                 </p>
             </section>
 
+            <SeatSection
+                event={event}
+                kind="member"
+                cart={cart}
+                max={event.max_per_order}
+                errors={seatErrors}
+                disabled={pending}
+                renderHolder={(seat) => (
+                    <div className={style.field}>
+                        <label htmlFor={`responsavel-${seat.seatId}`}>Responsável</label>
+                        <select
+                            id={`responsavel-${seat.seatId}`}
+                            value={seatHolders[seat.seatId] ?? title.people.find((person) => person.is_me)?.ref ?? ""}
+                            onChange={(e) => {
+                                setSeatHolders((current) => ({ ...current, [seat.seatId]: e.target.value }));
+                                setSeatErrors({});
+                            }}
+                            disabled={pending}
+                        >
+                            {title.people.map((person) => (
+                                <option key={person.ref} value={person.ref}>
+                                    {person.name}
+                                    {person.is_me ? " (você)" : ""}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+            />
+
             <section className={ui.panel} aria-labelledby="cupom-resumo">
                 <h2 className={ui.sectionTitle} id="cupom-resumo">
                     Resumo
@@ -440,7 +511,7 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
                     disabled={pending}
                 />
                 {lines.length === 0 ? (
-                    <p className={style.hint}>Marque as pessoas e escolha os ingressos.</p>
+                    <p className={style.hint}>Marque as pessoas e escolha os ingressos{cart.seats.length === 0 && event.has_map ? " (ou um lugar no mapa)" : ""}.</p>
                 ) : (
                     <>
                         <ul className={style.summary}>
@@ -476,7 +547,7 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
                     <div className={style.actionTotal}>
                         <strong>{formatBRL(total)}</strong>
                         <span>
-                            {items.length} ingresso{items.length === 1 ? "" : "s"} · o pagamento vem em seguida
+                            {itemsCountText(entryCount, cart.seats.length)} · o pagamento vem em seguida
                         </span>
                     </div>
                     <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={submit} disabled={pending}>

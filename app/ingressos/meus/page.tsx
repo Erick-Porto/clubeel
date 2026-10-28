@@ -1,13 +1,17 @@
 "use client";
 
 /**
- * Meus ingressos (sócio): todos os pedidos dele (`GET tickets/my-orders`),
- * inclusive os emitidos pela secretaria (pago por fora ou cortesia). Cada
- * cartão abre o pedido, com os ingressos, o QR Code e o PDF.
+ * Meus ingressos — para os dois públicos (fora do matcher do middleware):
+ * - sócio logado: todos os pedidos dele (`GET tickets/my-orders`), inclusive
+ *   os emitidos pela secretaria (pago por fora ou cortesia). Cada cartão abre
+ *   o pedido, com os ingressos, o QR Code e o PDF;
+ * - sem login: o "Meus ingressos" de quem comprou sem ser sócio (CPF + e-mail
+ *   da compra + código enviado por e-mail) — ver GuestAccess.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faArrowRight,
@@ -25,9 +29,10 @@ import Footer from "../../components/Common/footer";
 import { Loading } from "../../components/Common/loading";
 import ReplayNotice from "../../components/Replay/ReplayNotice";
 import { TicketCover } from "../../components/UI/covers";
+import GuestAccess from "../../components/Ticket/GuestAccess";
 import { Media, PageHeader, Pill, SearchBar, matchesSearch } from "../../components/UI/ui";
 import { fetchMyOrders, type TicketFailure, type TicketOrder } from "../../../services/ticket-api";
-import { formatWhen, isSilent, orderHref, orderTone, orderValueText } from "../../../utils/ticket";
+import { formatWhen, isSilent, orderCountText, orderHref, orderTone, orderValueText } from "../../../utils/ticket";
 
 function OrderCard({ order }: { order: TicketOrder }) {
     const people = [...new Set(order.tickets.map((ticket) => ticket.holder_name))];
@@ -48,7 +53,7 @@ function OrderCard({ order }: { order: TicketOrder }) {
                     )}
                     <span>
                         <FontAwesomeIcon icon={faTicket} />
-                        {order.tickets.length} ingresso{order.tickets.length === 1 ? "" : "s"}
+                        {orderCountText(order.tickets)}
                         {people.length > 0 && ` · ${people.join(", ")}`}
                     </span>
                 </div>
@@ -63,7 +68,7 @@ function OrderCard({ order }: { order: TicketOrder }) {
     );
 }
 
-export default function MyTicketsPage() {
+function MemberOrders() {
     const [orders, setOrders] = useState<TicketOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<TicketFailure | null>(null);
@@ -143,6 +148,23 @@ export default function MyTicketsPage() {
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader title="Meus ingressos" lead="Pedidos seus e das pessoas do seu título." />
                 {body}
+            </main>
+            <Footer />
+        </div>
+    );
+}
+
+export default function MyTicketsPage() {
+    const { status } = useSession();
+    if (status === "authenticated") return <MemberOrders />;
+
+    return (
+        <div className={globalStyle.page}>
+            <Header />
+            <TicketCover />
+            <main className={`${globalStyle.main} ${ui.page}`}>
+                <PageHeader title="Meus ingressos" lead="Para quem comprou sem ser sócio: todos os seus pedidos, com QR Code e PDF." />
+                {status === "loading" ? <Loading /> : <GuestAccess />}
             </main>
             <Footer />
         </div>

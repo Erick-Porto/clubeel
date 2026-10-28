@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRight, faCalendarDays, faLocationDot, faTicket } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight, faCalendarDays, faChair, faLocationDot, faTicket } from "@fortawesome/free-solid-svg-icons";
 import ui from "../../../styles/ui.module.css";
 import style from "../../../styles/ticket.module.css";
 import { Media, MediaTag, Pill } from "../UI/ui";
 import type { TicketEvent } from "../../../services/ticket-api";
-import { eventHref, formatBRL, formatInstant, formatWhen, lowestPrice, type BuyerKind } from "../../../utils/ticket";
+import { eventHref, formatBRL, formatInstant, formatWhen, lowestPrice, seatBlockTitle, type BuyerKind } from "../../../utils/ticket";
 
 /**
  * Selo do evento, só pelo que a Lara mandou: encerrado (`status`), vendas
@@ -56,6 +56,12 @@ export default function EventCard({ event, kind }: { event: TicketEvent; kind: B
                         <span>
                             <FontAwesomeIcon icon={faLocationDot} />
                             {event.venue}
+                        </span>
+                    )}
+                    {event.has_map && (
+                        <span>
+                            <FontAwesomeIcon icon={faChair} />
+                            {seatBlockTitle(event)} com lugar marcado (à parte da entrada)
                         </span>
                     )}
                 </div>

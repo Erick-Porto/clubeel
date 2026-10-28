@@ -96,15 +96,20 @@ function GuestOrderContent() {
                 title={notFound ? "Não encontramos este pedido" : "Não conseguimos carregar o pedido"}
                 description={
                     notFound
-                        ? "Abra o link que enviamos para o seu e-mail neste aparelho. Se não encontrar o e-mail, peça o link de novo."
+                        ? "Abra o link que enviamos para o seu e-mail neste aparelho, peça o link de novo ou veja todos os seus pedidos em Meus ingressos (CPF, e-mail e um código)."
                         : error?.error
                 }
                 tone="alert"
                 action={
                     notFound ? (
-                        <Link href="/ingressos/perdi-o-link" className={`${ui.btn} ${ui.btnPrimary}`}>
-                            Perdi o link
-                        </Link>
+                        <div className={style.row}>
+                            <Link href="/ingressos/meus" className={`${ui.btn} ${ui.btnPrimary}`}>
+                                Meus ingressos
+                            </Link>
+                            <Link href="/ingressos/perdi-o-link" className={`${ui.btn} ${ui.btnSecondary}`}>
+                                Perdi o link
+                            </Link>
+                        </div>
                     ) : (
                         <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={() => load()}>
                             <FontAwesomeIcon icon={faRotateRight} /> Tentar novamente
@@ -131,9 +136,15 @@ export default function GuestOrderPage() {
             <Header />
             <TicketCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
-                <Link href="/ingressos" className={style.backLink}>
-                    <FontAwesomeIcon icon={faArrowLeft} /> Eventos
-                </Link>
+                <div className={style.rowBetween}>
+                    <Link href="/ingressos" className={style.backLink}>
+                        <FontAwesomeIcon icon={faArrowLeft} /> Eventos
+                    </Link>
+                    {/* Todos os pedidos de quem comprou sem ser sócio (CPF + e-mail + código). */}
+                    <Link href="/ingressos/meus" className={ui.linkButton}>
+                        Meus ingressos
+                    </Link>
+                </div>
                 <Suspense fallback={<Loading />}>
                     <GuestOrderContent />
                 </Suspense>

@@ -11,6 +11,10 @@
  * - `withdrawn`: desistência; `cancelled`: cancelado pela organização (+ estorno).
  *
  * Depois de pagar ou desistir a tela relê o pedido; nunca deduz a situação.
+ *
+ * [lugares] O ingresso de lugar marcado (`kind: "seat"`) aparece com o lugar
+ * em destaque e "Não é entrada": o QR dele serve para a recepção conferir o
+ * responsável, não para entrar.
  */
 
 import { useRef, useState } from "react";
@@ -20,6 +24,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faBan,
     faCalendarDays,
+    faChair,
     faCircleCheck,
     faCreditCard,
     faFilePdf,
@@ -48,7 +53,9 @@ import {
     orderTone,
     orderValueText,
     passportStillValid,
+    placesText,
     refusalFlash,
+    seatName,
     ticketStatusText,
     ticketTone,
     validityText,
@@ -76,7 +83,54 @@ function PriceText({ ticket, courtesy }: { ticket: OrderTicket; courtesy: boolea
     return <span>{formatBRL(ticket.amount)}</span>;
 }
 
-function TicketCard({ ticket, order }: { ticket: OrderTicket; order: TicketOrder }) {
+/** [lugares] O lugar marcado pago: o lugar em destaque, o responsável e "Não é entrada". */
+function SeatTicketCard({ ticket }: { ticket: OrderTicket }) {
+    const validity = validityText(ticket);
+    const seat = ticket.seat;
+    return (
+        <article className={style.ticket}>
+            <div className={style.rowBetween}>
+                <span className={style.seatTicketName}>
+                    <FontAwesomeIcon icon={faChair} /> {seatName(ticket.type.name, seat?.label ?? "")}
+                </span>
+                <Pill kind={ticketTone(ticket.status)}>{ticketStatusText(ticket)}</Pill>
+            </div>
+            <span className={style.hint}>
+                {[seat ? placesText(seat.places) : null, seat?.map?.name, validity].filter(Boolean).join(" · ")}
+            </span>
+            <Pill kind="warn">Não é entrada</Pill>
+            <span className={style.hint}>
+                Responsável: <strong>{ticket.holder_name}</strong>
+                {ticket.holder_cpf && (
+                    <>
+                        {" "}
+                        · CPF <span className={style.mono}>{ticket.holder_cpf}</span>
+                    </>
+                )}
+            </span>
+            {ticket.qr_code && (
+                <div className={style.qr}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- SVG em data URI da Lara */}
+                    <img src={ticket.qr_code} alt={`QR Code do lugar ${seat?.label ?? ""} (responsável ${ticket.holder_name})`} />
+                </div>
+            )}
+            {ticket.code && (
+                <span className={style.code} aria-label={`Código do lugar: ${ticket.code}`}>
+                    {ticket.code}
+                </span>
+            )}
+            {ticket.qr_code && (
+                <span className={style.hint}>
+                    Este QR serve para a recepção conferir o responsável pelo lugar. Para entrar, cada pessoa usa a própria entrada.
+                </span>
+            )}
+        </article>
+    );
+}
+
+/** Um ingresso pago: titular, situação, QR, código e as entradas. Também na lista do "Meus ingressos" do não sócio. */
+export function TicketCard({ ticket, order }: { ticket: OrderTicket; order: TicketOrder }) {
+    if (ticket.kind === "seat") return <SeatTicketCard ticket={ticket} />;
     const validity = validityText(ticket);
     const entries = entryTexts(ticket, order.event.days);
     const over = eventIsOver(order.event);
@@ -127,6 +181,21 @@ function TicketCard({ ticket, order }: { ticket: OrderTicket; order: TicketOrder
             )}
         </article>
     );
+}
+
+/** Baixa o PDF do pedido (o servidor escolhe a rota: cookie do pedido ou sessão do sócio). */
+export async function saveOrderPdf(orderId: number): Promise<TicketResult<null>> {
+    const result = await downloadOrderPdf(orderId);
+    if (!result.ok) return result;
+    const url = URL.createObjectURL(result.data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ingressos-pedido-${orderId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    return { ok: true, status: result.status, data: null };
 }
 
 export default function TicketOrderView({ order, kind, onReload, onWithdraw }: TicketOrderViewProps) {
@@ -185,21 +254,12 @@ export default function TicketOrderView({ order, kind, onReload, onWithdraw }: T
     const downloadPdf = async () => {
         if (downloading) return;
         setDownloading(true);
-        const result = await downloadOrderPdf(order.id);
+        const result = await saveOrderPdf(order.id);
         setDownloading(false);
         if (!result.ok) {
             showFlash(refusalFlash(result, "Não foi possível baixar o PDF"));
             if (result.reason === "invalid_status") await onReload();
-            return;
         }
-        const url = URL.createObjectURL(result.data);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `ingressos-pedido-${order.id}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 10_000);
     };
 
     const pending = order.status === "pending_payment";
@@ -261,6 +321,8 @@ export default function TicketOrderView({ order, kind, onReload, onWithdraw }: T
                 <Note tone="ok" icon={faCircleCheck}>
                     <strong>Pedido pago.</strong> Mostre o QR Code (ou o código) na portaria. Os ingressos também foram
                     enviados por e-mail.
+                    {order.tickets.some((ticket) => ticket.kind === "seat") &&
+                        " O lugar marcado não é entrada: cada pessoa entra com a própria entrada."}
                 </Note>
             )}
 
@@ -273,16 +335,31 @@ export default function TicketOrderView({ order, kind, onReload, onWithdraw }: T
                 <ul className={style.summary}>
                     {order.tickets.map((ticket) => {
                         const validity = validityText(ticket);
+                        const seat = ticket.kind === "seat" ? ticket.seat : null;
                         return (
                             <li key={ticket.id} className={style.summaryLine}>
                                 <span>
-                                    {ticket.holder_name}
-                                    <span className={ui.muted}>
-                                        {" "}
-                                        · {ticket.type.name}
-                                        {validity && ` · ${validity}`}
-                                        {ticket.lot?.name && ` · ${ticket.lot.name}`}
-                                    </span>
+                                    {seat ? (
+                                        <>
+                                            <strong>
+                                                <FontAwesomeIcon icon={faChair} /> {seatName(ticket.type.name, seat.label)}
+                                            </strong>{" "}
+                                            <span className={ui.muted}>
+                                                · {placesText(seat.places)}
+                                                {validity && ` · ${validity}`} · responsável {ticket.holder_name} · não é entrada
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {ticket.holder_name}
+                                            <span className={ui.muted}>
+                                                {" "}
+                                                · {ticket.type.name}
+                                                {validity && ` · ${validity}`}
+                                                {ticket.lot?.name && ` · ${ticket.lot.name}`}
+                                            </span>
+                                        </>
+                                    )}
                                 </span>
                                 <PriceText ticket={ticket} courtesy={order.courtesy} />
                             </li>

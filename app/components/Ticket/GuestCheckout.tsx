@@ -11,6 +11,14 @@
  * em dois ingressos — [v4] permitido só em diárias de dias diferentes. CPF de
  * sócio no pedido: a Lara recusa (`holder_is_member`) e o sócio compra pelo
  * login dele.
+ *
+ * [lugares] Mesas/bistrôs/camarotes num bloco próprio: o lugar é escolhido no
+ * mapa e fica no nome de um responsável (nome e CPF; padrão: quem compra). O
+ * "um ingresso por CPF" não vale para o lugar — o responsável pode ter a
+ * entrada dele no mesmo pedido. `max_per_order` vale separado para entradas e
+ * para lugares. Os itens de lugar vão DEPOIS das entradas no pedido (é por essa
+ * ordem que `tickets.N` e o `context.index` das recusas são lidos), e um pedido
+ * só de lugar é aceito (a Lara decide).
  */
 
 import { useMemo, useRef, useState } from "react";
@@ -23,6 +31,7 @@ import style from "../../../styles/ticket.module.css";
 import { Note } from "../UI/ui";
 import SocialFlashBox from "../Social/SocialFlashBox";
 import CouponField from "./CouponField";
+import { SeatSection, itemsCountText, seatLimitTitle, useSeatCart } from "./SeatPicker";
 import {
     createGuestOrder,
     type CouponPreview,
@@ -32,17 +41,21 @@ import {
 import {
     COUPON_REASONS,
     EVENT_RELOAD_REASONS,
+    SEAT_REASONS,
     couponPreviewDiscount,
     cpfMatchesMasked,
     formatBRL,
     isBuyable,
     isMembersOnly,
+    isSeatType,
     isValidCpf,
     maskCpf,
     onlyDigits,
     orderHref,
+    placesText,
     priceFor,
     refusalFlash,
+    seatName,
     typeLabel,
     type TicketFlash,
 } from "../../../utils/ticket";
@@ -53,6 +66,15 @@ interface Row {
     name: string;
     cpf: string;
 }
+
+/** Responsável pelo lugar: quem compra (padrão) ou outra pessoa. */
+interface SeatHolder {
+    other: boolean;
+    name: string;
+    cpf: string;
+}
+
+const BUYER_HOLDER: SeatHolder = { other: false, name: "", cpf: "" };
 
 interface Buyer {
     cpf: string;
@@ -90,6 +112,9 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
     const [couponError, setCouponError] = useState<string | null>(null);
     const [flash, setFlash] = useState<TicketFlash | null>(null);
     const [pending, setPending] = useState(false);
+    const cart = useSeatCart();
+    const [seatHolders, setSeatHolders] = useState<Record<number, SeatHolder>>({});
+    const [seatErrors, setSeatErrors] = useState<Record<number, string>>({});
     const busy = useRef(false);
     const flashRef = useRef<HTMLDivElement>(null);
 
@@ -127,6 +152,17 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
         setRows((current) => [...current, { key: nextKey.current++, typeId: null, name: "", cpf: "" }]);
     };
 
+    const holderOf = (seatId: number) => seatHolders[seatId] ?? BUYER_HOLDER;
+    const setHolder = (seatId: number, change: Partial<SeatHolder>) => {
+        setSeatHolders((current) => ({ ...current, [seatId]: { ...(current[seatId] ?? BUYER_HOLDER), ...change } }));
+        clearError(`seat.${seatId}.holder_name`, `seat.${seatId}.holder_cpf`);
+        setSeatErrors((current) => {
+            const next = { ...current };
+            delete next[seatId];
+            return next;
+        });
+    };
+
     const removeRow = (index: number) => {
         setRows((current) => current.filter((_, i) => i !== index));
         // Os erros são por posição: some com todos os dos ingressos.
@@ -143,7 +179,14 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
             discount: type ? couponPreviewDiscount(coupon, type.id, price, "guest") : 0,
         };
     });
-    const total = lines.reduce((sum, line) => sum + line.price - line.discount, 0);
+    const seatLines = cart.seats.map((seat) => ({
+        seat,
+        holder: holderOf(seat.seatId).other ? holderOf(seat.seatId).name.trim() : buyer.name.trim(),
+        discount: couponPreviewDiscount(coupon, seat.typeId, seat.price, "guest"),
+    }));
+    const total =
+        lines.reduce((sum, line) => sum + line.price - line.discount, 0) +
+        seatLines.reduce((sum, line) => sum + line.seat.price - line.discount, 0);
 
     const validate = (): Record<string, string> => {
         const found: Record<string, string> = {};
@@ -177,6 +220,13 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                     : "Um ingresso por CPF: este CPF já está em outro ingresso.";
             }
         });
+        // [lugares] Responsável que não é quem compra: nome e CPF.
+        cart.seats.forEach((seat) => {
+            const holder = holderOf(seat.seatId);
+            if (!holder.other) return;
+            if (!holder.name.trim()) found[`seat.${seat.seatId}.holder_name`] = "Informe o nome do responsável.";
+            if (!isValidCpf(holder.cpf)) found[`seat.${seat.seatId}.holder_cpf`] = "CPF inválido.";
+        });
         return found;
     };
 
@@ -188,17 +238,31 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
             showFlash({ tone: "alert", title: "Confira os campos marcados", text: "" });
             return;
         }
+        if (rows.length === 0 && cart.seats.length === 0) {
+            showFlash({ tone: "alert", title: "Escolha ao menos um ingresso ou um lugar", text: "" });
+            return;
+        }
 
         busy.current = true;
         setPending(true);
         setFlash(null);
         setCouponError(null);
+        setSeatErrors({});
         try {
             const tickets: GuestTicketItem[] = rows.map((row) => ({
                 type_id: row.typeId as number,
                 holder_name: row.name.trim(),
                 holder_cpf: onlyDigits(row.cpf),
             }));
+            for (const seat of cart.seats) {
+                const holder = holderOf(seat.seatId);
+                tickets.push({
+                    type_id: seat.typeId,
+                    seat_id: seat.seatId,
+                    holder_name: (holder.other ? holder.name : buyer.name).trim(),
+                    holder_cpf: onlyDigits(holder.other ? holder.cpf : buyer.cpf),
+                });
+            }
             const result = await createGuestOrder(
                 event.id,
                 { cpf: onlyDigits(buyer.cpf), name: buyer.name.trim(), email: buyer.email.trim(), phone: onlyDigits(buyer.phone) },
@@ -216,13 +280,34 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                 return;
             }
 
+            // [lugares] Itens depois das entradas são os lugares do carrinho.
+            const seatAt = (i: number) => (i >= rows.length ? cart.seats[i - rows.length] : undefined);
+            const nextSeatErrors: Record<number, string> = {};
+
             // Erros de campo do Laravel ("buyer.email", "tickets.0.holder_cpf").
             const fieldErrors: Record<string, string> = {};
             for (const [key, messages] of Object.entries(result.fieldErrors)) {
-                if (messages[0]) fieldErrors[key] = messages[0];
+                if (!messages[0]) continue;
+                const match = /^tickets\.(\d+)\.(.+)$/.exec(key);
+                const seat = match ? seatAt(Number(match[1])) : undefined;
+                if (seat) {
+                    const field = match?.[2] ?? "";
+                    if (holderOf(seat.seatId).other && (field === "holder_name" || field === "holder_cpf")) {
+                        fieldErrors[`seat.${seat.seatId}.${field}`] = messages[0];
+                    } else {
+                        nextSeatErrors[seat.seatId] = messages[0];
+                    }
+                } else {
+                    fieldErrors[key] = messages[0];
+                }
             }
             // Recusa de um ingresso: `context.index` (+ `context.field`).
             const index = Number(result.context.index);
+            const seatPick = Number.isInteger(index) ? seatAt(index) : undefined;
+            if (seatPick && reason !== "seat_taken") {
+                nextSeatErrors[seatPick.seatId] = refusalFlash(result).text || refusalFlash(result).title;
+            }
+            if (SEAT_REASONS.has(reason) || reason === "map_not_found") cart.handleRefusal(result, seatAt);
             if (Number.isInteger(index) && index >= 0 && index < rows.length) {
                 const field =
                     typeof result.context.field === "string"
@@ -244,7 +329,9 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                 });
             }
             setErrors(fieldErrors);
-            showFlash(refusalFlash(result, "Não foi possível criar o pedido", event.days));
+            setSeatErrors(nextSeatErrors);
+            const flashData = refusalFlash(result, "Não foi possível criar o pedido", event.days);
+            showFlash({ ...flashData, title: seatLimitTitle(result, cart.seats.length) ?? flashData.title });
             if (EVENT_RELOAD_REASONS.has(reason)) await onEventReload();
         } finally {
             busy.current = false;
@@ -351,7 +438,7 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                                     >
                                         É para mim
                                     </button>
-                                    {rows.length > 1 && (
+                                    {(rows.length > 1 || cart.seats.length > 0) && (
                                         <button
                                             type="button"
                                             className={ui.linkButton}
@@ -374,7 +461,7 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                                         disabled={pending}
                                     >
                                         <option value="">Escolha o tipo</option>
-                                        {event.types.map((type) => {
+                                        {event.types.filter((type) => !isSeatType(type)).map((type) => {
                                             const price = priceFor(type.lot, "guest");
                                             const buyable = isBuyable(type, "guest");
                                             const why = !type.available
@@ -417,10 +504,64 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
 
                 {(max === null || rows.length < max) && (
                     <button type="button" className={`${ui.btn} ${ui.btnSecondary}`} onClick={addRow} disabled={pending} style={{ alignSelf: "flex-start" }}>
-                        <FontAwesomeIcon icon={faPlus} /> Mais um ingresso
+                        <FontAwesomeIcon icon={faPlus} /> {rows.length === 0 ? "Adicionar ingresso" : "Mais um ingresso"}
                     </button>
                 )}
             </section>
+
+            <SeatSection
+                event={event}
+                kind="guest"
+                cart={cart}
+                max={max}
+                errors={seatErrors}
+                disabled={pending}
+                renderHolder={(seat) => {
+                    const holder = holderOf(seat.seatId);
+                    const key = (field: string) => `seat.${seat.seatId}.${field}`;
+                    return (
+                        <>
+                            <label className={style.choiceRow}>
+                                <input
+                                    type="checkbox"
+                                    className={style.check}
+                                    checked={!holder.other}
+                                    onChange={(e) => setHolder(seat.seatId, { other: !e.target.checked })}
+                                    disabled={pending}
+                                />
+                                Responsável: quem está comprando{!holder.other && buyer.name.trim() ? ` (${buyer.name.trim()})` : ""}
+                            </label>
+                            {holder.other && (
+                                <div className={style.fieldGrid}>
+                                    <div className={fieldClass(key("holder_name"))}>
+                                        <label htmlFor={`resp-nome-${seat.seatId}`}>Nome do responsável</label>
+                                        <input
+                                            id={`resp-nome-${seat.seatId}`}
+                                            value={holder.name}
+                                            onChange={(e) => setHolder(seat.seatId, { name: e.target.value })}
+                                            disabled={pending}
+                                        />
+                                        {fieldError(key("holder_name"))}
+                                    </div>
+                                    <div className={fieldClass(key("holder_cpf"))}>
+                                        <label htmlFor={`resp-cpf-${seat.seatId}`}>CPF do responsável</label>
+                                        <input
+                                            id={`resp-cpf-${seat.seatId}`}
+                                            inputMode="numeric"
+                                            className={style.mono}
+                                            placeholder="000.000.000-00"
+                                            value={holder.cpf}
+                                            onChange={(e) => setHolder(seat.seatId, { cpf: maskCpf(e.target.value) })}
+                                            disabled={pending}
+                                        />
+                                        {fieldError(key("holder_cpf"))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    );
+                }}
+            />
 
             <section className={ui.panel} aria-labelledby="resumo-nao-socio">
                 <h2 className={ui.sectionTitle} id="resumo-nao-socio">
@@ -456,6 +597,21 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                             </span>
                         </li>
                     ))}
+                    {seatLines.map(({ seat, holder, discount }) => (
+                        <li key={`seat-${seat.seatId}`} className={style.summaryLine}>
+                            <span>
+                                {holder || "Responsável"}
+                                <span className={ui.muted}>
+                                    {" "}
+                                    · {seatName(seat.typeName, seat.label)} · {placesText(seat.places)} (não é entrada)
+                                </span>
+                            </span>
+                            <span>
+                                {discount > 0 && <span className={style.strike}>{formatBRL(seat.price)}</span>}
+                                {formatBRL(seat.price - discount)}
+                            </span>
+                        </li>
+                    ))}
                 </ul>
                 <div className={style.summaryTotal}>
                     <span>Total{coupon ? " (prévia)" : ""}</span>
@@ -472,9 +628,7 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
             <div className={style.actionBar}>
                 <div className={style.actionTotal}>
                     <strong>{formatBRL(total)}</strong>
-                    <span>
-                        {rows.length} ingresso{rows.length === 1 ? "" : "s"} · o pagamento vem em seguida
-                    </span>
+                    <span>{itemsCountText(rows.length, cart.seats.length)} · o pagamento vem em seguida</span>
                 </div>
                 <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={submit} disabled={pending}>
                     {pending ? "Reservando..." : "Reservar e pagar"}

@@ -37,7 +37,7 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 
 ### Allowlist atual
 
-**Públicos** (sem sessão): `login`, `register`, `check-member`, `change-password`, `replay/places`, `replay/places/{id}/videos`, `tournaments`, `tournaments/{id}`, `tournaments/{id}/categories/{id}/bracket`, `tournaments/{id}/staff/check`, `tournaments/{id}/staff/matches`, `tournaments/{id}/staff/matches/{id}/result`, `tickets/events`, `tickets/events/{id}`, `tickets/events/{id}/coupon-check`, `tickets/guest-orders/resend-link`, `tickets/guest-orders/{id}`.
+**Públicos** (sem sessão): `login`, `register`, `check-member`, `change-password`, `replay/places`, `replay/places/{id}/videos`, `tournaments`, `tournaments/{id}`, `tournaments/{id}/categories/{id}/bracket`, `tournaments/{id}/staff/check`, `tournaments/{id}/staff/matches`, `tournaments/{id}/staff/matches/{id}/result`, `tickets/events`, `tickets/events/{id}`, `tickets/events/{id}/coupon-check`, `tickets/guest-orders/resend-link`, `tickets/guest-orders/{id}`, `tickets/guest-access/code`.
 
 **Pedido de ingresso do não sócio** (`tickets/guest-orders/{id}`): o proxy repassa o header `Ticket-Order-Token` lido do cookie httpOnly `ingresso_pedido_<id>` (gravado pelas rotas `pages/api/ingressos/*`) e **não** repassa o `Session` — ver [17](17-ingressos.md).
 
@@ -47,7 +47,7 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 
 `tournaments/payment` fica **fora** da allowlist: só o servidor chama (`success.ts`). Também ficam fora `tickets/(guest-)orders/{id}/payment` (só `success.ts`), `tickets/(guest-)orders/{id}/pdf` e `tickets/events/{id}/guest-orders` (rotas próprias em `pages/api/ingressos/*`).
 
-**Limites no proxy** (por IP de quem chama, 60 s), na frente dos da Lara — lá eles contam por IP e todas as chamadas chegam do mesmo servidor: `coupon-check` 20 · `resend-link` 5 · `my-title` 30.
+**Limites no proxy** (por IP de quem chama, 60 s), na frente dos da Lara — lá eles contam por IP e todas as chamadas chegam do mesmo servidor: `coupon-check` 20 · `resend-link` 5 · `guest-access/code` 5 · `my-title` 30. `guest-access/verify` e `guest-access/orders` ficam fora da allowlist (rotas `pages/api/ingressos/acesso/*`, que guardam o token do acesso em cookie httpOnly).
 
 > Para expor um endpoint novo da Lara ao navegador **é obrigatório** adicioná-lo aqui, com a regex mais fechada possível (um caminho por regex, `\d+` para ids).
 

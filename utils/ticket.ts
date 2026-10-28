@@ -176,10 +176,10 @@ export function isBuyable(type: TicketType, kind: BuyerKind): boolean {
     return type.available && priceFor(type.lot, kind) !== null;
 }
 
-/** "a partir de" da vitrine: o menor preço à venda para quem está vendo. */
+/** "a partir de" da vitrine: o menor preço de ENTRADA à venda para quem está vendo (mesa não é entrada). */
 export function lowestPrice(event: TicketEvent, kind: BuyerKind): number | null {
     const prices = event.types
-        .filter((type) => type.available)
+        .filter((type) => type.available && !isSeatType(type))
         .map((type) => priceFor(type.lot, kind))
         .filter((price): price is number => price !== null);
     return prices.length ? Math.min(...prices) : null;
@@ -195,6 +195,46 @@ export function fewLeft(lot: TicketLot | null): boolean {
     return !!lot && lot.remaining !== null && lot.remaining > 0 && lot.remaining <= FEW_LEFT;
 }
 
+/* ------------------------------------------------------ Lugar marcado */
+
+/**
+ * [lugares] Tipo de lugar marcado (mesa, bistrô, camarote): o lugar é escolhido
+ * no mapa e NÃO é entrada — cada pessoa compra a própria entrada à parte.
+ */
+export function isSeatType(type: Pick<TicketType, "kind">): boolean {
+    return type.kind === "seat";
+}
+
+/** "4 lugares" / "1 lugar". */
+export function placesText(places: number): string {
+    return `${places} lugar${places === 1 ? "" : "es"}`;
+}
+
+/** "Mesa Vip V2" — o nome do tipo e o rótulo do lugar no mapa. */
+export function seatName(typeName: string, label: string): string {
+    return [typeName, label].filter(Boolean).join(" ");
+}
+
+/** Título do bloco de lugares: os nomes dos mapas ("Mesas e Bistrôs"). */
+export function seatBlockTitle(event: Pick<TicketEvent, "maps">): string {
+    const names = event.maps.map((map) => map.name).filter(Boolean);
+    if (names.length === 0) return "Lugares marcados";
+    if (names.length === 1) return names[0];
+    return `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}`;
+}
+
+export const SEAT_NOT_ENTRY = "Não é entrada: cada pessoa compra a própria entrada à parte.";
+
+/** "3 ingressos" ou "2 ingressos · 1 lugar marcado" (listas de pedidos). */
+export function orderCountText(tickets: Pick<OrderTicket, "kind">[]): string {
+    const seats = tickets.filter((ticket) => ticket.kind === "seat").length;
+    const entries = tickets.length - seats;
+    const parts: string[] = [];
+    if (entries > 0 || seats === 0) parts.push(`${entries} ingresso${entries === 1 ? "" : "s"}`);
+    if (seats > 0) parts.push(`${seats} lugar${seats === 1 ? "" : "es"} marcado${seats === 1 ? "" : "s"}`);
+    return parts.join(" · ");
+}
+
 /* --------------------------------------------------- Dias (vários dias) */
 
 export interface DayGroup {
@@ -202,16 +242,27 @@ export interface DayGroup {
     types: TicketType[];
 }
 
-/** Tipos agrupados por dia, na ordem dos `days`, e o passaporte à parte. */
-export function groupTypes(event: TicketEvent): { days: DayGroup[]; passport: TicketType[]; single: TicketType[] } {
-    if (!event.multi_day) return { days: [], passport: [], single: event.types };
+/**
+ * Tipos de ENTRADA agrupados por dia, na ordem dos `days`, e o passaporte à
+ * parte. [lugares] Os tipos de lugar marcado vão em `seats` (bloco próprio).
+ */
+export function groupTypes(event: TicketEvent): {
+    days: DayGroup[];
+    passport: TicketType[];
+    single: TicketType[];
+    seats: TicketType[];
+} {
+    const seats = event.types.filter(isSeatType);
+    const entries = event.types.filter((type) => !isSeatType(type));
+    if (!event.multi_day) return { days: [], passport: [], single: entries, seats };
     return {
         days: event.days.map((day) => ({
             day,
-            types: event.types.filter((type) => type.validity === "day" && type.day_id === day.id),
+            types: entries.filter((type) => type.validity === "day" && type.day_id === day.id),
         })),
-        passport: event.types.filter((type) => type.validity === "passport"),
+        passport: entries.filter((type) => type.validity === "passport"),
         single: [],
+        seats,
     };
 }
 
@@ -228,8 +279,12 @@ export function typeLabel(type: TicketType, days: TicketEventDay[]): string {
     return type.name;
 }
 
-/** "Diária · Sáb 14/02", "Passaporte · todos os dias" ou "" (evento de um dia). */
-export function validityText(ticket: Pick<OrderTicket, "validity" | "day">): string {
+/**
+ * "Diária · Sáb 14/02", "Passaporte · todos os dias" ou "" (evento de um dia).
+ * [lugares] O lugar é sempre de um dia: só o dia ("Sáb 14/02"), sem "Diária".
+ */
+export function validityText(ticket: Pick<OrderTicket, "validity" | "day"> & { kind?: string }): string {
+    if (ticket.kind === "seat") return ticket.day ? ticket.day.label : "";
     if (ticket.validity === "passport") return "Passaporte · todos os dias";
     if (ticket.validity === "day") return ticket.day ? `Diária · ${ticket.day.label}` : "Diária";
     return "";
@@ -284,6 +339,13 @@ export function couponPreviewDiscount(coupon: CouponPreview | null, typeId: numb
     if (coupon.type_ids && !coupon.type_ids.includes(typeId)) return 0;
     const raw = coupon.kind === "percent" ? (price * coupon.value) / 100 : coupon.kind === "fixed" ? coupon.value : 0;
     return Math.min(price, Math.max(0, Math.round(raw * 100) / 100));
+}
+
+/** "carla@email.com" → "c***@email.com" (para dizer para onde foi o código). */
+export function maskEmail(email: string): string {
+    const [user, domain] = email.trim().split("@");
+    if (!user || !domain) return email.trim();
+    return `${user[0]}***@${domain}`;
 }
 
 /* -------------------------------------------------------------------- CPF */
@@ -391,6 +453,15 @@ const REASON_TITLES: Record<string, string> = {
     coupon_invalid: "Cupom inválido",
     coupon_not_applicable: "Esse cupom não vale para este pedido",
     coupon_exhausted: "Cupom esgotado",
+    access_code_invalid: "Código incorreto",
+    access_code_expired: "Este código não vale mais",
+    access_expired: "Seu acesso venceu",
+    seat_required: "Escolha o lugar no mapa",
+    seat_not_found: "Esse lugar não está mais disponível",
+    seat_wrong_type: "Esse lugar não é vendido por esse tipo",
+    seat_taken: "Esse lugar acabou de ser reservado",
+    day_required: "Não foi possível abrir o mapa",
+    map_not_found: "Mapa não encontrado",
 };
 
 /** Texto de apoio quando a Lara não mandou mensagem. */
@@ -408,6 +479,11 @@ const REASON_FALLBACKS: Record<string, string> = {
     paid_contact_organizer: "Para desistir de um pedido pago, fale com a organização do evento.",
     already_paid:
         "O pagamento já foi registrado. Nada foi cobrado de novo — se o cartão chegou a ser cobrado, o valor foi estornado.",
+    seat_required: "Escolha o lugar no mapa.",
+    seat_not_found: "Atualizamos o mapa: escolha outro lugar.",
+    seat_wrong_type: "Atualizamos o mapa: escolha outro lugar.",
+    seat_taken: "Escolha outro.",
+    map_not_found: "O mapa saiu de venda. Atualizamos o evento.",
 };
 
 export interface TicketFlash {
@@ -447,4 +523,18 @@ export function isSilent(failure: TicketFailure): boolean {
 export const COUPON_REASONS = new Set(["coupon_invalid", "coupon_not_applicable", "coupon_exhausted"]);
 
 /** Recusas em que o evento mudou (lote, estoque, janela): relê o evento. */
-export const EVENT_RELOAD_REASONS = new Set(["sales_closed", "type_not_found", "sold_out", "capacity_full", "members_only"]);
+export const EVENT_RELOAD_REASONS = new Set([
+    "sales_closed",
+    "type_not_found",
+    "sold_out",
+    "capacity_full",
+    "members_only",
+    // [lugares] `seats_free` mudou.
+    "seat_taken",
+    "seat_not_found",
+    "seat_wrong_type",
+    "map_not_found",
+]);
+
+/** [lugares] Recusas de lugar: a tela volta ao mapa (relido). */
+export const SEAT_REASONS = new Set(["seat_required", "seat_not_found", "seat_wrong_type", "seat_taken"]);
