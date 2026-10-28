@@ -32,7 +32,7 @@ import { TicketCover } from "../../components/UI/covers";
 import GuestAccess from "../../components/Ticket/GuestAccess";
 import { Media, PageHeader, Pill, SearchBar, matchesSearch } from "../../components/UI/ui";
 import { fetchMyOrders, type TicketFailure, type TicketOrder } from "../../../services/ticket-api";
-import { formatWhen, isSilent, orderHref, orderTone, orderValueText } from "../../../utils/ticket";
+import { formatWhen, isSilent, orderCountText, orderHref, orderTone, orderValueText } from "../../../utils/ticket";
 
 function OrderCard({ order }: { order: TicketOrder }) {
     const people = [...new Set(order.tickets.map((ticket) => ticket.holder_name))];
@@ -53,7 +53,7 @@ function OrderCard({ order }: { order: TicketOrder }) {
                     )}
                     <span>
                         <FontAwesomeIcon icon={faTicket} />
-                        {order.tickets.length} ingresso{order.tickets.length === 1 ? "" : "s"}
+                        {orderCountText(order.tickets)}
                         {people.length > 0 && ` · ${people.join(", ")}`}
                     </span>
                 </div>

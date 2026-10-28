@@ -10,6 +10,9 @@
  * horário, e o passaporte à parte, em destaque ("vale todos os dias") — só se
  * a Lara mandou algum tipo `passport`.
  *
+ * [lugares] Os tipos de lugar marcado (mesa, bistrô, camarote) num bloco
+ * próprio, com "N lugares livres" e o aviso de que não é entrada.
+ *
  * Nada aqui é calculado: lote, preço, estoque e a janela de vendas vêm da Lara.
  */
 
@@ -20,6 +23,7 @@ import { useSession } from "next-auth/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faArrowLeft,
+    faChair,
     faCircleExclamation,
     faRightToBracket,
     faRotateRight,
@@ -46,6 +50,8 @@ import {
     groupTypes,
     idFromParam,
     lowestPrice,
+    seatBlockTitle,
+    typeLabel,
 } from "../../../utils/ticket";
 
 export default function TicketEventPage() {
@@ -215,8 +221,8 @@ export default function TicketEventPage() {
                         </h2>
                     </div>
 
-                    {event.types.length === 0 ? (
-                        <p className={style.hint}>Nenhum ingresso cadastrado.</p>
+                    {event.types.length === groups.seats.length ? (
+                        <p className={style.hint}>Nenhum ingresso de entrada cadastrado.</p>
                     ) : event.multi_day ? (
                         <>
                             {groups.passport.length > 0 && (
@@ -247,6 +253,32 @@ export default function TicketEventPage() {
                         <div className={style.typeList}>{groups.single.map(typeCard)}</div>
                     )}
                 </section>
+
+                {groups.seats.length > 0 && (
+                    <section className={ui.section} aria-labelledby="lugares">
+                        <div className={ui.sectionHead}>
+                            <h2 className={ui.sectionTitle} id="lugares">
+                                {seatBlockTitle(event)}
+                            </h2>
+                            <span className={ui.muted}>Lugar marcado: escolha o lugar exato no mapa, na compra.</span>
+                        </div>
+                        <Note tone="info" icon={faChair}>
+                            <strong>A mesa não é entrada.</strong> Cada pessoa compra a própria entrada à parte (Ingressos,
+                            acima). O lugar fica no nome de um responsável{event.multi_day ? " e vale para um dia" : ""}.
+                        </Note>
+                        <div className={style.typeList}>
+                            {groups.seats.map((type) => (
+                                <TicketTypeCard
+                                    key={type.id}
+                                    type={type}
+                                    kind={kind}
+                                    title={typeLabel(type, event.days)}
+                                    loginHref={kind === "guest" ? loginHref : undefined}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {canBuy && (
                     <div className={style.actionBar}>

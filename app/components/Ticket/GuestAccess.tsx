@@ -58,6 +58,7 @@ import {
     maskCpf,
     maskEmail,
     onlyDigits,
+    orderCountText,
     orderTone,
     orderValueText,
     refusalFlash,
@@ -484,7 +485,7 @@ export default function GuestAccess() {
                             <article key={order.id} className={ui.panel}>
                                 {orderHead(order)}
                                 <span className={style.hint}>
-                                    {order.tickets.length} ingresso{order.tickets.length === 1 ? "" : "s"} ·{" "}
+                                    {orderCountText(order.tickets)} ·{" "}
                                     <strong className={style.mono}>{formatBRL(order.total)}</strong>
                                 </span>
                                 {order.hold_until && <HoldCountdown until={order.hold_until} onExpire={() => loadList()} />}

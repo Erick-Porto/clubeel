@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { faFire } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChair, faFire } from "@fortawesome/free-solid-svg-icons";
 import ui from "../../../styles/ui.module.css";
 import style from "../../../styles/ticket.module.css";
 import { Pill } from "../UI/ui";
 import type { TicketLot, TicketType } from "../../../services/ticket-api";
-import { fewLeft, formatBRL, formatInstant, isMembersOnly, type BuyerKind } from "../../../utils/ticket";
+import { SEAT_NOT_ENTRY, fewLeft, formatBRL, formatInstant, isMembersOnly, isSeatType, type BuyerKind } from "../../../utils/ticket";
 
 interface TicketTypeCardProps {
     type: TicketType;
@@ -14,6 +15,8 @@ interface TicketTypeCardProps {
     kind: BuyerKind;
     /** Para o visitante: link de login que volta para esta página. */
     loginHref?: string;
+    /** Nome a mostrar (ex.: com o dia, no lugar marcado do evento de vários dias). */
+    title?: string;
 }
 
 function Prices({ lot, kind }: { lot: TicketLot; kind: BuyerKind }) {
@@ -42,16 +45,21 @@ function Prices({ lot, kind }: { lot: TicketLot; kind: BuyerKind }) {
  * Tipo de ingresso com o lote à venda agora e os dois preços (o que vale para
  * quem está vendo, realçado). Tipo sem lote à venda: "Próximo lote a partir
  * de…", se a Lara mandou `next_lot`. O site não calcula lote nem preço.
+ *
+ * [lugares] Tipo de lugar marcado: "N lugares livres" (`seats_free`) e o aviso
+ * de que não é entrada.
  */
-export default function TicketTypeCard({ type, kind, loginHref }: TicketTypeCardProps) {
+export default function TicketTypeCard({ type, kind, loginHref, title }: TicketTypeCardProps) {
     const lot = type.available ? type.lot : null;
-    const soldOut = !lot && type.lot?.remaining === 0;
+    const seat = isSeatType(type);
+    const soldOut = !lot && (type.lot?.remaining === 0 || (seat && type.seats_free === 0));
 
     return (
         <article className={`${style.typeCard} ${lot ? "" : style.typeOff}`}>
             <div className={style.rowBetween}>
-                <h3 className={style.typeName}>{type.name}</h3>
+                <h3 className={style.typeName}>{title ?? type.name}</h3>
                 {lot ? (
+                    !seat &&
                     fewLeft(lot) && (
                         <Pill kind="warn" icon={faFire}>
                             Últimos ingressos
@@ -62,6 +70,17 @@ export default function TicketTypeCard({ type, kind, loginHref }: TicketTypeCard
                 )}
             </div>
             {type.description && <p className={style.typeDesc}>{type.description}</p>}
+            {seat && (
+                <span className={style.hint}>
+                    <FontAwesomeIcon icon={faChair} />{" "}
+                    {lot && type.seats_free !== null && (
+                        <strong>
+                            {type.seats_free} lugar{type.seats_free === 1 ? "" : "es"} livre{type.seats_free === 1 ? "" : "s"} ·{" "}
+                        </strong>
+                    )}
+                    {SEAT_NOT_ENTRY}
+                </span>
+            )}
 
             {lot ? (
                 <>

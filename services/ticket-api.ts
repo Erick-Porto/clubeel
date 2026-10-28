@@ -57,12 +57,23 @@ export interface TicketLot {
     remaining: number | null;
 }
 
+/** `entry` = entrada; `seat` = lugar marcado (mesa, bistrô, camarote) — NÃO é entrada. */
+export type TicketKind = "entry" | "seat" | string;
+
 export interface TicketType {
     id: number;
     name: string;
     description: string | null;
+    /** [lugares] `entry` ou `seat`. */
+    kind: TicketKind;
     validity: TicketValidity;
     day_id: number | null;
+    /** [lugares] Mapa onde o lugar é escolhido (`null` em `entry`). */
+    map_id: number | null;
+    /** [lugares] Categoria dos lugares que o tipo vende (`null` = todos do mapa). Só informativo. */
+    seat_category: string | null;
+    /** [lugares] Lugares livres agora no dia do tipo (`null` em `entry`). Com 0, `available: false`. */
+    seats_free: number | null;
     /** Só com `true` (e `lot`) o tipo pode ser comprado agora. */
     available: boolean;
     /** O lote à venda agora (a Lara já escolheu). */
@@ -89,6 +100,10 @@ export interface TicketEvent {
     multi_day: boolean;
     days: TicketEventDay[];
     types: TicketType[];
+    /** [lugares] Algum tipo ativo é de lugar marcado. */
+    has_map: boolean;
+    /** [lugares] Mapas que algum tipo ativo usa. */
+    maps: { id: number; name: string }[];
     /** Texto livre com quebras de linha. Só no detalhe. */
     rules: string | null;
 }
@@ -125,6 +140,64 @@ export interface MyTitle {
     people: TitlePerson[];
 }
 
+/* ------------------------------------------------------- [lugares] O mapa */
+
+export interface SeatMapArea {
+    label: string;
+    /** `rect` ou `ellipse`; `x`/`y` = canto superior esquerdo. */
+    shape: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    /** Nome da cor: `stage`, `water`, `green`, `service`, `warn`. */
+    color: string;
+}
+
+/** `free` (pode escolher), `held` (alguém está pagando), `sold`, `unavailable`. */
+export type SeatStatus = "free" | "held" | "sold" | "unavailable" | string;
+
+export interface SeatMapSeat {
+    id: number;
+    label: string;
+    category: string | null;
+    /** `circle`, `square` ou `rect`; `x`/`y` = CENTRO. */
+    shape: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    /** Quantas pessoas cabem. */
+    places: number;
+    status: SeatStatus;
+    /** O tipo que vende o lugar no dia (o preço é o do lote dele). */
+    type_id: number | null;
+}
+
+export interface SeatMapType {
+    id: number;
+    name: string;
+    seat_category: string | null;
+    day_id: number | null;
+    available: boolean;
+    lot: TicketLot | null;
+}
+
+export interface SeatMap {
+    id: number;
+    event_id: number;
+    name: string;
+    width: number;
+    height: number;
+    background_url: string | null;
+    day: OrderTicketDay | null;
+    /** Segundos até reler o mapa. */
+    refresh_after: number;
+    areas: SeatMapArea[];
+    types: SeatMapType[];
+    seats: SeatMapSeat[];
+}
+
 export interface OrderTicketDay {
     id: number;
     name: string | null;
@@ -148,12 +221,24 @@ export interface OrderTicket {
     amount: number;
     validity: TicketValidity;
     day: OrderTicketDay | null;
+    /** [lugares] `entry` ou `seat`. */
+    kind: TicketKind;
+    /** [lugares] O lugar do ingresso `seat` (`null` nas entradas). */
+    seat: OrderSeat | null;
     /** Só com o ingresso pago. */
     code: string | null;
     /** Imagem SVG em data URI, direto no `<img src>`. Só com o ingresso pago. */
     qr_code: string | null;
     checked_in_at: string | null;
     entries: { day_id: number | null; checked_in_at: string | null }[];
+}
+
+export interface OrderSeat {
+    id: number;
+    label: string;
+    category: string | null;
+    places: number;
+    map: { id: number; name: string } | null;
 }
 
 export interface TicketOrder {
@@ -189,6 +274,8 @@ export interface TicketOrder {
 export interface MemberTicketItem {
     type_id: number;
     holder_ref?: string;
+    /** [lugares] Só no tipo `seat`. */
+    seat_id?: number;
 }
 
 export interface GuestBuyer {
@@ -202,6 +289,8 @@ export interface GuestTicketItem {
     type_id: number;
     holder_name: string;
     holder_cpf: string;
+    /** [lugares] Só no tipo `seat`. */
+    seat_id?: number;
 }
 
 /* ----------------------------------------------------------------- Falhas */
@@ -306,8 +395,12 @@ function toType(raw: unknown): TicketType {
         id: toNumber(obj.id),
         name: String(obj.name ?? ""),
         description: toStringOrNull(obj.description),
+        kind: String(obj.kind ?? "entry"),
         validity: String(obj.validity ?? "event"),
         day_id: toNumberOrNull(obj.day_id),
+        map_id: toNumberOrNull(obj.map_id),
+        seat_category: toStringOrNull(obj.seat_category),
+        seats_free: toNumberOrNull(obj.seats_free),
         available: obj.available === true,
         lot: toLot(obj.lot),
         next_lot: toLot(obj.next_lot),
@@ -334,6 +427,64 @@ function toEvent(raw: unknown): TicketEvent {
         days: listOf(obj.days, "days").map(toDay),
         types: listOf(obj.types, "types").map(toType),
         rules: toStringOrNull(obj.rules),
+        has_map: obj.has_map === true,
+        maps: listOf(obj.maps, "maps")
+            .map(toNamed)
+            .filter((map): map is { id: number; name: string } => map !== null),
+    };
+}
+
+function toSeatMap(raw: unknown): SeatMap {
+    const obj = asObj(unwrap(raw, "map"));
+    return {
+        id: toNumber(obj.id),
+        event_id: toNumber(obj.event_id),
+        name: String(obj.name ?? ""),
+        width: toNumber(obj.width, 1000) || 1000,
+        height: toNumber(obj.height, 600) || 600,
+        background_url: toStringOrNull(obj.background_url),
+        day: toOrderDay(obj.day),
+        // Piso de 5 s: um `refresh_after` zerado não vira martelada na Lara.
+        refresh_after: Math.max(5, toNumber(obj.refresh_after, 15)),
+        areas: listOf(obj.areas, "areas").map((item) => {
+            const area = asObj(item);
+            return {
+                label: String(area.label ?? ""),
+                shape: String(area.shape ?? "rect"),
+                x: toNumber(area.x),
+                y: toNumber(area.y),
+                w: toNumber(area.w),
+                h: toNumber(area.h),
+                color: String(area.color ?? ""),
+            };
+        }),
+        types: listOf(obj.types, "types").map((item) => {
+            const type = asObj(item);
+            return {
+                id: toNumber(type.id),
+                name: String(type.name ?? ""),
+                seat_category: toStringOrNull(type.seat_category),
+                day_id: toNumberOrNull(type.day_id),
+                available: type.available === true,
+                lot: toLot(type.lot),
+            };
+        }),
+        seats: listOf(obj.seats, "seats").map((item) => {
+            const seat = asObj(item);
+            return {
+                id: toNumber(seat.id),
+                label: String(seat.label ?? ""),
+                category: toStringOrNull(seat.category),
+                shape: String(seat.shape ?? "circle"),
+                x: toNumber(seat.x),
+                y: toNumber(seat.y),
+                w: toNumber(seat.w),
+                h: toNumber(seat.h),
+                places: toNumber(seat.places),
+                status: String(seat.status ?? "unavailable"),
+                type_id: toNumberOrNull(seat.type_id),
+            };
+        }),
     };
 }
 
@@ -381,6 +532,18 @@ function toNamed(raw: unknown): { id: number; name: string } | null {
     return obj ? { id: toNumber(obj.id), name: String(obj.name ?? "") } : null;
 }
 
+function toOrderSeat(raw: unknown): OrderSeat | null {
+    const obj = objOrNull(raw);
+    if (!obj) return null;
+    return {
+        id: toNumber(obj.id),
+        label: String(obj.label ?? ""),
+        category: toStringOrNull(obj.category),
+        places: toNumber(obj.places),
+        map: toNamed(obj.map),
+    };
+}
+
 function toOrderTicket(raw: unknown): OrderTicket {
     const obj = asObj(raw);
     return {
@@ -397,6 +560,8 @@ function toOrderTicket(raw: unknown): OrderTicket {
         amount: toNumber(obj.amount),
         validity: String(obj.validity ?? "event"),
         day: toOrderDay(obj.day),
+        kind: String(obj.kind ?? "entry"),
+        seat: toOrderSeat(obj.seat),
         code: toStringOrNull(obj.code),
         qr_code: toStringOrNull(obj.qr_code),
         checked_in_at: toStringOrNull(obj.checked_in_at),
@@ -559,6 +724,18 @@ export async function fetchEvent(eventId: number): Promise<TicketResult<TicketEv
     const response = await publicCall("GET", `tickets/events/${id(eventId)}`);
     if (!response.ok) return failure(response);
     return { ok: true, status: response.status, data: toEvent(response.data) };
+}
+
+/**
+ * [lugares] O mapa com a situação de cada lugar agora. `dayId` é obrigatório no
+ * evento de vários dias (o `day_id` do tipo): sem ele, 422 `day_required`.
+ * Mapa que nenhum tipo à venda usa: 404 `map_not_found`.
+ */
+export async function fetchSeatMap(eventId: number, mapId: number, dayId: number | null): Promise<TicketResult<SeatMap>> {
+    const query = dayId !== null ? `?${new URLSearchParams({ day_id: String(dayId) })}` : "";
+    const response = await publicCall("GET", `tickets/events/${id(eventId)}/maps/${id(mapId)}${query}`);
+    if (!response.ok) return failure(response);
+    return { ok: true, status: response.status, data: toSeatMap(response.data) };
 }
 
 /** [v2] Só informa (prévia). A Lara limita a 20 por minuto. */

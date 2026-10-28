@@ -183,9 +183,15 @@ async function confirmTicketPayment(res: NextApiResponse, data: TicketConfirmati
         reason = "already_paid";
     }
 
+    // [lugares] `hold_expired` com `context.seat_ids`: o lugar foi reservado por
+    // outra pessoa enquanto o pedido estava vencido.
+    const context = (response.data as { context?: { seat_ids?: unknown } } | null)?.context;
+    const seatLost = Array.isArray(context?.seat_ids) && context.seat_ids.length > 0;
     const detail =
         reason === "hold_expired"
-            ? "Os ingressos esgotaram enquanto o pagamento era feito. O valor foi estornado."
+            ? seatLost
+                ? "O lugar escolhido foi reservado por outra pessoa enquanto o pagamento era feito. O valor foi estornado."
+                : "Os ingressos esgotaram enquanto o pagamento era feito. O valor foi estornado."
             : response.message || "Não foi possível confirmar o pagamento dos ingressos. Valor estornado.";
     if (response.status >= 500 && !reason) {
         return res.status(502).json({ error: detail, reason, message: `${detail} O valor foi estornado.` });

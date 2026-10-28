@@ -50,6 +50,9 @@ const PUBLIC_ENDPOINTS: RegExp[] = [
     /^tickets\/events$/,
     /^tickets\/events\/\d+$/,
     /^tickets\/events\/\d+\/coupon-check$/,
+    // Lugar marcado: o mapa com a situação de cada lugar (sem dado de quem
+    // comprou). O `day_id` fica na query, fora do `path`.
+    /^tickets\/events\/\d+\/maps\/\d+$/,
     /^tickets\/guest-orders\/resend-link$/,
     /^tickets\/guest-orders\/\d+$/,
     // "Meus ingressos" do não sócio, passo 1: pedir o código por e-mail (a Lara
@@ -67,6 +70,8 @@ const GUEST_ORDER_ENDPOINT = /^tickets\/guest-orders\/(\d+)$/;
 // esgotaria o limite de todo mundo.
 const RATE_LIMITS: Array<[RegExp, number]> = [
     [/^tickets\/events\/\d+\/coupon-check$/, 20],
+    // O mapa aberto relê a cada `refresh_after` (hoje 15 s): ~4 por minuto por pessoa.
+    [/^tickets\/events\/\d+\/maps\/\d+$/, 120],
     [/^tickets\/guest-orders\/resend-link$/, 5],
     [/^tickets\/guest-access\/code$/, 5],
     [/^tickets\/my-title$/, 30],
