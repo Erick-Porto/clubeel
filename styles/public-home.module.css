@@ -135,7 +135,9 @@
 .doors {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Uma coluna por porta (--portas vem do componente: produção mostra menos
+     portas enquanto há módulos não liberados, utils/modulos.ts). */
+  grid-template-columns: repeat(var(--portas, 4), minmax(0, 1fr));
 }
 
 /* Quatro portas: em telas médias, duas por linha. */

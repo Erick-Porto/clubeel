@@ -31,6 +31,7 @@ import { fetchSocialGroups } from "../services/social-api";
 import { fetchTournaments } from "../services/tournament-api";
 import { tournamentHref } from "../utils/tournament";
 import { placeImageUrl } from "../utils/lighting";
+import { moduloVisivel } from "../utils/modulos";
 
 // O mapa interativo (MapBanner), a seção "Social" antiga e o tutorial da home
 // continuam desligados (ver docs/resumo-modulos/04-agendamento-quadras.md).
@@ -71,12 +72,15 @@ interface HomeItem {
     area: HomeTab;
 }
 
-const SHORTCUTS: { href: string; title: string; text: string; icon: typeof faVideo; area: Area }[] = [
+const ALL_SHORTCUTS: { href: string; title: string; text: string; icon: typeof faVideo; area: Area }[] = [
     { href: '/profile?tab=schedules', title: 'Meus agendamentos', text: 'Carrinho, horários confirmados e anteriores', icon: faCalendarCheck, area: 'perfil' },
     { href: '/meus-videos', title: 'Meus vídeos', text: 'Replays gravados nas suas reservas', icon: faVideo, area: 'replay' },
     { href: '/espacos-sociais/reservas', title: 'Minhas reservas sociais', text: 'Análise, pagamento e convidados', icon: faChampagneGlasses, area: 'social' },
     { href: '/torneios/inscricoes', title: 'Minhas inscrições em torneios', text: 'Pagamento, times e convites', icon: faTrophy, area: 'torneios' },
 ];
+
+/** Sem os atalhos dos módulos ainda não liberados nesta instância (utils/modulos.ts). */
+const SHORTCUTS = ALL_SHORTCUTS.filter((item) => moduloVisivel(item.area));
 
 const HomeContent = () => {
     const [places, setPlaces] = useState<Place[]>([]);
@@ -136,10 +140,12 @@ const HomeContent = () => {
 
     useEffect(() => {
         if (status !== 'authenticated') return;
+        // Módulo oculto nesta instância (utils/modulos.ts): nem busca, e a aba
+        // não aparece (aba sem itens some).
         // Os grupos sociais vêm de outro endpoint (social/groups — as rotas de
         // quadra não listam espaço social). Falha aqui não atrapalha a home:
         // a grade segue só com os esportes.
-        fetchSocialGroups().then((result) => {
+        if (moduloVisivel('social')) fetchSocialGroups().then((result) => {
             if (!result.ok) return;
             setSocialItems(
                 result.data.map((group) => ({
@@ -152,7 +158,7 @@ const HomeContent = () => {
             );
         });
         // Torneios: a mesma lista pública de /torneios, na ordem da Lara.
-        fetchTournaments().then((result) => {
+        if (moduloVisivel('torneios')) fetchTournaments().then((result) => {
             if (!result.ok) return;
             setTournamentItems(
                 result.data.map((tournament) => ({

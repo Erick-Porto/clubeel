@@ -28,6 +28,7 @@ import { useCart } from '../../../context/CartContext';
 import { ThemeSwitch } from './theme';
 import { areaStyle, initialsOf } from '../UI/ui';
 import { comBase } from '../../../utils/base-path';
+import { moduloVisivel } from '../../../utils/modulos';
 
 // As chaves são as mesmas do `Area` (cor de cada módulo, ui.tsx).
 type ModuleKey = 'inicio' | 'social' | 'replay' | 'luz' | 'torneios' | 'ingressos' | 'perfil';
@@ -48,7 +49,7 @@ interface NavItem {
  * porque os módulos não cabiam mais lado a lado; "Menu" abre uma folha com a
  * grade dos módulos (decisão de navegação na entrada dos ingressos).
  */
-const NAV: NavItem[] = [
+const TODOS: NavItem[] = [
     { key: 'inicio', href: '/', label: 'Início', short: 'Início', icon: faHouse },
     { key: 'social', href: '/espacos-sociais', label: 'Espaços sociais', short: 'Espaços', icon: faChampagneGlasses },
     { key: 'replay', href: '/replay', label: 'Replay', short: 'Replay', icon: faVideo },
@@ -57,6 +58,9 @@ const NAV: NavItem[] = [
     { key: 'ingressos', href: '/ingressos', label: 'Ingressos', short: 'Ingressos', icon: faTicket },
     { key: 'perfil', href: '/profile', label: 'Meu perfil', short: 'Perfil', icon: faUser },
 ];
+
+/** Sem os módulos ainda não liberados nesta instância (utils/modulos.ts). */
+const NAV = TODOS.filter((item) => moduloVisivel(item.key));
 
 /** Os módulos da folha "Menu" do celular (Início e Perfil estão na própria barra). */
 const SHEET = NAV.filter((item) => item.key !== 'inicio' && item.key !== 'perfil');
@@ -203,15 +207,21 @@ export default function Header() {
                                         <Link href="/meus-videos" className={styles.menuItem} role="menuitem">
                                             <FontAwesomeIcon icon={faVideo} /> Meus vídeos
                                         </Link>
-                                        <Link href="/espacos-sociais/reservas" className={styles.menuItem} role="menuitem">
-                                            <FontAwesomeIcon icon={faChampagneGlasses} /> Minhas reservas sociais
-                                        </Link>
-                                        <Link href="/torneios/inscricoes" className={styles.menuItem} role="menuitem">
-                                            <FontAwesomeIcon icon={faTrophy} /> Minhas inscrições em torneios
-                                        </Link>
-                                        <Link href="/ingressos/meus" className={styles.menuItem} role="menuitem">
-                                            <FontAwesomeIcon icon={faTicket} /> Meus ingressos
-                                        </Link>
+                                        {moduloVisivel('social') && (
+                                            <Link href="/espacos-sociais/reservas" className={styles.menuItem} role="menuitem">
+                                                <FontAwesomeIcon icon={faChampagneGlasses} /> Minhas reservas sociais
+                                            </Link>
+                                        )}
+                                        {moduloVisivel('torneios') && (
+                                            <Link href="/torneios/inscricoes" className={styles.menuItem} role="menuitem">
+                                                <FontAwesomeIcon icon={faTrophy} /> Minhas inscrições em torneios
+                                            </Link>
+                                        )}
+                                        {moduloVisivel('ingressos') && (
+                                            <Link href="/ingressos/meus" className={styles.menuItem} role="menuitem">
+                                                <FontAwesomeIcon icon={faTicket} /> Meus ingressos
+                                            </Link>
+                                        )}
                                         <div className={styles.menuSection}>
                                             <span className={styles.menuLabel}>Tema</span>
                                             <ThemeSwitch />

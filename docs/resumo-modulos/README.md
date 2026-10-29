@@ -112,6 +112,7 @@ Regras de ouro dessa arquitetura:
 - **Ao adicionar rota de sócio protegida**: inclua no `matcher` de `middleware.ts`.
 - **Segredos**: `.env` contém credenciais reais (Lara, eRede, NextAuth, WhatsApp). Nunca imprima, logue ou commite valores. Logs de pagamento nunca devem conter `cardData`.
 - **Homologação (`/homolog`)**: segunda instância da branch `homolog` no mesmo domínio. **Nunca use caminho absoluto** (`'/api/...'`, `'/images/...'`, `callbackUrl: '/login'`, `path` de cookie) sem `comBase` de `utils/base-path.ts` — `<Link>`, `router.push` e `redirect()` já prefixam sozinhos. Ver [01](01-infraestrutura-config.md#homologação-homolog).
+- **Módulos ainda não liberados em produção** (hoje espaços sociais, torneios e ingressos): [utils/modulos.ts](../../utils/modulos.ts). Na homologação aparecem; em produção somem só as **entradas** (menu, abas e atalhos da home, portas da página pública, avisos do perfil) — as páginas seguem acessíveis por URL. Entrada nova de um desses módulos fora da pasta dele passa por `moduloVisivel(...)`. Liberar = tirar da lista. Ver [01](01-infraestrutura-config.md#módulos-não-liberados-em-produção).
 - **Single-instance**: rate limit e cache de pagamentos pendentes são **em memória** (1 processo `next start`, serviço systemd atrás do nginx). Escalar horizontalmente exige Redis.
 - Leia [12-pontos-de-atencao.md](12-pontos-de-atencao.md) antes de "consertar" algo que parece estranho — vários comportamentos são intencionais e documentados.
 

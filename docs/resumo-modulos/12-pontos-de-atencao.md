@@ -7,7 +7,7 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | Item | Por quê |
 |---|---|
 | `/replay` e `replay/places*` sem login | Decisão de negócio (galeria pública). |
-| `/` fora do matcher do middleware | Sem sessão a raiz é a página de boas-vindas (Entrar, RePET, Torneios, Ingressos); a home do sócio só carrega dados com sessão. |
+| `/` fora do matcher do middleware | Sem sessão a raiz é a página de boas-vindas (Entrar, RePET, Torneios, Ingressos — em produção só Entrar e RePET enquanto os módulos não forem liberados); a home do sócio só carrega dados com sessão. |
 | Replay usa `skipAuthCheck` | Um 401 não pode deslogar visitante; em "Meus vídeos" vira estado de tela. |
 | `TokenValidator` desligado em `/aprovacao` | Sessões independentes. |
 | `decidir` sem `revalidatePath` | Revalidar trocaria a tela de resultado por "fora da fila" (ver [09](09-aprovacao-compras.md)). |
@@ -17,6 +17,7 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | Imports relativos em vez de `@/` | Alias quebrava no ambiente do usuário. |
 | `comBase(...)` em `fetch`, `src`, `callbackUrl`, cookie | A homologação roda sob `/homolog`; caminho absoluto sem `comBase` cai na produção (ver [01](01-infraestrutura-config.md#homologação-homolog)). |
 | Cookies do NextAuth com nome `*.homolog` | Só na homologação; evita colisão com a produção no mesmo domínio. |
+| Espaços sociais, torneios e ingressos fora do menu em produção, mas acessíveis por URL | Liberação parcial de 2026-10-29: só as entradas somem (`utils/modulos.ts`); bloquear as rotas foi descartado pelo clube. Ver [01](01-infraestrutura-config.md#módulos-não-liberados-em-produção). |
 | Luz: reler a disponibilidade após cada POST | O estado "aceso" só pode vir da Lara (multi-dispositivo, outros sócios). |
 | Torneios: lista, detalhe e chaveamento fora do matcher | Decisão de negócio (públicos); a Lara só devolve o que está publicado. |
 | `TokenValidator` desligado em `/torneios/equipe` e `/torneios/<id>/equipe` | A tela usa o código de lançamento; um login de sócio vencido no mesmo celular não pode tirá-la do ar. |

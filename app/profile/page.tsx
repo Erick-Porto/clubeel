@@ -10,6 +10,7 @@ import ui from '../../styles/ui.module.css';
 import Appointments from "../components/Profile/appointments";
 import SocialPendingPaymentBanner from "../components/Social/SocialPendingPaymentBanner";
 import TournamentNoticeBanner from "../components/Tournament/TournamentNoticeBanner";
+import { moduloVisivel } from "../../utils/modulos";
 import Header from "../components/Common/header";
 import { LoadingScreen } from "../components/Common/loading";
 import { useCart } from "../../context/CartContext";
@@ -129,9 +130,9 @@ useEffect(() => {
                 </nav>
 
                 {/* Reserva social a pagar (inclusive a aprovada no balcão): em qualquer aba. */}
-                <SocialPendingPaymentBanner />
+                {moduloVisivel('social') && <SocialPendingPaymentBanner />}
                 {/* Torneio: inscrição a pagar e convite de time recebido. */}
-                <TournamentNoticeBanner />
+                {moduloVisivel('torneios') && <TournamentNoticeBanner />}
                 {view === 'profile' && <ProfileForm />}
                 {view === 'password' && <PasswordForm />}
                 {view === 'schedules' && <Appointments />}

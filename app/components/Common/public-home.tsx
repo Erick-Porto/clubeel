@@ -11,6 +11,7 @@
  * véu na cor da tela para o texto ler bem nos dois temas.
  */
 
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -21,6 +22,7 @@ import Carousel from "./carousel";
 import Footer from "./footer";
 import { areaStyle, type Area } from "../UI/ui";
 import { comBase } from "../../../utils/base-path";
+import { moduloVisivel } from "../../../utils/modulos";
 
 interface Door {
     href: string;
@@ -32,14 +34,16 @@ interface Door {
     action: string;
 }
 
-const DOORS: Door[] = [
+const TODAS: Door[] = [
     {
         href: "/login",
         area: "inicio",
         icon: faUser,
         hint: "Sou sócio",
         title: "Entrar",
-        lead: "Reserve quadras e espaços sociais, acenda a luz da quadra e inscreva-se nos torneios.",
+        lead: moduloVisivel("social") || moduloVisivel("torneios")
+            ? "Reserve quadras e espaços sociais, acenda a luz da quadra e inscreva-se nos torneios."
+            : "Reserve quadras, acenda a luz da quadra e veja os seus replays.",
         action: "Entrar ou criar conta",
     },
     {
@@ -70,6 +74,9 @@ const DOORS: Door[] = [
         action: "Ver eventos",
     },
 ];
+
+/** Sem as portas dos módulos ainda não liberados nesta instância (utils/modulos.ts). */
+const DOORS = TODAS.filter((door) => moduloVisivel(door.area));
 
 export default function PublicHome() {
     return (
@@ -113,7 +120,7 @@ export default function PublicHome() {
                         <p className={style.lead}>O que você quer fazer hoje?</p>
                     </section>
 
-                    <nav className={style.doors} aria-label="Áreas do site">
+                    <nav className={style.doors} style={{ "--portas": DOORS.length } as CSSProperties} aria-label="Áreas do site">
                         {DOORS.map((door) => (
                             <Link key={door.href} href={door.href} className={style.door} style={areaStyle(door.area)}>
                                 <span className={style.doorIcon} aria-hidden="true">

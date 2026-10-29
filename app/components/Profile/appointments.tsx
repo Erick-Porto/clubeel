@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import LightingStatusCard from "../Lighting/LightingStatusCard";
 import ReplayNotice from "../Replay/ReplayNotice";
 import { faBagShopping } from "@fortawesome/free-solid-svg-icons";
+import { moduloVisivel } from "../../../utils/modulos";
 
 const Appointments = () => {
     const { cart, isLoading } = useCart();
@@ -57,7 +58,7 @@ const Appointments = () => {
             </section>
             {/* Espaços sociais têm fluxo próprio (análise da secretaria, prazo de
                 pagamento, lista de convidados): só um atalho para a tela deles. */}
-            <section className={style.appointmentsItem}>
+            {moduloVisivel('social') && <section className={style.appointmentsItem}>
                 <h2 className={style.appointmentsTitle}>Espaços sociais</h2>
                 <p className={style.emptyMessage}>Churrasqueiras e salões têm acompanhamento próprio.</p>
                 <div className={style.shortcuts}>
@@ -68,7 +69,7 @@ const Appointments = () => {
                         <FontAwesomeIcon icon={faCalendarPlus} /> Reservar um espaço
                     </Link>
                 </div>
-            </section>
+            </section>}
         </div>
     );
 };

@@ -14,6 +14,7 @@ import Link from "next/link";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { safeCallbackUrl } from "../../../utils/callback-url";
 import { comBase } from '../../../utils/base-path';
+import { moduloVisivel } from '../../../utils/modulos';
 
 export default function AuthSidebar({ useInterface }: { useInterface: string }) {
     const [cpf, setCPF] = useState("");
@@ -339,7 +340,9 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                       */}
                     <Link href="/" className={styles.homeLink}>
                         <FontAwesomeIcon icon={faArrowLeft} /> Voltar ao início
-                        <span className={styles.homeLinkHint}>RePET e torneios sem precisar de conta</span>
+                        <span className={styles.homeLinkHint}>
+                            {moduloVisivel('torneios') ? 'RePET e torneios sem precisar de conta' : 'RePET sem precisar de conta'}
+                        </span>
                     </Link>
                 </>
             )}

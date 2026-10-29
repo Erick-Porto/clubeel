@@ -64,6 +64,7 @@ Arquivos: `.env` (produção/host) e `.env.development.local` (só `NEXTAUTH_URL
 | `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | webhook (obrigatório; sem ele → 503) | servidor |
 | `WHATSAPP_WEBHOOK_SIGNING_SECRET` | webhook (opcional; vazio = camada HMAC desligada) | servidor |
 | `NEXT_PUBLIC_BASE_PATH` | `next.config.ts` (`basePath`) e `utils/base-path.ts`. Vazio = produção na raiz; `/homolog` = homologação. **Fixado no build.** | cliente + servidor |
+| `NEXT_PUBLIC_MODULOS_EXTRAS` | `utils/modulos.ts` — `1` mostra os módulos não liberados fora da homologação (ex.: `npm run dev`). Não usar em produção. **Fixado no build.** | cliente |
 | `NEXT_PUBLIC_APP_URL` | `utils/callback-url.ts` (validar origem do callback) | cliente |
 | `NEXT_PUBLIC_REPLAY_MEDIA_MODE` | `utils/replay.ts` — `direct` ou (padrão) `proxy` | cliente |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | `Common/location.tsx` (componente não usado) | cliente |
@@ -115,11 +116,17 @@ navegador ── espacos.clubedosfuncionarios.com.br (proxy reverso, 443)
                └─ /*          → systemd da produção      (porta atual, branch master)
 ```
 
-- **Branch `homolog`**: o que está em teste (hoje: rebrand v4 + espaços sociais). `master` segue indo para a produção. Função aprovada: merge da feature em `master`.
+- **Branch `homolog`**: o que está em teste. `master` segue indo para a produção. Função aprovada: merge da feature em `master` (ou de `homolog` inteira, com os módulos ainda não aprovados escondidos — ver abaixo).
 - **Mesma Lara e mesma eRede da produção**: reserva, pagamento, luz e aprovação feitos na homologação são **reais**. A faixa no topo avisa isso.
 - **Código ciente do prefixo** — [utils/base-path.ts](../../utils/base-path.ts) (`BASE_PATH`, `EM_HOMOLOGACAO`, `comBase`, `semBase`). O Next prefixa `<Link>`, `router.push` e `redirect()`; **todo o resto precisa de `comBase`**: `fetch('/api/...')` no cliente (inclusive `PROXY_API` do `api-consume`), `src="/images/..."` em string, `url(...)` em `style`, URL de mídia do replay, `callbackUrl` do `signOut`, `pages.signIn` do NextAuth, `basePath` do `SessionProvider`, `new URL(..., request.url)` em Route Handler, `path` de cookie. Em CSS Module use caminho relativo (`url('../public/images/x.png')`), que o bundler resolve com o prefixo.
 - **Cookies separados** ([utils/auth-cookies.ts](../../utils/auth-cookies.ts)): na homologação os cookies do NextAuth são `*.homolog` com `path=/homolog`, e o `NEXTAUTH_SECRET` é outro; sessão de um ambiente não vale no outro e sair de um não derruba o outro. Em produção ficam os nomes padrão (nenhuma sessão existente é invalidada). O cookie da aprovação usa `COOKIE_PATH = comBase('/aprovacao')`.
 - **Rate limit e cache de pagamentos pendentes** são em memória por processo: cada instância tem o seu.
+
+### Módulos não liberados em produção
+
+[utils/modulos.ts](../../utils/modulos.ts) lista os módulos que já estão no código mas ainda não aparecem em produção (desde a liberação de 2026-10-29: `social`, `torneios`, `ingressos`). `moduloVisivel(chave)` responde `true` na homologação (`EM_HOMOLOGACAO`) ou com `NEXT_PUBLIC_MODULOS_EXTRAS=1`; em produção, `false` para os da lista. Nenhum `.env` precisa mudar.
+
+O que some: itens do menu (topo, folha "Menu" do celular e menu do usuário), abas e atalhos da home do sócio (as leituras de `social/groups` e da lista de torneios nem são feitas), portas da página pública, dica do link "Voltar ao início" no login, seção "Espaços sociais" e avisos de reserva social/torneio no perfil. **As páginas, o middleware e o proxy não mudam**: quem tiver a URL (ex.: link de pedido de ingresso do e-mail) continua entrando — decisão do clube. Para liberar um módulo, tire-o da lista.
 
 ### Montar no servidor (uma vez)
 
