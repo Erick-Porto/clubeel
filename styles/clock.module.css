@@ -1,54 +1,45 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+/* Relógio do carrinho: quanto falta para o agendamento mais antigo expirar. */
+
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-weight: 700;
+  font-size: 13.5px;
+}
 
 .iconWrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.6s ease-in-out;
-    transform-origin: center;
-    font-size: 1.2rem;
+  display: grid;
+  place-items: center;
+  transition: transform .3s ease;
+}
+
+.clockLabel {
+  flex: 1;
+  min-width: 0;
 }
 
 .timerText {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Nunito', sans-serif;
-    /* font-weight: bold; */
-    font-size: 1.5rem;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 17px;
+  font-weight: 600;
 }
 
-.clock{
-    background-color: var(--grena-light);
-    padding:8px 10px;
-    color: white;
-    border-radius: 25px;
-    width:100px;
-    cursor: default;
-    user-select: none;
-}
-
-
+/* Último minuto: o aviso vira erro e pulsa. */
 .pulse {
-  position: relative;
-  border-radius: 25px;
-  box-shadow: 0 0 0 0 rgba(252, 75, 75, 0.7);
-  animation: pulse-white 1s infinite;
-  pointer-events: none;
-  z-index: 10001;
+  background: var(--danger-soft);
+  color: var(--danger);
+  animation: pulse 1s ease-in-out infinite;
 }
 
-@keyframes pulse-white {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(252, 75, 75, 0.7);
-  }
-  70% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 20px rgba(252, 75, 75, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(252, 75, 75, 0);
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 4px rgb(var(--danger-rgb) / .18);
   }
 }

@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 import { guardRequest } from "../../../utils/sanitize";
+import { getClientIp, rateLimit } from "../../../utils/rate-limit";
+import { readGuestToken } from "../../../utils/ticket-guest";
 
 interface SessionWithToken {
     accessToken?: string;
@@ -28,7 +30,60 @@ const PUBLIC_ENDPOINTS: RegExp[] = [
     // Lara não devolve identificação de sócio nesses dois endpoints.
     /^replay\/places$/,
     /^replay\/places\/\d+\/videos$/,
+    // Torneios: lista, detalhe e chaveamento divulgado são abertos a qualquer
+    // visitante (a Lara só devolve o que está publicado; rascunho e cancelado
+    // respondem 404). O filtro `place_group_id` fica na query, fora do `path`.
+    /^tournaments$/,
+    /^tournaments\/\d+$/,
+    /^tournaments\/\d+\/categories\/\d+\/bracket$/,
+    // Lançamento de resultados pela equipe do clube: não usa login de sócio —
+    // a autorização é o código de lançamento do torneio, que vai no header
+    // `Tournament-Code` (repassado só nestas rotas; ver STAFF_ENDPOINTS).
+    /^tournaments\/\d+\/staff\/check$/,
+    /^tournaments\/\d+\/staff\/matches$/,
+    /^tournaments\/\d+\/staff\/matches\/\d+\/result$/,
+    // Ingressos: vitrine e cupom são abertos (o não sócio compra sem login).
+    // O pedido do não sócio é autorizado pelo token do pedido (header
+    // `Ticket-Order-Token`, montado aqui a partir do cookie httpOnly — ver
+    // GUEST_ORDER_ENDPOINT). Criar o pedido sem login, pagar e baixar o PDF
+    // ficam FORA: rotas próprias do servidor (pages/api/ingressos/*, success.ts).
+    /^tickets\/events$/,
+    /^tickets\/events\/\d+$/,
+    /^tickets\/events\/\d+\/coupon-check$/,
+    // Lugar marcado: o mapa com a situação de cada lugar (sem dado de quem
+    // comprou). O `day_id` fica na query, fora do `path`.
+    /^tickets\/events\/\d+\/maps\/\d+$/,
+    /^tickets\/guest-orders\/resend-link$/,
+    /^tickets\/guest-orders\/\d+$/,
+    // "Meus ingressos" do não sócio, passo 1: pedir o código por e-mail (a Lara
+    // responde sempre igual). Conferir o código e listar os pedidos ficam FORA:
+    // rotas próprias (pages/api/ingressos/acesso/*), que guardam o token.
+    /^tickets\/guest-access\/code$/,
 ];
+
+// Pedido de ingresso do não sócio: recebe o `Ticket-Order-Token` do cookie
+// deste pedido e NÃO recebe o Session de um sócio logado no mesmo navegador.
+const GUEST_ORDER_ENDPOINT = /^tickets\/guest-orders\/(\d+)$/;
+
+// Limites por IP de quem chama, na frente dos da Lara: lá eles contam por IP,
+// e todas as chamadas chegam do mesmo IP (este servidor) — sem isto, uma pessoa
+// esgotaria o limite de todo mundo.
+const RATE_LIMITS: Array<[RegExp, number]> = [
+    [/^tickets\/events\/\d+\/coupon-check$/, 20],
+    // O mapa aberto relê a cada `refresh_after` (hoje 15 s): ~4 por minuto por pessoa.
+    [/^tickets\/events\/\d+\/maps\/\d+$/, 120],
+    [/^tickets\/events\/\d+\/maps\/\d+\/member$/, 120],
+    [/^tickets\/guest-orders\/resend-link$/, 5],
+    [/^tickets\/guest-access\/code$/, 5],
+    [/^tickets\/my-title$/, 30],
+];
+
+// Rotas da equipe do torneio: recebem o `Tournament-Code` e NÃO recebem o
+// Session de um sócio que por acaso esteja logado no mesmo navegador.
+const STAFF_ENDPOINT = /^tournaments\/\d+\/staff\//;
+// 8 letras e números, mostrado como ABCD-EFGH (maiúsculas, espaço e hífen
+// não importam para a Lara). Qualquer outra coisa não é repassada.
+const TOURNAMENT_CODE = /^[A-Za-z0-9 -]{1,20}$/;
 
 // Endpoints que exigem sessão autenticada.
 const AUTHENTICATED_ENDPOINTS: RegExp[] = [
@@ -48,6 +103,46 @@ const AUTHENTICATED_ENDPOINTS: RegExp[] = [
     /^lighting\/places\/\d+\/activate$/,
     /^lighting\/release$/,
     /^lighting\/activations$/,
+    // Espaços sociais (churrasqueiras, salões): o dono da reserva é sempre o
+    // Session — nenhum endpoint recebe id/CPF de sócio, e reserva de outro
+    // sócio responde 404. A query (`place_id`, `month`, `place_group_id`) não
+    // entra no teste da regex: ela fica fora do `path`.
+    /^social\/groups$/,
+    /^social\/groups\/\d+\/places$/,
+    /^social\/availability$/,
+    /^social\/beverages$/,
+    /^social\/furniture$/,
+    /^social\/limits$/,
+    /^social\/bookings$/,
+    /^social\/bookings\/\d+$/,
+    /^social\/bookings\/\d+\/guests$/,
+    // Torneios (sócio): o inscrito, o capitão e o convidado são sempre o dono
+    // do Session — nenhum corpo leva id/CPF de sócio (a Lara ignora). A busca
+    // de convidado recebe `title`/`cpf` na query e devolve uma `ref` opaca.
+    // `tournaments/payment` fica FORA de propósito: só o servidor chama
+    // (pages/api/success.ts), depois de verificar a transação na eRede.
+    /^tournaments\/\d+\/eligibility$/,
+    /^tournaments\/\d+\/registrations$/,
+    /^tournaments\/my-registrations$/,
+    /^tournaments\/registrations\/\d+$/,
+    /^tournaments\/my-teams$/,
+    /^tournaments\/categories\/\d+\/teams$/,
+    /^tournaments\/member-lookup$/,
+    /^tournaments\/teams\/\d+\/invites$/,
+    /^tournaments\/invites\/\d+$/,
+    /^tournaments\/my-invites$/,
+    /^tournaments\/invites\/\d+\/accept$/,
+    /^tournaments\/invites\/\d+\/decline$/,
+    // Ingressos (sócio): o comprador é sempre o dono do Session. As pessoas do
+    // título vão no pedido pela `ref` opaca da Lara (`my-title`), nunca por
+    // CPF. O `event_id` do `my-title` fica na query, fora do `path`.
+    // `tickets/orders/{id}/payment` e `/pdf` ficam FORA: só o servidor chama.
+    /^tickets\/my-title$/,
+    /^tickets\/events\/\d+\/orders$/,
+    /^tickets\/my-orders$/,
+    /^tickets\/orders\/\d+$/,
+    // Mapa visto pelo sócio: a cativa da matrícula dele (do Session) vem livre.
+    /^tickets\/events\/\d+\/maps\/\d+\/member$/,
 ];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -68,6 +163,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const isAuthenticated = AUTHENTICATED_ENDPOINTS.some((re) => re.test(pathString));
     if (!isPublic && !isAuthenticated) {
         return res.status(403).json({ error: "Endpoint não permitido." });
+    }
+
+    const limit = RATE_LIMITS.find(([re]) => re.test(pathString));
+    if (limit) {
+        const rl = rateLimit(`proxy:${limit[0].source}:${getClientIp(req)}`, limit[1], 60_000);
+        if (!rl.ok) {
+            res.setHeader('Retry-After', String(rl.retryAfter));
+            return res.status(429).json({ message: "Muitas tentativas. Tente novamente em instantes." });
+        }
     }
 
     // Endpoints autenticados EXIGEM sessão válida — sem sessão, não repassa o
@@ -102,7 +206,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     headers.set("Accept", "application/json");
     headers.set("Authorization", `Bearer ${appToken}`);
 
-    if (accessToken) {
+    const guestOrder = GUEST_ORDER_ENDPOINT.exec(pathString);
+    if (STAFF_ENDPOINT.test(pathString)) {
+        const rawCode = req.headers["tournament-code"];
+        const code = Array.isArray(rawCode) ? rawCode[0] : rawCode;
+        if (code && TOURNAMENT_CODE.test(code)) headers.set("Tournament-Code", code);
+    } else if (guestOrder) {
+        // Sem cookie deste pedido o header não vai, e a Lara responde 404.
+        const orderToken = readGuestToken(req, Number(guestOrder[1]));
+        if (orderToken) headers.set("Ticket-Order-Token", orderToken);
+    } else if (accessToken) {
         headers.set("Session", accessToken);
     }
 

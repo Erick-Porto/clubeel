@@ -14,6 +14,7 @@
 
 import { cookies } from 'next/headers';
 import type { AprovacaoUsuario } from '../../services/aprovacao-api';
+import { comBase } from '../../utils/base-path';
 
 export const COOKIE_TOKEN = 'aprovacao_token';
 export const COOKIE_USUARIO = 'aprovacao_usuario';
@@ -22,8 +23,11 @@ export const COOKIE_USUARIO = 'aprovacao_usuario';
  * Escopado à área. As Server Actions são postadas para a própria rota, e o
  * Route Handler de expiração também vive sob /aprovacao, então tudo que precisa
  * do cookie o recebe.
+ *
+ * O path do cookie é o que o NAVEGADOR vê: na homologação a área fica em
+ * /homolog/aprovacao, e um cookie com path /aprovacao nunca voltaria.
  */
-export const COOKIE_PATH = '/aprovacao';
+export const COOKIE_PATH = comBase('/aprovacao');
 
 const OITO_HORAS_MS = 8 * 60 * 60 * 1000;
 

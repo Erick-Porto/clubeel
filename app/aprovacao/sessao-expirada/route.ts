@@ -17,10 +17,13 @@
 
 import { NextResponse } from 'next/server';
 import { COOKIE_PATH, COOKIE_TOKEN, COOKIE_USUARIO } from '../sessao';
+import { comBase } from '../../../utils/base-path';
 
 export async function GET(request: Request) {
   const resposta = NextResponse.redirect(
-    new URL('/aprovacao/login?motivo=expirada', request.url)
+    // `new URL` não conhece o basePath do Next; sem o prefixo, a homologação
+    // mandaria o aprovador para o login da produção.
+    new URL(comBase('/aprovacao/login?motivo=expirada'), request.url)
   );
 
   for (const nome of [COOKIE_TOKEN, COOKIE_USUARIO]) {

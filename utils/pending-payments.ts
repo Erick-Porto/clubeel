@@ -6,7 +6,7 @@
  * segunda chamada era uma fonte de lentidao extra (risco de expirar o hold
  * do agendamento) e de falso-positivo de "valor divergente".
  *
- * Adequado para uma unica instancia (PM2 single process), mesmo modelo do
+ * Adequado para uma unica instancia (um unico processo `next start`), mesmo modelo do
  * rate-limit.ts. Para escala horizontal, migrar para um store compartilhado
  * (Redis).
  */
@@ -17,6 +17,25 @@ export interface PendingPayment {
   amountCents: number;
   method: string;
   createdAt: number;
+  /**
+   * Preenchido quando a cobrança é de uma reserva de espaço social: o
+   * `scheduleIds` então é só o `schedule_id` dela, e a falha da Lara volta
+   * com `reason` (ex.: `payment_mismatch`) em vez de "expired".
+   */
+  socialBookingId?: number;
+  /**
+   * Preenchido quando a cobrança é de inscrições de torneio: `scheduleIds` fica
+   * vazio e a confirmação vai para `tournaments/payment`, não para
+   * `schedule/payment`.
+   */
+  tournamentRegistrationIds?: number[];
+  /**
+   * Preenchido quando a cobrança é de um pedido de ingressos: `scheduleIds`
+   * fica vazio e a confirmação vai para `tickets/(guest-)orders/{id}/payment`.
+   * No pedido do não sócio, `userId` é `ticket-guest:<id do pedido>`.
+   */
+  ticketOrderId?: number;
+  ticketGuest?: boolean;
 }
 
 // Generosa o suficiente para cobrir a confirmacao (normalmente quase

@@ -2,6 +2,18 @@
 
 echo "🚀 Iniciando Deploy..."
 
+# O `next start` roda como serviço do systemd, atrás do nginx (o nginx só faz
+# o proxy reverso; quem executa o Next é o serviço). Ajuste o nome se o da
+# máquina for outro, ou rode `SERVICO=<nome> ./deploy.sh`.
+SERVICO="${SERVICO:-espacos}"
+
+# Confere ANTES de mexer no código: sem o serviço certo, o build novo ficaria
+# em disco sem nunca ser carregado.
+if ! systemctl cat "$SERVICO" >/dev/null 2>&1; then
+  echo "❌  Serviço systemd '$SERVICO' não encontrado. Rode 'systemctl list-units --type=service' e use SERVICO=<nome> ./deploy.sh."
+  exit 1
+fi
+
 # Garante que estamos na pasta certa (ajuste se necessário)
 # cd /home/administrator/clubeel 
 
@@ -24,8 +36,10 @@ npm ci --include=dev
 echo "🏗️  Gerando Build..."
 npm run build
 
-echo "🔄  Reiniciando PM2..."
-pm2 restart espacos
+echo "🔄  Reiniciando o serviço $SERVICO..."
+# Precisa de sudo (ou de uma regra no sudoers liberando só este restart).
+sudo systemctl restart "$SERVICO"
+systemctl is-active --quiet "$SERVICO" || { echo "❌  $SERVICO não subiu. Veja: journalctl -u $SERVICO -n 50"; exit 1; }
 
 echo "🔒  Aplicando permissões mínimas (Linux)..."
 # NUNCA usar 777: tornaria todo o diretório (código, build, .env) gravável por

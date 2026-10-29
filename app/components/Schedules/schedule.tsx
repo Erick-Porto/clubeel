@@ -3,12 +3,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import styles from '../../../styles/schedule.module.css';
 import BookingButton from './booking-button';
-import Image from 'next/image';
 import { toast } from 'react-toastify';
 import { useSession } from 'next-auth/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBagShopping, faBan, faCheck, faCircleCheck, faClock } from '@fortawesome/free-solid-svg-icons';
 import { useCart } from '../../../context/CartContext';
 import API_CONSUME from '../../../services/api-consume';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { Media, Pill } from '../UI/ui';
 import Clock from './clock';
 
 interface ReservationPayload {
@@ -45,6 +47,8 @@ interface ScheduleProps {
     limit?: number;
 }
 
+const formatBRL = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) => {
     const { data: session } = useSession();
     const { cart, refreshCart } = useCart();
@@ -66,7 +70,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const fetchData = useCallback(async () => {
         if (!placeId || !session?.accessToken || !currentDate) {
             toast.error("Dados insuficientes para carregar horários.");
-            
+
             return;
         }
         try {
@@ -81,17 +85,17 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
             if (!response.ok || !response.data) {
                 const msg = response.message as unknown;
                 const errorText = msg instanceof Error ? msg.message : String(msg);
-                
+
                 toast.error('Erro ao buscar horários: ' + errorText);
                 return;
             }
-            
+
             const timeOptions = response.data.options;
             const listToMap = Array.isArray(timeOptions) ? timeOptions : [];
             const quantityFromPlace = response.data.limit ? response.data.limit.remaining : 2;
             setLocalQuantity(Number(quantityFromPlace));
             setLoadedContent(listToMap);
-            
+
         } catch(error) {
             toast.error('Erro ao buscar horários: ' + (error instanceof Error ? error.message : String(error)));
         }
@@ -114,7 +118,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
         }
 
         const currentSelectionIndices = selectedItems.map(sel => loadedContent.indexOf(sel));
-        
+
         const allMyIndices = [...currentSelectionIndices].sort((a, b) => a - b);
 
         if (allMyIndices.length > 0) {
@@ -136,7 +140,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
         if (!session?.accessToken) {
             toast.error("Sessão inválida. Por favor, faça login novamente.");
             return;
-            
+
         }
         if (selectedItems.length === 0) return toast.info("Selecione ao menos um horário.");
 
@@ -176,12 +180,15 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
     const minActiveIndex = allActiveIndices.length > 0 ? allActiveIndices[0] : -1;
     const maxActiveIndex = allActiveIndices.length > 0 ? allActiveIndices[allActiveIndices.length - 1] : -1;
     const limitReached = (selectedItems.length) >= localQuantity;
+    const selectedTotal = selectedItems.length * numericPrice;
+
+    // Os ids `action-buttons-1/2` são alvos do tutorial: não renomear.
     const ActionButtons = () => (
         <div className={isMobile? styles.mobileButtons : styles.actionButtonsWrapper}>
-            <div style={isMobile ? {minWidth: '140px'}:{}} id='action-buttons-1'>
+            <div id='action-buttons-1'>
                 <BookingButton
-
-                    text={selectedItems.length === 0 ? isMobile ? 'Adicionar' : 'Selecione um horário' :  isMobile ? `Adicionar (${selectedItems.length})`: `Adicionar ${selectedItems.length} Horário(s)`}
+                    text={selectedItems.length === 0 ? isMobile ? 'Adicionar' : 'Selecione um horário' :  isMobile ? `Adicionar (${selectedItems.length})`: `Adicionar ${selectedItems.length} ${selectedItems.length === 1 ? 'horário' : 'horários'}`}
+                    icon={faBagShopping}
                     itemsToValidate={selectedItems}
                     onClick={handleReserve}
                     disabled={selectedItems.length === 0}
@@ -191,7 +198,8 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
             {(cart && cart.length > 0) && (
                 <div id ='action-buttons-2'>
                     <BookingButton
-                        text= {isMobile ? 'Finalizar' : "Finalizar (Ir ao Carrinho)"}
+                        text= {isMobile ? 'Finalizar' : "Finalizar compra"}
+                        variant="secondary"
                         redirectPath="/checkout"
                         itemsToValidate={[]}
                         onClick={() => {}}
@@ -204,17 +212,19 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
 
     return (
         <div className={styles.placeContainer}>
+            {/* Os ids `schedule-N` dos horários são alvos do tutorial (o passo 1 aponta `schedule-1`). */}
             <div className={styles.scheduleContainer}>
-                <div className={styles.legendContainer}>
-                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendAvailable}`}></span> Disponível</div>
-                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendSelected}`}></span> Selecionado</div>
-                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendConfirmed}`}></span> Confirmado</div>
-                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendInCart}`}></span> No Carrinho</div>
-                    <div className={styles.legendItem}><span className={`${styles.legendBox} ${styles.legendOccupied}`}></span> Ocupado</div>
+                <div className={styles.legendContainer} aria-label="Legenda">
+                    <Pill kind="ok" icon={faCheck}>Disponível</Pill>
+                    <Pill kind="info" icon={faCircleCheck}>Selecionado</Pill>
+                    <Pill kind="ok" icon={faCircleCheck}>Confirmado (seu)</Pill>
+                    <Pill kind="warn" icon={faBagShopping}>No carrinho</Pill>
+                    <Pill kind="off" icon={faBan}>Ocupado</Pill>
                 </div>
 
                 {loadedContent.length === 0 ? (
                     <div className={styles.emptyState} id="schedule-list">
+                        <FontAwesomeIcon icon={faClock} />
                         Nenhum horário disponível para esta data.
                     </div>
                 ) : (
@@ -223,9 +233,7 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
                             const isSelected = selectedItems.includes(item);
 
                             let itemClass = styles.scheduleItem;
-                            // let memberName = "";
-                            // let owner = "";
-                            let label = `R$ ${numericPrice.toFixed(2)}`;
+                            let label = formatBRL(numericPrice);
                             let isClickable = true;
                             let isBlocked = false;
 
@@ -242,15 +250,13 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
                                 }
                                 else if (item.colided_status_id === 3) {
                                     itemClass += ` ${styles.inCart}`;
-                                    label = "No Carrinho";
+                                    label = "No carrinho";
                                     isBlocked = true;
                                 }
                             } else if (item.colides && item.colided_member) {
                                 itemClass += ` ${styles.reservedByOthers}`;
                                 label = "Ocupado";
                                 isBlocked = true;
-                                // memberName = item.colided_member.name ? (item.colided_member.name).split(' ') : '' 
-                                // owner = `${memberName[0]} ${memberName[memberName.length -1]}`;
                             } else if (item.excluded_by_rule){
                                 itemClass += ` ${styles.reservedByOthers}`;
                                 label = "Indisponível";
@@ -262,7 +268,10 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
                             }
 
 
-                            if (isSelected) itemClass += ` ${styles.selected}`;
+                            if (isSelected) {
+                                itemClass += ` ${styles.selected}`;
+                                label = "Selecionado";
+                            }
 
                             if (!isBlocked && !isSelected && allActiveIndices.length > 0) {
                                 const isNeighbor = index === minActiveIndex - 1 || index === maxActiveIndex + 1;
@@ -279,63 +288,76 @@ const Schedule: React.FC<ScheduleProps> = ({ place_id, src, price, dateProp }) =
                                     id={`schedule-${index}`}
                                     key={`${index}-${item.start_time}`}
                                     className={itemClass}
+                                    role="button"
+                                    tabIndex={isClickable || item.colided_description ? 0 : -1}
+                                    aria-pressed={isSelected}
+                                    aria-disabled={!isClickable}
                                     onClick={() => {
+                                        if(item.colided_description) toast.info(item.colided_description);
+                                        else if (isClickable) toggleSelectHour(item, index);
+                                    }}
+                                    onKeyDown={(event) => {
+                                        if (event.key !== 'Enter' && event.key !== ' ') return;
+                                        event.preventDefault();
                                         if(item.colided_description) toast.info(item.colided_description);
                                         else if (isClickable) toggleSelectHour(item, index);
                                     }}
                                 >
                                     <span className={styles.timeLabel}>
-                                        {item.start_time} - {item.end_time}
+                                        {item.start_time} – {item.end_time}
                                     </span>
                                     <span className={styles.priceLabel}>{label}</span>
-                                    {/* <span className={styles.priceLabel}>{owner}</span> */}
                                 </li>
                             );
                         })}
                     </ul>
                 )}
-                <div className={styles.mobileSpacer}></div>
             </div>
 
-            <div className={ isMobile? styles.mobileBottomBar : styles.rightColumn}>
-                { isMobile ? (
-                    <>
-                        <div className={styles.mobileSummary}>
-                            <span>Total:</span>
-                            <strong>R$ {((selectedItems.length * numericPrice)+cartTotal).toFixed(2)}</strong>
+            { isMobile ? (
+                <div className={styles.mobileBottomBar}>
+                    <div className={styles.mobileClock} id='expire-clock'>
+                        <Clock/>
+                    </div>
+                    <div className={styles.mobileSummary}>
+                        <span>{selectedItems.length > 0 ? `${selectedItems.length} ${selectedItems.length === 1 ? 'horário' : 'horários'} · total` : 'Total'}</span>
+                        <strong>{formatBRL((selectedItems.length * numericPrice)+cartTotal)}</strong>
+                    </div>
+                    <ActionButtons />
+                </div>
+            ) : (
+                <aside className={styles.rightColumn}>
+                    <div className={styles.calendarImageContainer}>
+                        <Media src={src || null} area="quadras" ratio="video" alt="Foto da quadra" />
+                    </div>
+                    <div className={styles.desktopActions}>
+                        <span className={styles.asideLabel}>Seleção</span>
+                        {selectedItems.length > 0 ? (
+                            <ul className={styles.selectionList}>
+                                {selectedItems.map((item) => (
+                                    <li key={item.start_time}>
+                                        <span className={styles.selectionTime}>{item.start_time} – {item.end_time}</span>
+                                        <span className={styles.selectionPrice}>{formatBRL(numericPrice)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className={styles.selectionEmpty}>Toque em um horário disponível para começar.</p>
+                        )}
+                        <div className={styles.subtotal}>
+                            <span>Selecionado agora</span>
+                            <strong>{formatBRL(selectedTotal)}</strong>
                         </div>
                         <ActionButtons />
-                        <div className={styles.mobileButtons}>
+                        <div className={styles.clockWrapper} id='expire-clock'>
+                            <Clock/>
                         </div>
-                    </>
-                ) :(
-                    <>
-                        <div className={styles.calendarImageContainer}>
-                            {src ? (
-                                <Image
-                                    src={src}
-                                    width={400}
-                                    height={275}
-                                    alt="Local" 
-                                    priority={true}
-                                    quality={100} 
-                                    style={{objectFit: 'cover'}}
-                                />
-                            ) : <div className={styles.imagePlaceholder}>Imagem não disponível</div>
-                            }
-                            
-                            <div className={styles.clockWrapper} id='expire-clock'>
-                                <Clock/>
-                            </div>
-                        </div>
-                        <div className={styles.desktopActions}>
-                            <h3>Resumo</h3>
-                            <p>Selecionado Agora: <strong>R$ {(selectedItems.length * numericPrice).toFixed(2)}</strong></p>
-                            <ActionButtons />
-                        </div>
-                    </>
-                )}
-            </div>
+                        <p className={styles.asideHint}>
+                            Os horários ficam guardados no carrinho por 10 minutos. Depois disso, voltam a ficar livres.
+                        </p>
+                    </div>
+                </aside>
+            )}
         </div>
     );
 }

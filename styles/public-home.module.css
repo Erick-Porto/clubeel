@@ -1,0 +1,271 @@
+/*
+ * Página inicial pública (raiz sem sessão): fotos do clube fixas ao fundo,
+ * véu na cor da tela e três "portas" — Entrar (sócio), RePET e Torneios.
+ * Cada porta usa as duas cores do seu módulo invertidas (tinta no fundo, tom
+ * claro no texto), como o antigo cartão do RePET no login: contraste nos dois
+ * temas. Cores só por token.
+ */
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--canvas);
+}
+
+/* O carrossel vira o fundo fixo da tela inteira. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.backdrop > * {
+  height: 100% !important;
+}
+
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(var(--canvas-rgb) / .7) 0%, rgb(var(--canvas-rgb) / .55) 45%, rgb(var(--canvas-rgb) / .85) 100%);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top {
+  width: 100%;
+  max-width: var(--page-width);
+  margin: 0 auto;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.logo {
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.logo img {
+  height: 100%;
+  width: auto;
+}
+
+.logoDark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .logoLight { display: none; }
+  :root:not([data-theme='light']) .logoDark { display: block; }
+}
+
+:root[data-theme='dark'] .logoLight { display: none; }
+:root[data-theme='dark'] .logoDark { display: block; }
+
+.enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--grena);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.enter:hover {
+  background: var(--grena-hover);
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--page-width);
+  margin: 0 auto;
+  padding: 48px 16px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-2);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(32px, 5vw, 48px);
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.lead {
+  font-size: 17px;
+  color: var(--ink-2);
+}
+
+.doors {
+  display: grid;
+  gap: 16px;
+  /* Uma coluna por porta (--portas vem do componente: produção mostra menos
+     portas enquanto há módulos não liberados, utils/modulos.ts). */
+  grid-template-columns: repeat(var(--portas, 4), minmax(0, 1fr));
+}
+
+/* Quatro portas: em telas médias, duas por linha. */
+@media (max-width: 1180px) {
+  .doors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.door {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 230px;
+  padding: 22px;
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgb(var(--c) / .26) 0%, transparent 60%),
+    rgb(var(--ci));
+  color: rgb(var(--c));
+  box-shadow: var(--shadow-pop);
+  transition: transform .15s, box-shadow .15s;
+}
+
+@media (hover: hover) {
+  .door:hover {
+    transform: translateY(-3px);
+  }
+}
+
+.door:focus-visible {
+  outline: 3px solid var(--grena-tint);
+  outline-offset: 3px;
+}
+
+.doorIcon {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: rgb(var(--c));
+  color: rgb(var(--ci));
+}
+
+.doorText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.25;
+}
+
+.doorHint {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: .85;
+}
+
+.doorTitle {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+.doorLead {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.doorAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.doorAction svg {
+  transition: transform .15s;
+}
+
+.door:hover .doorAction svg {
+  transform: translateX(3px);
+}
+
+/* O rodapé fica sobre a tela, não sobre as fotos. */
+.content > footer {
+  background: var(--canvas);
+}
+
+@media (max-width: 900px) {
+  .doors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .door {
+    min-height: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 18px;
+    gap: 14px;
+  }
+
+  .doorText {
+    min-width: 0;
+  }
+
+  .doorAction {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  .logo {
+    height: 34px;
+  }
+
+  .main {
+    padding: 28px 16px 36px;
+    justify-content: flex-start;
+    gap: 20px;
+  }
+}

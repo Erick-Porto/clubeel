@@ -1,188 +1,481 @@
+/* Cabeçalho do sócio (topo) e barra inferior de módulos (celular). */
+
 .header {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 80px;
-  padding: 0 40px;
-  box-sizing: border-box;
+  z-index: 1000;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: rgb(var(--surface-rgb) / .92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.inner {
+  max-width: var(--page-width);
+  margin: 0 auto;
+  padding: 0 16px;
+  min-height: var(--header-height);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  z-index: 10000;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: transparent;
+  gap: 18px;
 }
 
-.headerActive {
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
-  height: 70px; 
+.logo {
+  display: block;
+  height: 36px;
+  flex: none;
 }
 
-.headerLogo {
-  position: relative;
-  width: 160px;
-  height: 50px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
+.logo img {
+  height: 100%;
+  width: auto;
 }
+
+.logoDark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .logoLight { display: none; }
+  :root:not([data-theme='light']) .logoDark { display: block; }
+}
+
+:root[data-theme='dark'] .logoLight { display: none; }
+:root[data-theme='dark'] .logoDark { display: block; }
+
+/* ------------------------------------------------------ Navegação do topo */
 
 .desktopNav {
-    height: 100%;
-    display: flex;
-    align-items: center;
-}
-
-.navigateOptions {
   display: flex;
-  gap: 30px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
-.navButton, 
 .navLink {
-  background: none;
-  border: none;
-  padding: 8px 0;
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
   font-weight: 600;
-  color: #4a4a4a;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.3s ease;
-  position: relative;
-  font-family: inherit;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: background-color .15s, color .15s;
 }
 
-.navButton:hover,
+.navShort {
+  display: none;
+}
+
+/* Telas médias: com sete módulos, os nomes longos não cabem; ficam os curtos. */
+@media (max-width: 1180px) {
+  .navLong { display: none; }
+  .navShort { display: inline; }
+}
+
+@media (max-width: 960px) {
+  .navIcon { display: none; }
+  .navLink { padding: 8px 10px; }
+}
+
 .navLink:hover {
-  color: var(--grena);
+  background: var(--subtle);
+  color: var(--ink);
 }
 
-.activePage .navButton::after,
-.navButton:hover::after,
-.navLink:hover::after {
-  content: '';
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  background-color: var(--grena);
-  border-radius: 50%;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%) scale(1);
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.navLinkActive,
+.navLinkActive:hover {
+  background: var(--grena-tint);
+  color: var(--grena-ink);
 }
 
-.navButton::after,
-.navLink::after {
-    content: '';
-    position: absolute;
-    width: 5px;
-    height: 5px;
-    background-color: var(--grena);
-    border-radius: 50%;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%) scale(0);
-    transition: transform 0.3s;
-}
-
-.profileOptions {
-  position: relative;
-  z-index: 10002;
-}
-
-.profileButton {
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #333;
+.actions {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background 0.3s ease;
 }
 
-.profileButton:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+.iconButton {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
 }
 
-.profileButton span {
+.iconButton:hover {
+  background: var(--subtle);
+  color: var(--ink);
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 2px solid var(--surface);
+  background: var(--grena);
+  color: #fff;
+  font: 700 11px/16px var(--font-mono);
+  text-align: center;
+}
+
+.loginButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--grena);
+  color: #fff;
   font-weight: 700;
-  color: var(--grena);
+}
+
+.loginButton:hover {
+  background: var(--grena-hover);
+}
+
+/* ---------------------------------------------------------- Menu do usuário */
+
+.userMenu {
+  position: relative;
+}
+
+.userButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 12px 3px 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.userButton:hover {
+  background: var(--subtle);
+}
+
+.userButtonActive {
+  border-color: rgb(var(--grena-rgb) / .45);
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgb(var(--a-perfil-rgb));
+  color: rgb(var(--a-perfil-ink-rgb));
+  font: 700 12px var(--font-display);
+}
+
+.userName {
   text-transform: capitalize;
 }
 
-.optionsChevronActive {
-  transform: rotate(180deg);
-  transition: transform 0.3s ease;
+.chevron {
+  font-size: 11px;
+  color: var(--ink-3);
+  transition: transform .2s;
 }
 
-.userOptions {
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   right: 0;
-  width: 200px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  width: min(300px, calc(100vw - 32px));
   padding: 8px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: all 0.2s ease;
-  list-style: none;
+  z-index: 1001;
 }
 
-.userOptionsActive {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+.menuHead {
+  padding: 8px 10px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: var(--ink-2);
 }
 
-.userOptions li {
-  padding: 10px 15px;
-  border-radius: 8px;
-  cursor: pointer;
+.menuHead strong {
+  color: var(--ink);
   font-size: 14px;
-  color: #555;
-  transition: background 0.2s ease;
 }
 
-.userOptions li:hover {
-  background-color: #f5f5f5;
-  color: var(--grena);
+.mono {
+  font-family: var(--font-mono);
 }
 
-.userOptions hr {
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
   border: 0;
-  border-top: 1px solid #eee;
-  margin: 4px 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
 }
 
-@media (max-width: 1024px) {
-  .header {
-    padding: 0 20px;
-    height: 70px;
+.menuItem svg {
+  width: 16px;
+  color: var(--ink-3);
+}
+
+.menuItem:hover {
+  background: var(--subtle);
+}
+
+.menuDanger,
+.menuDanger svg {
+  color: var(--danger);
+}
+
+.menuSection {
+  margin: 4px 0;
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menuLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+}
+
+.themeSwitch {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--subtle);
+}
+
+.themeOption {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.themeOptionActive {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+
+/* ------------------------------------------- Barra inferior (só no celular) */
+
+.bottomNav {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .inner {
+    gap: 10px;
   }
-  
-  .desktopNav {
+
+  .logo {
+    height: 30px;
+  }
+
+  .desktopNav,
+  .userName,
+  .chevron {
     display: none;
   }
-  
-  .profileButton {
-    padding: 8px;
+
+  .userButton {
+    padding: 3px;
+  }
+
+  .bottomNav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
+    background: rgb(var(--surface-rgb) / .96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line);
+  }
+
+  .bottomItem {
+    border: 0;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    color: var(--ink-3);
+  }
+
+  .bottomIcon {
+    width: 48px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    font-size: 18px;
+    transition: background-color .15s;
+  }
+
+  .bottomItemActive {
+    color: var(--grena-ink);
+  }
+
+  .bottomItemActive .bottomIcon {
+    background: var(--grena-tint);
+  }
+}
+
+/* ------------------------------------------ Folha "Menu" (só no celular) */
+
+.sheet,
+.sheetVeil {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .sheetVeil {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    background: rgb(var(--ink-rgb) / .35);
+  }
+
+  .sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--bottom-nav-height) + 8px);
+    z-index: 999;
+    padding: 14px 14px 16px;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    box-shadow: var(--shadow-pop);
+    border: 1px solid var(--line);
+  }
+
+  .sheetHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sheetTitle {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-3);
+  }
+
+  .sheetClose {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--subtle);
+    color: var(--ink-2);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  .sheetGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  /* Cada módulo com a sua cor (areaStyle define --c/--ci). */
+  .sheetItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 92px;
+    padding: 12px 6px;
+    border-radius: 16px;
+    border: 2px solid transparent;
+    background: rgb(var(--c));
+    color: rgb(var(--ci));
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .sheetItemActive {
+    border-color: rgb(var(--ci));
+  }
+
+  .sheetIcon {
+    font-size: 22px;
   }
 }

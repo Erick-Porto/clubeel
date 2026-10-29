@@ -4,6 +4,7 @@ import { useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import API_CONSUME from '../../../services/api-consume';
 import { usePathname } from 'next/navigation';
+import { comBase } from '../../../utils/base-path';
 
 export default function TokenValidator() {
   const { data: session, status } = useSession();
@@ -11,7 +12,7 @@ export default function TokenValidator() {
 
   const validateBackendToken = useCallback(async () => {
     if (status === 'authenticated' && !session?.accessToken) {
-      await signOut({ callbackUrl: '/login', redirect: true });
+      await signOut({ callbackUrl: comBase('/login'), redirect: true });
       return;
     }
 
@@ -19,7 +20,7 @@ export default function TokenValidator() {
 
     if (!response.ok || response.status === 401 || response.status === 403) {
       console.log("Token Validator: Token inválido ou expirado detectado. Deslogando...");
-      await signOut({ callbackUrl: '/login', redirect: true });
+      await signOut({ callbackUrl: comBase('/login'), redirect: true });
     }
   }, [status, session]);
 
@@ -30,6 +31,11 @@ export default function TokenValidator() {
     // porque validateBackendToken chama signOut({ callbackUrl: '/login' }).
     // Não altera nada no fluxo de agendamento: só desliga o validador fora dele.
     if (pathname?.startsWith('/aprovacao')) return;
+    // Mesma coisa nas telas da equipe do torneio (/torneios/equipe e
+    // /torneios/<id>/equipe): usam o código de lançamento, não o login de
+    // sócio, e são usadas na beira da quadra — um login de sócio vencido no
+    // mesmo celular não pode tirá-las dali.
+    if (/^\/torneios\/([^/]+\/)?equipe(\/|$)/.test(pathname ?? '')) return;
 
     if (status === 'authenticated') {
       validateBackendToken();

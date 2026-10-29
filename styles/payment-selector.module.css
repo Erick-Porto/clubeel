@@ -1,74 +1,85 @@
+/*
+ * Formulário de cartão (quadras e reserva social). O cartão desenhado imita o
+ * cartão físico do sócio: as cores por banco (.nubank, .itau…) são as das
+ * marcas dos bancos, não da interface — por isso continuam fixas, nos dois temas.
+ */
+
 .tabsContainer {
   display: flex;
-  background-color: #f5f5f5;
-  padding: 5px;
-  border-radius: 12px;
-  gap: 5px;
-  margin-bottom: 30px;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--subtle);
 }
 
 .tab {
   flex: 1;
-  padding: 12px;
-  border: none;
-  background: transparent;
-  color: #666;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ink);
 }
 
 .tabActive {
-  background-color: white;
-  color: var(--grena);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
 }
+
+/* ------------------------------------------------------------- Cartão */
 
 .cardWrapper {
   perspective: 1000px;
   width: 100%;
-  max-width: 370px;
-  height: 215px;
-  margin: 0 auto 30px auto;
+  max-width: 360px;
+  aspect-ratio: 1.586;
+  margin: 20px auto;
 }
 
 .cardBody {
   width: 100%;
   height: 100%;
   position: relative;
-  transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: transform .6s cubic-bezier(.4, 0, .2, 1);
   transform-style: preserve-3d;
-  cursor: pointer;
 }
 
 .cardFlipped {
   transform: rotateY(180deg);
 }
 
-.cardFront, .cardBack {
+.cardFront,
+.cardBack {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  border-radius: 16px;
-  padding: 25px;
-  color: white;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  border-radius: 18px;
+  padding: 22px;
+  color: #fff;
+  box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background-image: url('/images/default-card.png');
+  background-image: url('../public/images/default-card.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
-  transition: background 0.5s ease;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgb(255 255 255 / .1);
+  overflow: hidden;
 }
 
 .cardBack {
@@ -76,8 +87,8 @@
   padding: 0;
 }
 
-.nubank .cardFront, .nubank .cardBack { background: linear-gradient(135deg, #820ad1, #48037a); } 
-.inter .cardFront, .inter .cardBack { background: linear-gradient(135deg, #FF7A00, #FF5000); }  
+.nubank .cardFront, .nubank .cardBack { background: linear-gradient(135deg, #820ad1, #48037a); }
+.inter .cardFront, .inter .cardBack { background: linear-gradient(135deg, #FF7A00, #FF5000); }
 .itau .cardFront, .itau .cardBack { background: linear-gradient(135deg, #ec7000, #104da1); }
 .bradesco .cardFront, .bradesco .cardBack { background: linear-gradient(135deg, #cc092f, #980320); }
 .santander .cardFront, .santander .cardBack { background: linear-gradient(135deg, #ec0000, #a30000); }
@@ -87,86 +98,96 @@
 .black .cardFront, .black .cardBack { background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #444; }
 
 .chip {
-  width: 50px;
-  height: 35px;
-  background: linear-gradient(135deg, #d4af37, #a8892d);
+  width: 46px;
+  height: 34px;
   border-radius: 6px;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+  background: linear-gradient(135deg, #e9d39a, #b8954a);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / .3);
 }
+
 .chip::after {
-    content: ''; position: absolute; top: 0; left: 50%; width: 1px; height: 100%; background: rgba(0,0,0,0.1);
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 100%;
+  background: rgb(0 0 0 / .12);
 }
 
 .contactlessIcon {
-    opacity: 0.7;
-    transform: rotate(90deg);
-    font-size: 1.5rem;
+  opacity: .7;
+  transform: rotate(90deg);
+  font-size: 1.3rem;
 }
 
 .bankLogo {
-    position: absolute;
-    top: 25px;
-    right: 80px;
-    font-size: 1.1rem;
-    font-weight: 800;
-    font-style: italic;
-    opacity: 0.9;
-    text-transform: uppercase;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  font-size: .95rem;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: .04em;
+  opacity: .95;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgb(0 0 0 / .3);
 }
 
 .cardNumber {
-  font-size: 1.45rem;
-  letter-spacing: 3px;
-  font-family: 'Courier New', monospace;
-  text-shadow: 0 2px 3px rgba(0,0,0,0.4);
-  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1rem, 4.6vw, 1.3rem);
+  font-weight: 500;
+  letter-spacing: .08em;
   white-space: nowrap;
+  text-shadow: 0 2px 3px rgb(0 0 0 / .35);
 }
 
 .cardLabels {
-  font-size: 0.65rem;
+  font-size: .62rem;
+  font-weight: 700;
   text-transform: uppercase;
-  opacity: 0.8;
+  letter-spacing: .08em;
+  opacity: .8;
   margin-bottom: 2px;
-  letter-spacing: 1px;
 }
 
 .cardInfo {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  gap: 10px;
+}
+
+.holderName,
+.expiry {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgb(0 0 0 / .35);
 }
 
 .holderName {
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.9rem;
+  font-size: .85rem;
   max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-  font-family: 'Courier New', monospace;
 }
 
 .expiry {
-  font-weight: 600;
-  font-size: 1rem;
-  font-family: 'Courier New', monospace;
+  font-size: .95rem;
 }
 
 .magneticStrip {
   background: #222;
   width: 100%;
-  height: 45px;
-  margin-top: 25px;
+  height: 44px;
+  margin-top: 24px;
 }
 
 .cvvContainer {
-  padding: 20px;
+  padding: 18px 20px;
   text-align: right;
   position: relative;
 }
@@ -174,79 +195,133 @@
 .cvvStrip {
   background: repeating-linear-gradient(45deg, #fff, #fff 5px, #f0f0f0 5px, #f0f0f0 10px);
   color: #333;
-  height: 35px;
+  height: 34px;
   width: 100%;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 15px;
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
-  font-size: 1.1rem;
+  padding-right: 14px;
+  font-family: var(--font-mono);
+  font-weight: 600;
 }
+
+/* --------------------------------------------------------- Formulário */
 
 .formGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  animation: fadeIn 0.4s ease;
+  gap: 14px;
 }
 
-.fullWidth { grid-column: 1 / -1; }
+.fullWidth {
+  grid-column: 1 / -1;
+}
 
 .inputLabel {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #444;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
 }
 
 .input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.2s;
-    background: #fff;
+  width: 100%;
 }
-.input:focus {
-    border-color: var(--grena);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(115, 0, 1, 0.1);
+
+.monoInput {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .pixContainer {
-    text-align: center;
-    padding: 40px;
-    background: #f8f9fa;
-    border-radius: 12px;
-    border: 2px dashed #e0e0e0;
-    animation: fadeIn 0.4s ease;
+  text-align: center;
+  padding: 32px 20px;
+  border-radius: var(--radius-card);
+  border: 1.5px dashed var(--line-strong);
+  background: var(--canvas);
+  color: var(--ink-2);
 }
 
-.confirmButton{
-    width: 100%;
-    padding: 15px;
-    background-color: var(--grena);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+.status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  color: var(--ink);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.status svg {
+  margin-top: 3px;
 }
 
-@media(max-width: 480px){
-    .cardWrapper { max-width: 300px; height: 190px; }
-    .cardNumber { font-size: 1.1rem; }
-    .formGrid { grid-template-columns: 1fr; }
+.statusOk {
+  background: var(--ok-soft);
+}
+
+.statusOk svg {
+  color: var(--ok);
+}
+
+.statusError {
+  background: var(--danger-soft);
+}
+
+.statusError svg {
+  color: var(--danger);
+}
+
+.secureNote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.confirmButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--grena);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+
+.confirmButton:hover:not(:disabled) {
+  background: var(--grena-hover);
+}
+
+.confirmButton:disabled {
+  opacity: .6;
+  cursor: progress;
+}
+
+@media (max-width: 480px) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cardWrapper {
+    max-width: 320px;
+  }
+
+  .cardFront {
+    padding: 18px;
+  }
 }

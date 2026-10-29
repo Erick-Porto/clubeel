@@ -1,0 +1,22 @@
+/* Faixa de homologação (topo da página, só na instância /homolog). */
+
+.faixa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 16px;
+  padding-top: calc(6px + env(safe-area-inset-top, 0px));
+  background: var(--warn-soft);
+  color: var(--ink);
+  border-bottom: 1px solid var(--warn);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.faixa svg {
+  color: var(--warn);
+  flex-shrink: 0;
+}

@@ -1,27 +1,30 @@
 "use client"
 
 import style from '../../../styles/cart.module.css'
-import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faCartShopping, faCalendarAlt, faClock } from '@fortawesome/free-solid-svg-icons';
+import { faTrashCan, faCartShopping, faCalendarDays, faClock, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
 import { useCart, CartItem } from '../../../context/CartContext';
 import { useSession } from 'next-auth/react';
 import { useMemo } from 'react';
 import URIGen from '../../../utils/uriGen';
+import Clock from '../Schedules/clock';
+import { Media } from '../UI/ui';
+
+const formatBRL = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const Cart = () => {
     const { data: session } = useSession();
     const { cart, refreshCart, isLoading, removeCartItem } = useCart();
 
     const handleRemoveItem = async (scheduleId: number) => {
-        
+
         if (!session?.accessToken) {
-            
+
             toast.error("Sessão inválida. Por favor, faça login novamente.");
             return;
-            
+
         }
         try {
             removeCartItem(scheduleId);
@@ -68,67 +71,57 @@ const Cart = () => {
 
     return (
         <div className={style.cartContainer}>
+            <Clock />
             <div className={style.cartListContainer}>
                 {cart.map((item: CartItem, index: number) => {
                     const startSec = hhmmssToSeconds(String(item.start_schedule).split(' ')[1] || '00:00');
                     const endSec =  hhmmssToSeconds(String(item.end_schedule).split(' ')[1] || '00:00');
-                    const hourDisplay = `${secondsToHHMM(startSec)} - ${secondsToHHMM(endSec)}`
-                    
+                    const hourDisplay = `${secondsToHHMM(startSec)} – ${secondsToHHMM(endSec)}`
+
                     const isoDate = String(item.start_schedule).split(' ')[0];
                     const date = isoDate ? isoDate.split('-').reverse().join('/') : '--/--';
-                    
+
                     const numericPrice = item.price || 0;
 
                     return(
                         <div key={item.id || index} className={style.cartItem} >
-                            <Link href={URIGen(item.place.name, item.place.id, isoDate)}>
-                                <div className={style.cartItemImageContainer}>
-                                    <Image 
-                                        alt={item.place.name || 'Local'} 
-                                        fill
-                                        priority={true}
-                                        quality={100}
-                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        className={style.cartItemImage} 
-                                        src={item.place.image || '/images/placeholder.jpg'}
-                                    />
-                                </div>
-                                
+                            <Link href={URIGen(item.place.name, item.place.id, isoDate)} className={style.cartItemLink}>
+                                <Media src={item.place.image || null} area="quadras" ratio="sq" alt={item.place.name || 'Local'} className={style.cartItemImageContainer} />
+
                                 <div className={style.cartItemDetails}>
                                     <h3 className={style.cartItemTitle}>{item.place.name}</h3>
                                     <div className={style.cartItemInfo}>
                                         <span>
-                                            <FontAwesomeIcon icon={faCalendarAlt} width={14} />
+                                            <FontAwesomeIcon icon={faCalendarDays} />
                                             {date}
                                         </span>
                                         <span>
-                                            <FontAwesomeIcon icon={faClock} width={14} />
+                                            <FontAwesomeIcon icon={faClock} />
                                             {hourDisplay}
-                                        </span>
-                                        <span className={style.cartItemPrice}>
-                                            R$ {numericPrice.toFixed(2)}
                                         </span>
                                     </div>
                                 </div>
                             </Link>
-                            <button 
-                                className={style.removeItemButton} 
+                            <span className={style.cartItemPrice}>{formatBRL(numericPrice)}</span>
+                            <button
+                                className={style.removeItemButton}
                                 onClick={() => handleRemoveItem(item.id)}
-                                title="Remover item"
+                                title="Remover do carrinho"
+                                aria-label={`Remover ${item.place.name} ${date} ${hourDisplay} do carrinho`}
                             >
-                                <FontAwesomeIcon icon={faTrashAlt} />
+                                <FontAwesomeIcon icon={faTrashCan} />
                             </button>
                         </div>
                     )})}
             </div>
-            
+
             <div className={style.cartSummary}>
                 <div className={style.totalPrice}>
-                    <span>Total a Pagar</span>
-                    <span>R$ {total.toFixed(2)}</span>
+                    <span>Total a pagar</span>
+                    <span>{formatBRL(total)}</span>
                 </div>
                  <Link referrerPolicy='no-referrer' rel='noopener noreferrer' href="/checkout" className={style.checkoutButton}>
-                    Finalizar Compra
+                    Finalizar compra <FontAwesomeIcon icon={faArrowRight} />
                 </Link>
             </div>
         </div>

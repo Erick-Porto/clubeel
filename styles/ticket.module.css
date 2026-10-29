@@ -1,0 +1,1072 @@
+/*
+ * Ingressos de eventos (/ingressos/**): vitrine, página do evento, checkout
+ * do sócio e do não sócio, pedido (pagamento, QR Code, PDF), meus ingressos e
+ * "perdi o link". Botões, painéis, selos e cartões vêm de ui.module.css; aqui
+ * só o que é do módulo. Cores sempre por token.
+ */
+
+/* ------------------------------------------------------------- Comuns */
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  min-height: 40px;
+  font-weight: 700;
+  color: var(--grena-ink);
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.rowBetween {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.hint {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.pillSlot {
+  display: inline-flex;
+  align-self: flex-start;
+}
+
+.moduleTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgb(var(--a-ingressos-rgb));
+  color: rgb(var(--a-ingressos-ink-rgb));
+}
+
+/* --------------------------------------------------------------- Vitrine */
+
+.cardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.cardMeta svg {
+  width: 14px;
+  margin-right: 6px;
+  color: var(--ink-3);
+}
+
+.cardAction {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--grena-ink);
+}
+
+.fromPrice {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.fromPrice strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------------- Detalhe */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.heroMedia {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.heroBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  font-size: 14px;
+}
+
+.facts dt {
+  color: var(--ink-3);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding-top: 2px;
+}
+
+.facts dd {
+  color: var(--ink);
+  min-width: 0;
+}
+
+.description {
+  white-space: pre-line;
+  color: var(--ink-2);
+}
+
+.rules {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 12px 16px;
+}
+
+.rules summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--grena-ink);
+  min-height: 28px;
+}
+
+.rulesText {
+  margin-top: 10px;
+  white-space: pre-line;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+@media (max-width: 760px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+}
+
+/* ---------------------------------------------------- Tipos e dias */
+
+.dayBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dayHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.dayTitle {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+.dayHours {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+/* Passaporte em destaque: borda e fundo na cor do módulo. */
+.passport {
+  padding: 16px;
+  border-radius: var(--radius-card);
+  border: 1px solid rgb(var(--a-ingressos-ink-rgb) / .35);
+  background: rgb(var(--a-ingressos-rgb) / .55);
+}
+
+.typeList {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+@media (max-width: 420px) {
+  .typeList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.typeCard {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgb(var(--line-rgb) / .6);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.typeOff {
+  background: var(--subtle);
+  box-shadow: none;
+}
+
+.typeName {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  line-height: 1.25;
+}
+
+.typeDesc {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  white-space: pre-line;
+}
+
+.prices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.priceRow strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/* O preço que vale para quem está vendo. */
+.priceMine {
+  background: var(--grena-tint);
+  color: var(--grena-ink);
+  font-weight: 700;
+}
+
+.priceMine strong {
+  font-size: 16px;
+  color: var(--grena-ink);
+}
+
+.nextLot {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.nextLot strong {
+  font-family: var(--font-mono);
+  color: var(--ink);
+}
+
+/* Barra de compra: acompanha a rolagem, acima da barra inferior no celular. */
+.actionBar {
+  position: sticky;
+  bottom: calc(var(--bottom-nav-height) + 12px);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  border: 1px solid var(--line);
+}
+
+.actionTotal {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.actionTotal strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+}
+
+.actionTotal span {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.actionBar > :last-child {
+  margin-left: auto;
+}
+
+@media (max-width: 480px) {
+  .actionBar > :last-child {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+/* -------------------------------------------------------------- Checkout */
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field,
+.fieldFull {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fieldFull {
+  grid-column: 1 / -1;
+}
+
+.field label,
+.fieldFull label,
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.fieldInvalid input,
+.fieldInvalid select {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 4px var(--danger-soft);
+}
+
+.fieldError {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+@media (max-width: 600px) {
+  .fieldGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.personList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.person {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgb(var(--line-rgb) / .6);
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.personOn {
+  border-color: var(--grena);
+  box-shadow: 0 0 0 3px var(--grena-tint), var(--shadow-card);
+}
+
+.personError {
+  border-color: var(--danger);
+}
+
+.personHead {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.check {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  accent-color: var(--grena);
+  cursor: pointer;
+}
+
+.check:disabled {
+  cursor: not-allowed;
+}
+
+.personName {
+  font-weight: 700;
+  font-size: 15.5px;
+}
+
+.personMeta {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.personBody {
+  padding: 0 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.personBody select {
+  max-width: 420px;
+}
+
+.taken {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.choiceRow label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.dayPick {
+  display: grid;
+  grid-template-columns: minmax(150px, max-content) minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.dayPick > label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .dayPick {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ticketRow {
+  padding: 14px 16px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ticketRowError {
+  border-color: var(--danger);
+}
+
+.ticketRowHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ticketRowTitle {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+}
+
+.summaryLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.summaryLine > span:last-child,
+.summaryTotal > span:last-child {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.summaryTotal {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.discount {
+  color: var(--ok);
+}
+
+.strike {
+  text-decoration: line-through;
+  color: var(--ink-3);
+  margin-right: 6px;
+}
+
+/* ------------------------------------------------------------------ Cupom */
+
+.coupon {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.coupon input {
+  flex: 1 1 180px;
+  max-width: 260px;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.couponApplied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  font-size: 14px;
+}
+
+/* -------------------------------------------------------------- Contador */
+
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.countdown strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+}
+
+.countdownLate {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* ---------------------------------------------------------------- Pedido */
+
+.orderHead {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.orderMedia {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+@media (max-width: 520px) {
+  .orderHead {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.orderTitle {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+}
+
+.ticketGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+@media (max-width: 420px) {
+  .ticketGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ticket {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgb(var(--line-rgb) / .6);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.ticketHolder {
+  font-weight: 800;
+  font-size: 16px;
+}
+
+/* O QR fica sobre "papel" branco nos dois temas: precisa contrastar para a leitura. */
+.qr {
+  align-self: center;
+  width: 220px;
+  max-width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--pad);
+}
+
+.qr img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Código para digitar na portaria: grande, legível. */
+.code {
+  align-self: center;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  user-select: all;
+}
+
+.entries {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.confirmBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--danger-soft);
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------- Meus ingressos */
+
+.orderList {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.narrowForm {
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Código de 6 dígitos do "Meus ingressos" do não sócio. */
+.otp {
+  max-width: 220px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  letter-spacing: .3em;
+  text-align: center;
+}
+
+/* ---------------------------------------------- Lugar marcado (mapa) */
+
+.seatTypeList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seatType {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.seatTypeInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Tela cheia por cima do checkout (no celular, a tela inteira). */
+.seatSheetVeil {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(var(--ink-rgb) / .45);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.seatSheet {
+  width: min(1100px, 100%);
+  height: min(860px, 100%);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .seatSheetVeil {
+    padding: 0;
+  }
+
+  .seatSheet {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+}
+
+.seatSheetHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.seatSheetTitle {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0 0 2px;
+}
+
+.seatSheetClose {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--subtle);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.seatSheetBody {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: var(--canvas);
+}
+
+.seatMapMessage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  color: var(--ink-2);
+}
+
+.seatCanvas {
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+.seatCanvasContent {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.seatSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+.seatZoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seatZoom button {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+}
+
+.seatSheetFoot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.seatNotice {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-field);
+  background: rgb(var(--warn-soft-rgb));
+  color: rgb(var(--warn-rgb));
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.seatDetail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.seatLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.seatLegend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Áreas: só orientação (palco, piscina…), nunca clicáveis. */
+.seatArea {
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.seatAreaLabel {
+  fill: var(--ink-2);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.area_stage { fill: var(--grena-tint); stroke: var(--grena); }
+.area_water { fill: rgb(var(--a-torneios-rgb)); stroke: rgb(var(--a-torneios-ink-rgb)); }
+.area_green { fill: rgb(var(--ok-soft-rgb)); stroke: rgb(var(--ok-rgb)); }
+.area_service { fill: var(--subtle); stroke: var(--line-strong); }
+.area_warn { fill: rgb(var(--warn-soft-rgb)); stroke: rgb(var(--warn-rgb)); }
+
+/* Lugares: a forma e o rótulo; a cor sai da situação. */
+.seat ellipse,
+.seat rect {
+  stroke-width: 2;
+}
+
+.seat text {
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.seat[role="button"] {
+  cursor: pointer;
+}
+
+.seat:focus {
+  outline: none;
+}
+
+.seat:focus-visible ellipse,
+.seat:focus-visible rect,
+.seatFocused ellipse,
+.seatFocused rect {
+  stroke-width: 4;
+}
+
+.seatFree ellipse, .seatFree rect {
+  fill: var(--surface);
+  stroke: rgb(var(--a-ingressos-ink-rgb));
+}
+.seatFree text { fill: rgb(var(--a-ingressos-ink-rgb)); }
+
+.seatPicked ellipse, .seatPicked rect {
+  fill: var(--grena);
+  stroke: var(--grena-hover);
+}
+.seatPicked text { fill: rgb(var(--on-solid-rgb)); }
+
+.seatHeld ellipse, .seatHeld rect {
+  fill: rgb(var(--warn-soft-rgb));
+  stroke: rgb(var(--warn-rgb));
+}
+.seatHeld text { fill: rgb(var(--warn-rgb)); }
+
+.seatSold ellipse, .seatSold rect {
+  fill: var(--line-strong);
+  stroke: var(--ink-3);
+}
+.seatSold text { fill: var(--ink-2); }
+
+.seatOff ellipse, .seatOff rect {
+  fill: var(--subtle);
+  stroke: var(--line);
+  stroke-dasharray: 4 3;
+}
+.seatOff text { fill: var(--ink-3); }
+
+/* Acabou de ser reservado por outra pessoa (recusa `seat_taken`). */
+.seatTaken ellipse, .seatTaken rect {
+  fill: rgb(var(--danger-soft-rgb));
+  stroke: rgb(var(--danger-rgb));
+}
+.seatTaken text { fill: rgb(var(--danger-rgb)); }
+
+/* [cativas] A cativa da matrícula de quem está logado: livre e em destaque. */
+.seatMine ellipse, .seatMine rect {
+  fill: rgb(var(--star-rgb) / .28);
+  stroke: rgb(var(--star-rgb));
+  stroke-width: 3;
+}
+.seatMine text { fill: var(--ink); font-weight: 800; }
+
+.seatMineNote {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-field);
+  background: rgb(var(--star-rgb) / .16);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+}
+.seatMineNote svg { color: rgb(var(--star-rgb)); }
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid;
+  background: none;
+}
+
+.swatch.seatFree { background: var(--surface); border-color: rgb(var(--a-ingressos-ink-rgb)); }
+.swatch.seatPicked { background: var(--grena); border-color: var(--grena-hover); }
+.swatch.seatHeld { background: rgb(var(--warn-soft-rgb)); border-color: rgb(var(--warn-rgb)); }
+.swatch.seatSold { background: var(--line-strong); border-color: var(--ink-3); }
+.swatch.seatOff { background: var(--subtle); border-color: var(--line); border-style: dashed; }
+.swatch.seatMine { background: rgb(var(--star-rgb) / .28); border-color: rgb(var(--star-rgb)); }
+
+/* O ingresso do lugar no pedido: o lugar em destaque. */
+.seatTicketName {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--grena-ink);
+}

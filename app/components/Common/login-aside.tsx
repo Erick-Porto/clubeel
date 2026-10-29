@@ -8,11 +8,13 @@ import { toast } from "react-toastify";
 import CryptoJS from "crypto-js";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRight, faPlugCircleXmark, faRotateRight, faVideo } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faPlugCircleXmark, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import API_CONSUME from "../../../services/api-consume";
 import Link from "next/link";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { safeCallbackUrl } from "../../../utils/callback-url";
+import { comBase } from '../../../utils/base-path';
+import { moduloVisivel } from '../../../utils/modulos';
 
 export default function AuthSidebar({ useInterface }: { useInterface: string }) {
     const [cpf, setCPF] = useState("");
@@ -196,13 +198,22 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
     return (
         <aside className={styles.sidebar}>
             <div className={styles.sidebarHeader}>
-                <Image 
-                    src="/images/logo-cfcsn-horiz.png" 
-                    alt="Logo CFCSN" 
-                    width={200} 
-                    height={80} 
+                <Image
+                    src={comBase("/images/logo-cfcsn-horiz.png")}
+                    alt="Logo CFCSN"
+                    width={200}
+                    height={80}
                     quality={100}
-                    className={styles.logoImage}
+                    className={`${styles.logoImage} ${styles.logoLight}`}
+                    priority
+                />
+                <Image
+                    src={comBase("/images/logo-cfcsn-w-horiz.png")}
+                    alt="Logo CFCSN"
+                    width={200}
+                    height={80}
+                    quality={100}
+                    className={`${styles.logoImage} ${styles.logoDark}`}
                     priority
                 />
             </div>
@@ -322,24 +333,17 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     ) : null}
 
                     {/*
-                      * Quem abre a raiz do site sem sessão é mandado para cá
-                      * pelo middleware. A galeria das quadras é aberta a
-                      * qualquer visitante, por decisão de negócio — sem este
-                      * caminho ela ficaria invisível para quem não tem conta.
+                      * As áreas abertas (RePET e torneios) ficam na página de
+                      * boas-vindas da raiz (public-home.tsx). Daqui só se volta
+                      * para lá — quem caiu no login vindo de uma página
+                      * protegida também enxerga que há o que ver sem conta.
                       */}
-                    {/* <div className={styles.replayEntry}>
-                        <span className={styles.replayEntryHint}>Não precisa de conta</span>
-                        <Link
-                            href="/replay"
-                            className={styles.replayEntryLink}
-                            referrerPolicy="no-referrer"
-                            rel="noopener noreferrer"
-                        >
-                            <FontAwesomeIcon icon={faVideo} />
-                            Ver os replays das quadras
-                            <FontAwesomeIcon icon={faArrowRight} />
-                        </Link>
-                    </div> */}
+                    <Link href="/" className={styles.homeLink}>
+                        <FontAwesomeIcon icon={faArrowLeft} /> Voltar ao início
+                        <span className={styles.homeLinkHint}>
+                            {moduloVisivel('torneios') ? 'RePET e torneios sem precisar de conta' : 'RePET sem precisar de conta'}
+                        </span>
+                    </Link>
                 </>
             )}
         </aside>

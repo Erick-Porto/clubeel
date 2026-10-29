@@ -9,6 +9,8 @@
  * open redirect (phishing hospedado no nosso próprio domínio de login).
  */
 
+import { semBase } from "./base-path";
+
 export const DEFAULT_CALLBACK_URL = "/";
 
 export function safeCallbackUrl(raw: string | null | undefined): string {
@@ -37,6 +39,10 @@ export function safeCallbackUrl(raw: string | null | undefined): string {
     if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
         return DEFAULT_CALLBACK_URL;
     }
+
+    // O middleware monta o callbackUrl COM o basePath (/homolog/meus-videos), e
+    // quem usa este valor é o router.push, que prefixa de novo. Devolve sem ele.
+    value = semBase(value);
 
     // Voltar para o próprio login seria um laço.
     if (value === "/login" || value.startsWith("/login?")) return DEFAULT_CALLBACK_URL;

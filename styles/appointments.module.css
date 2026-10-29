@@ -1,37 +1,73 @@
+/* Aba "Agendamentos" do perfil. */
+
 .appointmentsContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
 }
 
 .appointmentsItem {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .appointmentsTitle {
-    font-size: 1.2rem;
-    color: #333;
-    border-left: 4px solid var(--grena);
-    padding-left: 12px;
-    margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.01em;
 }
 
 .loadingContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 40px;
-    color: #777;
-    gap: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-2);
 }
 
 .emptyMessage {
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    color: #666;
-    font-size: 0.95rem;
+  color: var(--ink-2);
+}
+
+.whatsLink {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--grena-ink);
+  white-space: nowrap;
+}
+
+.whatsLink:hover {
+  text-decoration: underline;
+}
+
+.shortcuts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.shortcutButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.shortcutButton:hover {
+  background: var(--subtle);
+}
+
+@media (max-width: 480px) {
+  .shortcutButton {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
 }

@@ -2,7 +2,13 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(150px, 1fr));
     gap: 1px;
-    height: 720px;
+    /* Altura por LINHA, não do bloco todo: com altura total fixa, cada item a
+       mais (ex.: os cards de espaço social) encolhia todos os outros. */
+    grid-auto-rows: 240px;
+}
+/* Total ímpar: o último card ocupa a linha inteira em vez de deixar um buraco. */
+.gridContainer > a:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
 }
 .gridItem{
     background-color: #f0f0f0;
@@ -38,4 +44,15 @@
     font-family: 'Nunito', sans-serif;
     font-weight: 600;
     text-align: right;
+}
+/* Selo dos itens que não são esporte (espaços sociais). */
+.gridItemTag {
+    align-self: flex-end;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--grena);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
