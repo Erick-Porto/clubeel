@@ -78,12 +78,14 @@ Falta a TI confirmar a configuração do nginx da produção e da homologação 
 | 2 | CPF | `rules.identity_confirmed` falso | `identidade`; mostra `attempts_left`; `link_locked` → tela final |
 | 3 | Perguntas | `form` não nulo e com campos | `respostas`; erros em `errors[key]`; resposta = sessão nova (`pdf_version` muda) |
 | 4 | Anexos | `attachments.items` não vazia | `anexos` GET/POST/DELETE; Continuar só com `missing_required` vazia |
-| 5 | Leitura | sempre | `pdf` (PDF.js, zoom 1×/1,5×/2×); mede segundos com a aba visível e se chegou ao fim; ao sair, `visualizado` |
+| 5 | Leitura | sempre | `pdf` (PDF.js, zoom 1×/1,5×/2×); todas as páginas desenhadas, com teto de ~2 milhões de pixels por página (memória no celular; no mesmo tamanho na tela, nunca abaixo de 1 pixel por ponto); mede segundos com a aba visível e se chegou ao fim (depois da última página); ao sair, `visualizado` |
 | 6 | Aceite | sempre | termos (`accepted`), foto com `photo_consent_text` **exato**, via por e-mail se `signer.has_email` |
 | 7 | Assinatura | sempre | canvas com pointer events, `touch-action: none`; Continuar a partir de 30 pontos |
 | 8 | Visto | `rules.requires_initials` | mesmo quadro, 8 pontos |
 | 9 | Foto | `rules.requires_photo` | câmera frontal, 3 s, recorte 600×600, JPEG 0,82; câmera desligada logo depois |
 | 10 | Envio | — | `assinar` (tudo numa requisição). Sucesso: data, `validation_code`, aviso da via |
+
+**Modelo vinculado** (Lara, 29/10/2026): um modelo pode exigir outro junto. A API não muda: o PDF continua um só (mais páginas, os dois textos seguidos), e `form.fields` e `attachments.items` podem trazer itens dos dois modelos. O front não sabe nem precisa saber que há vínculo: não há limite de páginas, de perguntas ou de anexos, nem altura fixa (tudo rola com a página). Campos "só o atendente responde" nunca chegam ao formulário, e a conferência das respostas pelo atendente (`answer_check`) só existe no tablet do balcão.
 
 "Recusar documento" (com motivo opcional e confirmação) aparece da leitura em diante; "Sair sem assinar" (`encerrar`) em todas as etapas com sessão. "Voltar" anda entre etapas do documento, nunca de volta ao CPF.
 
@@ -102,7 +104,7 @@ Falta a TI confirmar a configuração do nginx da produção e da homologação 
 ## Testes
 
 - `npm run test` (Vitest, `tests/unit/`): rotas de servidor com `fetch` mockado — credencial, IP/UA, cookies, segredo fora do corpo, cada `reason` da tabela, limpeza de cookies, stream do multipart, headers.
-- `npm run test:e2e` (Playwright, `tests/e2e/`): sobe uma **Lara falsa** (`lara-falsa.mjs`, porta 4010) e o `next dev` na porta 3100 apontado para ela, e roda o fluxo inteiro num Chromium com câmera falsa, em 360×740. Na primeira vez: `npx playwright install chromium`.
+- `npm run test:e2e` (Playwright, `tests/e2e/`): sobe uma **Lara falsa** (`lara-falsa.mjs`, porta 4010) e o `next dev` na porta 3100 apontado para ela, e roda o fluxo inteiro num Chromium com câmera falsa, em 360×740. O cenário `vinculado` da Lara falsa simula o modelo vinculado (PDF de 12 páginas com dois textos, 12 perguntas, anexo do segundo modelo). Na primeira vez: `npx playwright install chromium`.
 
 ## Fica de fora / limitações conhecidas
 

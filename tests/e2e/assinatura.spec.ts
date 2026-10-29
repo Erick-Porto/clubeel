@@ -293,6 +293,50 @@ test.describe('fluxo completo', () => {
     expect(envio.viewport).toEqual({ w: 360, h: 740, orientation: 'portrait' });
   });
 
+  test('modelo vinculado: 12 perguntas, anexos dos dois e PDF de 12 páginas', async ({ page, request }) => {
+    await cenario(request, { vinculado: true });
+    await comecar(page);
+    await confirmarCpf(page);
+
+    // Perguntas dos dois modelos no mesmo formulário, rolando com a página.
+    await expect(page.getByRole('heading', { name: 'Complete o documento' })).toBeVisible();
+    await expect(page.locator('[id^="campo-"]')).toHaveCount(12);
+    await page.locator('#campo-telefone').fill('24999998888');
+    await page.getByLabel('Sim').check();
+    await page.locator('#campo-reg_8').fill('Resposta do regulamento');
+    await expect(page.locator('#campo-reg_8')).toBeInViewport();
+    await page.getByRole('button', { name: 'Continuar' }).click();
+
+    // Anexos dos dois modelos na mesma lista.
+    await expect(page.getByRole('heading', { name: 'Anexe os documentos' })).toBeVisible();
+    await expect(page.getByTestId('anexo-reg_autorizacao')).toBeVisible();
+    await page.getByTestId('arquivo-doc_identidade').setInputFiles({
+      name: 'rg.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4\n% identidade\n'),
+    });
+    await page.getByRole('button', { name: 'Continuar' }).click();
+
+    // Leitura: um PDF só, longo; o fim só conta depois da última página.
+    await expect(page.getByRole('heading', { name: 'Leia o documento' })).toBeVisible();
+    await expect(page.getByText('12 páginas')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Página 12 de 12' })).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page.getByTestId('fim-leitura')).toContainText('Role até o fim');
+    for (const _ of [1, 2]) await page.getByRole('button', { name: 'Aumentar' }).click();
+    await expect(page.getByRole('button', { name: 'Aumentar' })).toBeDisabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+    await expect(async () => {
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await expect(page.getByTestId('fim-leitura')).toContainText('Você chegou ao fim do documento', { timeout: 500 });
+    }).toPass();
+    await page.getByRole('button', { name: 'Li o documento, continuar' }).click();
+    await expect(page.getByRole('button', { name: 'Continuar para a assinatura' })).toBeVisible();
+
+    const visto = (await registro(request)).find((c) => c.rota === 'visualizado')!.resumo!;
+    expect(visto.scrolled_to_end).toBe(true);
+  });
+
   test('recarregar a página retoma a sessão aberta', async ({ page, request }) => {
     await cenario(request, { semAnexos: true });
     await comecar(page);

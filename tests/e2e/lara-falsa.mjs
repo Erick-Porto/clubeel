@@ -8,6 +8,9 @@
  *   POST /__cenario   { ...opções }   reinicia o estado com as opções dadas
  *   GET  /__registro                  chamadas recebidas (sem dado pessoal)
  *
+ * Cenário `vinculado`: modelo que exige outro junto. Mesmo contrato da API,
+ * só maior: PDF com os dois textos seguidos, perguntas e anexos dos dois.
+ *
  * NUNCA aponte o site real para isto; é só para `npm run test:e2e`.
  */
 
@@ -42,6 +45,9 @@ function reiniciar(cenario = {}) {
           { id: 7, type: 'pdf', size_label: 'PDF, 120 KB', sent_at: '2026-10-20T10:00:00-03:00', mine: false, can_remove: false },
         ],
       },
+      ...(cenario.vinculado
+        ? [{ key: 'reg_autorizacao', label: 'Autorização do responsável (regulamento)', required: false, files: [] }]
+        : []),
     ],
     proximoId: 100,
     registro: [],
@@ -51,6 +57,7 @@ reiniciar();
 
 /* ------------------------------------------------------------------ PDF */
 
+/** `rotulo` pode ser uma lista, um por página (dois textos seguidos). */
 function pdfMinimo(paginas, rotulo) {
   const objetos = [];
   const kids = [];
@@ -60,7 +67,7 @@ function pdfMinimo(paginas, rotulo) {
     const pagina = 4 + i * 2;
     const conteudo = pagina + 1;
     kids.push(`${pagina} 0 R`);
-    const fluxo = `BT /F1 28 Tf 72 700 Td (${rotulo} - pagina ${i + 1}) Tj ET`;
+    const fluxo = `BT /F1 28 Tf 72 700 Td (${Array.isArray(rotulo) ? rotulo[i] : rotulo} - pagina ${i + 1}) Tj ET`;
     objetos[conteudo] = `<< /Length ${fluxo.length} >>\nstream\n${fluxo}\nendstream`;
     objetos[pagina] =
       `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] ` +
@@ -96,7 +103,7 @@ function linkInfo() {
       photo: true,
       initials: Boolean(c.comVisto),
       form: !c.semFormulario,
-      attachments: c.semAnexos ? 0 : 2,
+      attachments: c.semAnexos ? 0 : estado.anexos.length,
       attachments_required: c.semAnexos ? 0 : 1,
     },
     identity_attempts_left: estado.tentativas,
@@ -114,6 +121,18 @@ function listaAnexos() {
   };
 }
 
+/** Perguntas do modelo vinculado (regulamento), no mesmo `form.fields`. */
+function perguntasDoVinculado() {
+  return Array.from({ length: 8 }, (_, i) => ({
+    key: `reg_${i + 1}`,
+    question: `Regulamento — pergunta ${i + 1}`,
+    type: 'text',
+    required: false,
+    options: [],
+    value: estado.respostas[`reg_${i + 1}`] ?? '',
+  }));
+}
+
 function sessaoInfo() {
   const c = estado.cenario;
   return {
@@ -127,6 +146,7 @@ function sessaoInfo() {
             { key: 'evento', question: 'Tipo de evento', type: 'radio', required: true, options: ['Aniversário', 'Casamento', 'Outro'], value: estado.respostas.evento ?? 'Aniversário' },
             { key: 'bebida', question: 'Haverá bebida alcoólica?', type: 'yes_no', required: true, options: [], value: estado.respostas.bebida ?? '' },
             { key: 'data_evento', question: 'Data do evento', type: 'date', required: false, options: [], value: estado.respostas.data_evento ?? '2026-11-15' },
+            ...(c.vinculado ? perguntasDoVinculado() : []),
           ],
         },
     signer: { name: 'Maria de Souza', role: 'Contratante', has_email: true },
@@ -283,7 +303,12 @@ const servidor = http.createServer(async (req, res) => {
 
   if (rota === 'pdf') {
     res.writeHead(200, { 'Content-Type': 'application/pdf' });
-    return res.end(pdfMinimo(3, estado.versao === 'v1' ? 'Contrato' : 'Contrato respondido'));
+    const contrato = estado.versao === 'v1' ? 'Contrato' : 'Contrato respondido';
+    if (estado.cenario.vinculado) {
+      // 6 páginas do contrato + 6 do regulamento vinculado, num PDF só.
+      return res.end(pdfMinimo(12, Array.from({ length: 12 }, (_, i) => (i < 6 ? contrato : 'Regulamento'))));
+    }
+    return res.end(pdfMinimo(3, contrato));
   }
 
   if (rota === 'respostas') {

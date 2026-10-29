@@ -47,6 +47,15 @@ interface Props {
 
 const ZOOMS = [1, 1.5, 2] as const;
 
+/**
+ * Teto de pixels do canvas de cada página (~8 MB de memória). Todas as páginas
+ * ficam desenhadas ao mesmo tempo e o documento pode ser longo (modelo com
+ * outro vinculado: dois textos seguidos); sem teto, celular 3× com zoom 2 gasta
+ * ~17 MB por página e o navegador (Safari no iPhone, sobretudo) passa a apagar
+ * canvas. Acima do teto a página sai com menos densidade, no mesmo tamanho.
+ */
+const PIXELS_POR_PAGINA = 2_000_000;
+
 export default function EtapaLeitura({ versao, inicial, tratar, aoContinuar, ocupado, erroAoContinuar }: Props) {
   const [estado, setEstado] = useState<'carregando' | 'pronto' | 'erro'>('carregando');
   const [erro, setErro] = useState<string | null>(null);
@@ -138,20 +147,28 @@ export default function EtapaLeitura({ versao, inicial, tratar, aoContinuar, ocu
         const pagina = await documento.getPage(numero);
         const base = pagina.getViewport({ scale: 1 });
         const escala = (largura / base.width) * zoom;
-        const viewport = pagina.getViewport({ scale: escala * dpr });
+        // Nunca abaixo de 1 pixel por ponto: no computador o zoom 2 passa um
+        // pouco do teto, mas não fica borrado.
+        const densidade = Math.min(
+          dpr,
+          Math.max(1, Math.sqrt(PIXELS_POR_PAGINA / (base.width * base.height * escala * escala)))
+        );
+        const viewport = pagina.getViewport({ scale: escala * densidade });
         const canvas = canvasRefs.current[numero - 1];
         const contexto = canvas?.getContext('2d');
         if (!canvas || !contexto) continue;
         canvas.width = Math.floor(viewport.width);
         canvas.height = Math.floor(viewport.height);
-        canvas.style.width = `${Math.floor(viewport.width / dpr)}px`;
-        canvas.style.height = `${Math.floor(viewport.height / dpr)}px`;
+        canvas.style.width = `${Math.floor(viewport.width / densidade)}px`;
+        canvas.style.height = `${Math.floor(viewport.height / densidade)}px`;
         tarefa = pagina.render({ canvasContext: contexto, viewport });
         try {
           await tarefa.promise;
         } catch {
           return; // cancelado por novo zoom/largura
         }
+        // A imagem já está no canvas: libera o que o PDF.js guardou da página.
+        pagina.cleanup();
         if (!cancelado) setDesenhadas(numero);
       }
     })();
