@@ -17,6 +17,7 @@ import {
     faLightbulb,
     faRightFromBracket,
     faRightToBracket,
+    faTableTennisPaddleBall,
     faTableCellsLarge,
     faTicket,
     faTrophy,
@@ -31,7 +32,7 @@ import { comBase } from '../../../utils/base-path';
 import { moduloVisivel } from '../../../utils/modulos';
 
 // As chaves são as mesmas do `Area` (cor de cada módulo, ui.tsx).
-type ModuleKey = 'inicio' | 'social' | 'replay' | 'luz' | 'torneios' | 'ingressos' | 'perfil';
+type ModuleKey = 'inicio' | 'quadras' | 'social' | 'replay' | 'luz' | 'torneios' | 'ingressos' | 'perfil';
 
 interface NavItem {
     key: ModuleKey;
@@ -62,8 +63,19 @@ const TODOS: NavItem[] = [
 /** Sem os módulos ainda não liberados nesta instância (utils/modulos.ts). */
 const NAV = TODOS.filter((item) => moduloVisivel(item.key));
 
-/** Os módulos da folha "Menu" do celular (Início e Perfil estão na própria barra). */
-const SHEET = NAV.filter((item) => item.key !== 'inicio' && item.key !== 'perfil');
+/**
+ * Os módulos da folha "Menu" do celular (Início e Perfil estão na própria
+ * barra). As quadras são a própria home, mas entram na folha com nome próprio
+ * para não sumirem dela — em produção, sem os módulos ocultos, a folha ficava
+ * só com Replay e Luz.
+ */
+const SHEET: NavItem[] = [
+    { key: 'quadras', href: '/', label: 'Quadras esportivas', short: 'Quadras', icon: faTableTennisPaddleBall },
+    ...NAV.filter((item) => item.key !== 'inicio' && item.key !== 'perfil'),
+];
+
+/** Item da folha que corresponde à tela atual (as quadras respondem pela home). */
+const sheetKeyOf = (current: ModuleKey | null): ModuleKey | null => (current === 'inicio' ? 'quadras' : current);
 
 function moduleOf(pathname: string): ModuleKey | null {
     if (pathname === '/' || pathname.startsWith('/places') || pathname.startsWith('/place/') || pathname.startsWith('/checkout')) return 'inicio';
@@ -118,6 +130,7 @@ export default function Header() {
     }, [pathname]);
 
     const inSheet = SHEET.some((item) => item.key === current);
+    const sheetCurrent = sheetKeyOf(current);
     const firstName = session?.user?.name?.split(' ')[0] ?? '';
     const cartCount = cart?.length ?? 0;
 
@@ -262,8 +275,8 @@ export default function Header() {
                             <Link
                                 key={item.key}
                                 href={item.href}
-                                className={`${styles.sheetItem} ${current === item.key ? styles.sheetItemActive : ''}`}
-                                aria-current={current === item.key ? 'page' : undefined}
+                                className={`${styles.sheetItem} ${sheetCurrent === item.key ? styles.sheetItemActive : ''}`}
+                                aria-current={sheetCurrent === item.key ? 'page' : undefined}
                                 style={areaStyle(item.key)}
                             >
                                 <span className={styles.sheetIcon}>
