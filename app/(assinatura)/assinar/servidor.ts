@@ -25,7 +25,7 @@ import { comBase } from '../../../utils/base-path';
 /* Cookies                                                                    */
 /* -------------------------------------------------------------------------- */
 
-/** Token do link do e-mail (64 caracteres). */
+/** Token do link enviado à pessoa (64 caracteres). */
 export const COOKIE_LINK = 'assinatura_link';
 /** Segredo da sessão aberta por `abrir`. */
 export const COOKIE_SESSAO = 'assinatura_sessao';
@@ -168,8 +168,8 @@ export function json(status: number, corpo: unknown): NextResponse {
  * legível — quando ela responde, a mensagem dela passa como veio.
  */
 export const MENSAGENS = {
-  semLink: 'Abra o link que você recebeu por e-mail.',
-  sessaoEncerrada: 'Sua sessão terminou. Comece de novo pelo link do e-mail.',
+  semLink: 'Abra o link que você recebeu.',
+  sessaoEncerrada: 'Sua sessão terminou. Comece de novo pelo link que você recebeu.',
   indisponivel: 'Não foi possível falar com o clube agora. Tente de novo em instantes.',
   configuracao: 'O site não conseguiu se comunicar com o clube. Avise o clube e tente mais tarde.',
   limite: 'Muitas tentativas em pouco tempo. Aguarde um minuto e tente de novo.',

@@ -116,7 +116,7 @@ function semIndexacao(res: Response) {
 
 /* -------------------------------------------------------------------------- */
 
-describe('entrada pelo link do e-mail (/assinar/<token>)', () => {
+describe('entrada pelo link (/assinar/<token>)', () => {
   it('guarda o token em cookie httpOnly de 3 dias em /assinar e redireciona sem o token', async () => {
     const res = await entrarPeloLink(new NextRequest(`http://localhost/assinar/${TOKEN}`), {
       params: Promise.resolve({ token: TOKEN }),

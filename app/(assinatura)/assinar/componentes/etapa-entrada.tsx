@@ -145,9 +145,10 @@ export default function EtapaEntrada({ link, camera, aviso, erro, ocupado, aoCom
       {precisaCamera && camera === 'ausente' && (
         <div className={styles.aviso} data-testid="sem-camera">
           <Note tone="danger" icon={faTriangleExclamation}>
-            <strong>Este aparelho não tem câmera disponível.</strong> Para assinar, abra o link
-            do e-mail num celular, tablet ou computador com câmera: o clube pede uma foto sua no
-            momento da assinatura.
+            <strong>Não conseguimos usar a câmera neste aparelho ou navegador.</strong> O clube pede uma
+            foto sua no momento da assinatura. Se você abriu o link por dentro de um aplicativo, como o
+            WhatsApp, copie o link da mensagem e cole no navegador do celular (Chrome ou Safari). Se o
+            aparelho não tiver câmera, abra o link em outro que tenha.
           </Note>
         </div>
       )}

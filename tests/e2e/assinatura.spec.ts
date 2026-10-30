@@ -104,7 +104,7 @@ test.describe('endereço e não indexação', () => {
       if (r.url().includes('/assinar/api/')) chamadas.push(r.url());
     });
     await page.goto('/assinar');
-    await expect(page.getByRole('heading', { name: 'Abra o link que você recebeu por e-mail' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Abra o link que você recebeu' })).toBeVisible();
     expect(chamadas).toEqual([]);
   });
 
@@ -135,6 +135,35 @@ test.describe('endereço e não indexação', () => {
 
     const html = await (await request.get('/assinar')).text();
     expect(html).toMatch(/<meta name="robots" content="noindex, nofollow/);
+  });
+
+  test('prévia de link: só o redirecionamento, sem dados nem token, e sem abrir sessão', async ({ request }) => {
+    await cenario(request);
+    const primeira = await request.get(`/assinar/${TOKEN}`, { maxRedirects: 0 });
+    expect(primeira.status()).toBe(303);
+    expect(await primeira.text()).toBe('');
+
+    const html = await (await request.get(`/assinar/${TOKEN}`)).text();
+    // Só nas meta tags: este teste roda em `next dev`, cujos dados de depuração do
+    // React trazem o valor de cookies() no corpo. O build de produção não traz.
+    expect((html.match(/<meta[^>]*>/g) ?? []).join('\n')).not.toContain(TOKEN);
+    expect(html).not.toContain('Contrato de locação');
+    expect(html).not.toContain('Maria de Souza');
+    expect(html).not.toMatch(/property="og:|name="twitter:/);
+    expect(await registro(request)).toEqual([]);
+  });
+
+  test('carregar a página não abre sessão: só o clique em Começar', async ({ page, request }) => {
+    await cenario(request);
+    await abrirLink(page);
+    await expect(page.getByRole('button', { name: 'Começar' })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Começar' })).toBeEnabled();
+    const aberturas = async () => (await registro(request)).filter((c) => c.rota === 'abrir');
+    expect(await aberturas()).toHaveLength(0);
+    await page.getByRole('button', { name: 'Começar' }).click();
+    await expect(page.getByRole('heading', { name: 'Confirme seu CPF' })).toBeVisible();
+    expect(await aberturas()).toHaveLength(1);
   });
 
   test('robots.txt bloqueia /assinar', async ({ request }) => {
@@ -313,7 +342,7 @@ test.describe('câmera', () => {
         [{ kind: 'audioinput', deviceId: 'a', groupId: 'g', label: '', toJSON: () => ({}) }] as MediaDeviceInfo[];
     });
     await abrirLink(page);
-    await expect(page.getByTestId('sem-camera')).toContainText('não tem câmera');
+    await expect(page.getByTestId('sem-camera')).toContainText('copie o link da mensagem');
     await expect(page.getByRole('button', { name: 'Começar' })).toBeDisabled();
     expect((await registro(request)).some((c) => c.rota === 'abrir')).toBe(false);
   });

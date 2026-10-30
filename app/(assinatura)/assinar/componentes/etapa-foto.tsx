@@ -25,18 +25,25 @@ interface Props {
   aoContinuar: (foto: string) => void;
 }
 
+/**
+ * O navegador interno de um aplicativo pode não dar acesso à câmera. "Abrir no
+ * navegador" levaria só /assinar, sem o cookie do link: por isso copiar o link.
+ */
+const OUTRO_NAVEGADOR =
+  'Se você abriu o link por dentro de um aplicativo, como o WhatsApp, copie o link da mensagem e cole no navegador do celular (Chrome ou Safari).';
+
 function mensagemDeErro(erro: unknown): string {
   const nome = erro instanceof DOMException ? erro.name : '';
   if (nome === 'NotAllowedError' || nome === 'SecurityError') {
-    return 'O acesso à câmera foi negado. Libere a câmera para este site nas configurações do navegador e toque em "Tentar de novo".';
+    return `O acesso à câmera foi negado. Libere a câmera para este site nas configurações do navegador e toque em "Tentar de novo". ${OUTRO_NAVEGADOR}`;
   }
   if (nome === 'NotFoundError' || nome === 'OverconstrainedError') {
-    return 'Não encontramos uma câmera neste aparelho. Abra o link do e-mail num aparelho com câmera.';
+    return `Não encontramos uma câmera. ${OUTRO_NAVEGADOR} Se o aparelho não tiver câmera, abra o link em outro que tenha.`;
   }
   if (nome === 'NotReadableError') {
     return 'A câmera está sendo usada por outro aplicativo. Feche-o e toque em "Tentar de novo".';
   }
-  return 'Não foi possível ligar a câmera. Toque em "Tentar de novo".';
+  return `Não foi possível ligar a câmera. Toque em "Tentar de novo". ${OUTRO_NAVEGADOR}`;
 }
 
 export default function EtapaFoto({ inicial, aoContinuar }: Props) {
