@@ -14,8 +14,6 @@ import {
   faBan,
   faCircleCheck,
   faClock,
-  faEnvelope,
-  faEnvelopeOpenText,
   faLink,
   faLock,
   faTriangleExclamation,
@@ -38,15 +36,15 @@ interface Moldura {
 export const MOLDURAS: Record<string, Moldura> = {
   invalid_link: {
     titulo: 'Link inválido',
-    dica: 'Confira se você abriu o link inteiro, exatamente como veio no e-mail.',
+    dica: null, // a mensagem da Lara já orienta
     icone: faLink,
     tom: 'perigo',
   },
   link_expired: { titulo: 'Link vencido', dica: 'Peça um novo link ao clube.', icone: faClock, tom: 'aviso' },
   link_superseded: {
     titulo: 'Existe um link mais recente',
-    dica: 'Use o link do último e-mail que você recebeu do clube.',
-    icone: faEnvelope,
+    dica: null, // a mensagem da Lara já orienta
+    icone: faLink,
     tom: 'aviso',
   },
   link_revoked: { titulo: 'Link cancelado pelo clube', dica: null, icone: faBan, tom: 'aviso' },
@@ -59,9 +57,9 @@ export const MOLDURAS: Record<string, Moldura> = {
   },
   document_unavailable: { titulo: 'Documento indisponível', dica: null, icone: faBan, tom: 'aviso' },
   no_link: {
-    titulo: 'Abra o link que você recebeu por e-mail',
+    titulo: 'Abra o link que você recebeu',
     dica: null,
-    icone: faEnvelopeOpenText,
+    icone: faLink,
     tom: 'neutro',
   },
 };

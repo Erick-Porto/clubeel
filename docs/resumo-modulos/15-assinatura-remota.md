@@ -1,8 +1,8 @@
 # 15 — Assinatura remota de documentos (`/assinar`)
 
-Área para a pessoa assinar um documento do clube (termo, contrato, ficha) **a distância**, pelo celular ou computador, a partir de um **link especial enviado por e-mail** pelo atendimento. Complementa o tablet do balcão, que continua existindo.
+Área para a pessoa assinar um documento do clube (termo, contrato, ficha) **a distância**, pelo celular ou computador, a partir de um **link especial enviado pelo atendimento**: por e-mail ou, copiado pelo atendente, por outro canal, como o WhatsApp. Complementa o tablet do balcão, que continua existindo.
 
-É um produto **isolado** dentro do mesmo app: não tem relação com login, sócio, reserva ou qualquer outra parte do site. Só divide o servidor e a identidade visual. Quem chega aqui chegou pelo link do e-mail.
+É um produto **isolado** dentro do mesmo app: não tem relação com login, sócio, reserva ou qualquer outra parte do site. Só divide o servidor e a identidade visual. Quem chega aqui chegou por esse link.
 
 ## Princípios (leia antes de editar)
 
@@ -20,10 +20,10 @@
 |---|---|---|
 | [services/assinatura-api.ts](../../services/assinatura-api.ts) | server-only | `chamarLara`: URL `INTERNAL_LARA_API_URL/api/assinatura/remota/*`, `Bearer LARA_SIGNATURE_API_TOKEN`, `X-Signer-Ip`, `X-Signer-User-Agent`, `X-Signature-Session`; multipart em stream (`duplex: 'half'`). Falha de rede → `FalhaDeRede`; variável ausente → `ConfiguracaoAusenteError`. Log só método/caminho |
 | [app/(assinatura)/assinar/servidor.ts](../../app/(assinatura)/assinar/servidor.ts) | servidor | Cookies (`assinatura_link`, 3 dias; `assinatura_sessao`, sem validade), `ipDeQuemAssina`, `HEADERS_DA_AREA`, `normalizarRecusa`, `repassar` (repasse JSON + limpeza de cookies), `escolher` (só os campos do contrato seguem) |
-| `app/(assinatura)/assinar/[token]/route.ts` | Route Handler GET | Link do e-mail: grava o cookie, apaga a sessão local do link anterior, `303` para `/assinar` (Location relativo) |
+| `app/(assinatura)/assinar/[token]/route.ts` | Route Handler GET | Entrada pelo link: grava o cookie, apaga a sessão local do link anterior, `303` para `/assinar` (Location relativo) |
 | `app/(assinatura)/assinar/api/*/route.ts` | Route Handlers | `link`, `abrir`, `sessao`, `identidade`, `respostas`, `anexos` (GET/POST), `anexos/[id]` (DELETE), `pdf`, `visualizado`, `assinar`, `recusar`, `encerrar` |
 | `app/(assinatura)/assinar/layout.tsx` | server | Casca própria (logo claro/escuro + "Assinatura de documentos"), metadata `noindex` e `referrer: no-referrer` |
-| `app/(assinatura)/assinar/page.tsx` | server | Sem cookie do link: "abra o link que você recebeu por e-mail". Com cookie: `<FluxoAssinatura temSessao>` |
+| `app/(assinatura)/assinar/page.tsx` | server | Sem cookie do link: "abra o link que você recebeu". Com cookie: `<FluxoAssinatura temSessao>` |
 | `app/(assinatura)/assinar/cliente.ts` | cliente | `api()` e `baixarPdf()` para `/assinar/api/*` (`no-store`); `errosPorCampo` |
 | `app/(assinatura)/assinar/tipos.ts` | compartilhado | Contratos (`LinkInfo`, `Sessao`, `ListaAnexos`, `Recusa`, `Traco`…) |
 | `app/(assinatura)/assinar/formato.ts` | puro | Datas em `America/Sao_Paulo`, máscaras (CPF, CNPJ, CEP, telefone), tamanhos |
@@ -37,13 +37,18 @@ Fora da pasta: [app/robots.ts](../../app/robots.ts) (`Disallow: /assinar` e `/ho
 
 ## Endereço e cookies
 
-1. O e-mail leva `https://<site>/assinar/<token>` (64 caracteres `[A-Za-z0-9]`).
+1. O link é `https://<site>/assinar/<token>` (64 caracteres `[A-Za-z0-9]`).
 2. `[token]/route.ts` grava `assinatura_link` (httpOnly, `secure` em produção, `sameSite=lax`, `path=comBase('/assinar')`, 3 dias) e redireciona para `/assinar`. Token fora do formato não grava nada.
 3. Abrir outro link troca o cookie.
 4. `abrir` devolve o `session_token` **só uma vez**; a rota o grava em `assinatura_sessao` e o tira do corpo. Toda resposta JSON da área passa por um `delete session_token`.
 5. Os cookies são apagados **na própria resposta**: sucesso do `assinar` e do `recusar` (os dois), recusas que encerram o link (`invalid_link`, `link_expired`, `link_superseded`, `link_revoked`, `link_used`, `link_locked`, `document_unavailable` — os dois), `session_ended` e `encerrar` (só a sessão).
 
 As rotas de servidor ficam **sob `/assinar/api`** porque o navegador só manda cookie com `path=/assinar` para URLs sob `/assinar`.
+
+## Prévia de link e navegador de aplicativo
+
+- **Prévia (WhatsApp e afins)**: o aplicativo pode acessar o endereço sozinho. A primeira resposta é só o `303`, sem corpo; `/assinar` não leva título do documento, nome de quem assina, token nem `og:*`, porque esses dados só vêm do `link`, chamado no navegador. `abrir` conta abertura no painel do atendente e derruba a sessão anterior, por isso **só o botão Começar o chama**. Coberto nos testes e2e. Em `next dev`, os dados de depuração do React trazem o valor de `cookies()` no corpo do HTML (o token inclusive); no build de produção, usado nas duas instâncias, isso não acontece (conferido em 30/10/2026). Por isso o teste, que roda em dev, olha o token só nas meta tags.
+- **Navegador interno do aplicativo**: pode não dar acesso à câmera, e a foto costuma ser obrigatória. As mensagens de câmera (entrada e foto) orientam a **copiar o link da mensagem** e colar no navegador do celular. Não mandam "abrir no navegador": o token já saiu da URL e o cookie não passa de um navegador para o outro, então a pessoa cairia em "abra o link que você recebeu". **Falta testar em aparelho real** (Android e iPhone, abrindo pelo WhatsApp).
 
 ## IP de quem assina — **PENDENTE (TI)**
 

@@ -1,15 +1,15 @@
 /**
- * Entrada pelo link do e-mail: /assinar/<token>.
+ * Entrada pelo link enviado pelo atendimento (e-mail, WhatsApp...): /assinar/<token>.
  *
  * Guarda o token num cookie httpOnly e redireciona para /assinar SEM o token,
  * para ele sair da barra de endereço e do histórico. Daqui em diante o token só
  * existe no cookie e no servidor.
  *
- * Abrir um link novo (outro e-mail) troca o cookie e derruba a sessão local do
+ * Abrir um link novo troca o cookie e derruba a sessão local do
  * link anterior — o segredo dela pertence ao outro documento.
  *
  * Token fora do formato não grava nada: a tela de /assinar mostra "abra o link
- * que você recebeu por e-mail". Quem decide se um token bem formado vale é a
+ * que você recebeu". Quem decide se um token bem formado vale é a
  * Lara, na chamada `link`.
  *
  * O `Location` é relativo de propósito: atrás do nginx o `request.url` pode

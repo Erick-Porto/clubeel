@@ -6,7 +6,7 @@
  * login do site — e sem os provedores de sessão de sócio, que o layout raiz
  * deixa de montar aqui (app/components/casca-do-site.tsx).
  *
- * Quem chega aqui chegou pelo link do e-mail. Nada no site aponta para cá, a
+ * Quem chega aqui chegou pelo link enviado pelo atendimento. Nada no site aponta para cá, a
  * área fica fora dos buscadores (metadata abaixo + X-Robots-Tag no
  * next.config.ts + robots.txt) e não carrega analytics nem script de terceiro.
  */

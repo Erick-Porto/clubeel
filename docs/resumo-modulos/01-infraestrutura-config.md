@@ -44,7 +44,7 @@ Ficam **fora de propósito**:
 - `/aprovacao/**` — tem sessão própria (cookie `aprovacao_token`), ver [09](09-aprovacao-compras.md).
 - `/` — sem sessão, a raiz mostra a página de boas-vindas (`app/components/Common/public-home.tsx`); com sessão, a home do sócio. Tudo o que a home do sócio carrega exige sessão no proxy.
 - `/torneios`, `/torneios/<id>`, `/torneios/<id>/chaveamento/*` — abertos a visitante; `/torneios/equipe` e `/torneios/<id>/equipe` usam o código de lançamento, não o login de sócio (ver [16](16-torneios.md)).
-- `/assinar/**` — assinatura remota, cookies próprios do link do e-mail, sem relação com sócio; ver [15](15-assinatura-remota.md). **Não** colocar no matcher: o `withAuth` leria a sessão de sócio.
+- `/assinar/**` — assinatura remota, cookies próprios do link da assinatura, sem relação com sócio; ver [15](15-assinatura-remota.md). **Não** colocar no matcher: o `withAuth` leria a sessão de sócio.
 - `/ingressos`, `/ingressos/<id>`, `/ingressos/<id>/comprar` — o não sócio compra sem login; `/ingressos/pedido/<id>` e `/ingressos/perdi-o-link` — abertos pelo link do e-mail (token do pedido em cookie httpOnly); `/ingressos/meus` — sem login é o "Meus ingressos" do não sócio (CPF + e-mail + código); ver [17](17-ingressos.md). Por isso o pedido do sócio entra como `:path+` (`:path*` casaria também com `/ingressos/meus`).
 - `/api/**` — cada rota faz sua própria checagem.
 

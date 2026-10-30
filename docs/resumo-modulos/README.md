@@ -17,7 +17,7 @@ Front-end web do **Clube dos Funcionários da CSN (CFCSN)**, Volta Redonda/RJ �
 | **Replay** (vídeos curtos gravados nas quadras, guardados 7 dias) | Galeria: qualquer visitante · "Meus vídeos": sócio | `/replay`, `/replay/[slug]`, `/meus-videos` | [07](07-replay.md) |
 | **Luz da quadra** (sócio acende/prolonga/devolve a luz pelo celular no uso livre) | Sócio logado | `/luz` (+ banner na home e card no perfil) | [08](08-luz-da-quadra.md) |
 | **Aprovação de compras** (diretoria aprova/reprova ordens de compra do ERP Questor) | Diretor (sessão própria, sem relação com sócio) | `/aprovacao/**` | [09](09-aprovacao-compras.md) |
-| **Assinatura remota de documentos** (termos, contratos, fichas assinados pelo link do e-mail) | Quem recebeu o link (cookie próprio, sem relação com sócio; fora dos buscadores) | `/assinar/**` | [15](15-assinatura-remota.md) |
+| **Assinatura remota de documentos** (termos, contratos, fichas assinados pelo link enviado pelo atendimento) | Quem recebeu o link (cookie próprio, sem relação com sócio; fora dos buscadores) | `/assinar/**` | [15](15-assinatura-remota.md) |
 
 Além disso: um **webhook de WhatsApp** (Poli Digital → Lara) — [10](10-webhook-whatsapp.md).
 
@@ -87,7 +87,7 @@ Regras de ouro dessa arquitetura:
 12. [12-pontos-de-atencao.md](12-pontos-de-atencao.md) — bugs conhecidos, dívidas técnicas, documentos desatualizados, armadilhas.
 13. [13-espacos-sociais.md](13-espacos-sociais.md) — churrasqueiras/salões: vitrine, calendário, pré-reserva, minhas reservas, pagamento por reserva.
 14. [14-identidade-visual.md](14-identidade-visual.md) — rebrand v4: tokens, tema escuro, cores de módulo, peças de UI (`app/components/UI/`), modelo de tela, pegadinhas.
-15. [15-assinatura-remota.md](15-assinatura-remota.md) — assinatura de documentos pelo link do e-mail: área isolada, cookies httpOnly, IP de quem assina, etapas, testes.
+15. [15-assinatura-remota.md](15-assinatura-remota.md) — assinatura de documentos pelo link enviado pelo atendimento (e-mail, WhatsApp): área isolada, cookies httpOnly, IP de quem assina, etapas, testes.
 16. [16-torneios.md](16-torneios.md) — torneios: lista/detalhe públicos, elegibilidade, inscrição e pagamento eRede, times e convites, chaveamento, tela da equipe com código de lançamento.
 17. [17-ingressos.md](17-ingressos.md) — ingressos de eventos: vitrine, compra do sócio (título) e do não sócio (sem login, token do pedido em cookie httpOnly), cupom, pagamento eRede com estorno no `hold_expired`, QR/PDF, vários dias.
 
