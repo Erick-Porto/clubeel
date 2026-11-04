@@ -34,7 +34,7 @@ import Footer from "../../../components/Common/footer";
 import { Loading, LoadingScreen } from "../../../components/Common/loading";
 import ReplayNotice from "../../../components/Replay/ReplayNotice";
 import SocialFlashBox from "../../../components/Social/SocialFlashBox";
-import { TournamentCover } from "../../../components/UI/covers";
+import { EventsCover } from "../../../components/UI/covers";
 import { PageHeader, Pill, initialsOf } from "../../../components/UI/ui";
 import {
     cancelInvite,
@@ -328,7 +328,7 @@ export default function TeamPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TournamentCover />
+            <EventsCover />
 
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <Link href="/torneios/inscricoes" className={style.backLink}>

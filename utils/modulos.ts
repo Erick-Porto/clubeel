@@ -11,8 +11,10 @@ import { EM_HOMOLOGACAO } from "./base-path";
  * Só some a entrada (menu, cartões, atalhos, avisos): as páginas e o proxy
  * continuam no ar para quem tiver o endereço — decisão do clube na liberação
  * de 2026-10-29. Para liberar um módulo, basta tirá-lo da lista.
+ *
+ * Eventos (chaves `ingressos` e `torneios`) foi liberado em 2026-11-04.
  */
-const OCULTOS_EM_PRODUCAO = ["social", "torneios", "ingressos"];
+const OCULTOS_EM_PRODUCAO = ["social"];
 
 const MOSTRAR_TUDO = EM_HOMOLOGACAO || process.env.NEXT_PUBLIC_MODULOS_EXTRAS === "1";
 

@@ -333,7 +333,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     ) : null}
 
                     {/*
-                      * As áreas abertas (RePET e torneios) ficam na página de
+                      * As áreas abertas (RePET e Eventos) ficam na página de
                       * boas-vindas da raiz (public-home.tsx). Daqui só se volta
                       * para lá — quem caiu no login vindo de uma página
                       * protegida também enxerga que há o que ver sem conta.
@@ -341,7 +341,7 @@ export default function AuthSidebar({ useInterface }: { useInterface: string }) 
                     <Link href="/" className={styles.homeLink}>
                         <FontAwesomeIcon icon={faArrowLeft} /> Voltar ao início
                         <span className={styles.homeLinkHint}>
-                            {moduloVisivel('torneios') ? 'RePET e torneios sem precisar de conta' : 'RePET sem precisar de conta'}
+                            {moduloVisivel('ingressos') ? 'RePET e eventos sem precisar de conta' : 'RePET sem precisar de conta'}
                         </span>
                     </Link>
                 </>

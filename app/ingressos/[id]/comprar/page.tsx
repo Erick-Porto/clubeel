@@ -24,7 +24,7 @@ import Header from "../../../components/Common/header";
 import Footer from "../../../components/Common/footer";
 import { Loading } from "../../../components/Common/loading";
 import ReplayNotice from "../../../components/Replay/ReplayNotice";
-import { TicketCover } from "../../../components/UI/covers";
+import { EventsCover } from "../../../components/UI/covers";
 import { PageHeader } from "../../../components/UI/ui";
 import MemberCheckout from "../../../components/Ticket/MemberCheckout";
 import GuestCheckout from "../../../components/Ticket/GuestCheckout";
@@ -151,7 +151,7 @@ export default function TicketBuyPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TicketCover />
+            <EventsCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <Suspense fallback={<Loading />}>
                     <BuyContent />

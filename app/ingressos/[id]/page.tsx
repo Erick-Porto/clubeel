@@ -36,7 +36,7 @@ import Header from "../../components/Common/header";
 import Footer from "../../components/Common/footer";
 import { Loading } from "../../components/Common/loading";
 import ReplayNotice from "../../components/Replay/ReplayNotice";
-import { TicketCover } from "../../components/UI/covers";
+import { EventsCover } from "../../components/UI/covers";
 import { Media, Note } from "../../components/UI/ui";
 import { EventStatusPill } from "../../components/Ticket/EventCard";
 import TicketTypeCard from "../../components/Ticket/TicketTypeCard";
@@ -298,7 +298,7 @@ export default function TicketEventPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TicketCover />
+            <EventsCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <Link href="/ingressos" className={style.backLink}>
                     <FontAwesomeIcon icon={faArrowLeft} /> Eventos
