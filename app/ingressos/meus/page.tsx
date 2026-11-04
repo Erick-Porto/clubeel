@@ -28,7 +28,7 @@ import Header from "../../components/Common/header";
 import Footer from "../../components/Common/footer";
 import { Loading } from "../../components/Common/loading";
 import ReplayNotice from "../../components/Replay/ReplayNotice";
-import { TicketCover } from "../../components/UI/covers";
+import { EventsCover } from "../../components/UI/covers";
 import GuestAccess from "../../components/Ticket/GuestAccess";
 import { Media, PageHeader, Pill, SearchBar, matchesSearch } from "../../components/UI/ui";
 import { fetchMyOrders, type TicketFailure, type TicketOrder } from "../../../services/ticket-api";
@@ -144,7 +144,7 @@ function MemberOrders() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TicketCover />
+            <EventsCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader title="Meus ingressos" lead="Pedidos seus e das pessoas do seu título." />
                 {body}
@@ -161,7 +161,7 @@ export default function MyTicketsPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TicketCover />
+            <EventsCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader title="Meus ingressos" lead="Para quem comprou sem ser sócio: todos os seus pedidos, com QR Code e PDF." />
                 {status === "loading" ? <Loading /> : <GuestAccess />}

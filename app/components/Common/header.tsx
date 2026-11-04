@@ -32,7 +32,7 @@ import { comBase } from '../../../utils/base-path';
 import { moduloVisivel } from '../../../utils/modulos';
 
 // As chaves são as mesmas do `Area` (cor de cada módulo, ui.tsx).
-type ModuleKey = 'inicio' | 'quadras' | 'social' | 'replay' | 'luz' | 'torneios' | 'ingressos' | 'perfil';
+type ModuleKey = 'inicio' | 'quadras' | 'social' | 'replay' | 'luz' | 'ingressos' | 'perfil';
 
 interface NavItem {
     key: ModuleKey;
@@ -55,8 +55,9 @@ const TODOS: NavItem[] = [
     { key: 'social', href: '/espacos-sociais', label: 'Espaços sociais', short: 'Espaços', icon: faChampagneGlasses },
     { key: 'replay', href: '/replay', label: 'Replay', short: 'Replay', icon: faVideo },
     { key: 'luz', href: '/luz', label: 'Luz da quadra', short: 'Luz', icon: faLightbulb },
-    { key: 'torneios', href: '/torneios', label: 'Torneios', short: 'Torneios', icon: faTrophy },
-    { key: 'ingressos', href: '/ingressos', label: 'Ingressos', short: 'Ingressos', icon: faTicket },
+    // "Eventos" junta ingressos e torneios (as abas ficam na capa, covers.tsx).
+    // A chave segue `ingressos` (cor e `moduloVisivel`); as URLs não mudaram.
+    { key: 'ingressos', href: '/ingressos', label: 'Eventos', short: 'Eventos', icon: faTicket },
     { key: 'perfil', href: '/profile', label: 'Meu perfil', short: 'Perfil', icon: faUser },
 ];
 
@@ -82,8 +83,8 @@ function moduleOf(pathname: string): ModuleKey | null {
     if (pathname.startsWith('/espacos-sociais')) return 'social';
     if (pathname.startsWith('/replay') || pathname.startsWith('/meus-videos')) return 'replay';
     if (pathname.startsWith('/luz')) return 'luz';
-    if (pathname.startsWith('/torneios')) return 'torneios';
-    if (pathname.startsWith('/ingressos')) return 'ingressos';
+    // Torneios moram dentro de Eventos: acendem o mesmo item do menu.
+    if (pathname.startsWith('/torneios') || pathname.startsWith('/ingressos')) return 'ingressos';
     if (pathname.startsWith('/profile')) return 'perfil';
     return null;
 }

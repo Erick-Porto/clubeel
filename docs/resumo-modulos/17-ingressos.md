@@ -1,4 +1,6 @@
-# 17 — Ingressos de eventos (`/ingressos`)
+# 17 — Eventos: ingressos (`/ingressos`)
+
+> **Eventos** (2026-11-04): o módulo Ingressos passou a se chamar **Eventos** e os torneios moram dentro dele. Só mudaram nomes e navegação — as URLs seguem `/ingressos/...` e `/torneios/...` (o link do e-mail da Lara ao não sócio é `/ingressos/pedido/{id}?token=…`) e as chaves internas (`Area`, `moduloVisivel`) seguem `ingressos` e `torneios`. Uma capa só, `EventsCover` ([covers.tsx](../../app/components/UI/covers.tsx)), na cor de `ingressos`, com as abas **Ingressos** (`/ingressos`) · **Torneios** (`/torneios`) · **Meus ingressos** (`/ingressos/meus`) · **Minhas inscrições** (`/torneios/inscricoes`); no menu, um item só, **Eventos** (`/ingressos`), aceso nas duas pastas; na página de boas-vindas, uma porta **Eventos**. Os torneios em si estão em [16](16-torneios.md).
 
 Venda de ingressos dos eventos do clube: vitrine, página do evento, compra do **sócio** (para as pessoas do título dele, preço de sócio) e do **não sócio** (sem login e sem cadastro), pagamento na eRede, "meus ingressos" com QR Code, código e PDF — do sócio pelo login e do não sócio por CPF + e-mail + código —, "perdi o link", eventos de vários dias (diária × passaporte) e **lugar marcado** (mesa, bistrô, camarote escolhidos num mapa). Backend: rotas `api/tickets/*` da Lara. Contrato: versões v1 a v4 (v2 cupom, v3 compra para o título, v4 vários dias) + lugares marcados.
 
@@ -115,7 +117,7 @@ Cupom de 100%: o pedido já nasce pago; a tela do pedido mostra os ingressos dir
 
 ## Telas
 
-Visual v4 ([14](14-identidade-visual.md)), módulo `ingressos` (rosa-magenta, cor proposta pelo site). Capa `TicketCover` com abas **Eventos** / **Meus ingressos**.
+Visual v4 ([14](14-identidade-visual.md)), módulo `ingressos` (rosa-magenta, cor proposta pelo site). Capa `EventsCover` (ver o aviso no topo).
 
 - **Vitrine**: cartões (imagem ou ingresso na cor do módulo, "N dias" e as datas "13/02 a 14/02" no evento de vários dias, selo: Vendas abertas / Vendas a partir de… / Vendas encerradas / Esgotado (`capacity_left` 0) / Evento encerrado), data e local, "a partir de" (menor preço à venda para quem vê). Busca.
 - **Evento**: hero (quando — "13/02 a 14/02" no evento de vários dias —, local, janela de vendas, lugares restantes), descrição, regras (`<details>`), tipos com lote e os dois preços (o de quem vê realçado; visitante vê "Sócio? Entre para pagar R$ y"), selo "Últimos ingressos" com `remaining ≤ 10` (número escolhido pelo site, só apresentação; `remaining: null` = lote sem limite de quantidade → sem selo e sem contagem — quem diz se o tipo está à venda é só o `available`), tipo indisponível com "Próximo lote a partir de…" e os preços dele. Vários dias: passaporte em destaque ("vale todos os dias", só se houver tipo `passport`) e um bloco por dia (`label` + horário; "Dia esgotado" com `capacity_left` 0 do dia). Botão Comprar e barra fixa com "a partir de".
@@ -127,7 +129,7 @@ Visual v4 ([14](14-identidade-visual.md)), módulo `ingressos` (rosa-magenta, co
 
 ## Integração com o resto do app
 
-- Navegação: item **Ingressos** no topo (desktop) e na folha "Menu" do celular; "Meus ingressos" no menu do usuário; porta **Ingressos** na página de boas-vindas ([header.tsx](../../app/components/Common/header.tsx), [public-home.tsx](../../app/components/Common/public-home.tsx)). A entrada do módulo trouxe a **nova barra inferior** do celular (Início · Menu · Perfil) — ver [11](11-ui-compartilhada.md).
+- Navegação: item **Eventos** no topo (desktop) e na folha "Menu" do celular (vale para `/ingressos` e `/torneios`); "Meus ingressos" e "Minhas inscrições em torneios" no menu do usuário; porta **Eventos** na página de boas-vindas ([header.tsx](../../app/components/Common/header.tsx), [public-home.tsx](../../app/components/Common/public-home.tsx)). A entrada do módulo trouxe a **nova barra inferior** do celular (Início · Menu · Perfil) — ver [11](11-ui-compartilhada.md).
 
 ## Pontos a confirmar com a Lara
 

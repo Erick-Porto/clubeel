@@ -25,7 +25,7 @@ import Header from "../components/Common/header";
 import Footer from "../components/Common/footer";
 import { Loading } from "../components/Common/loading";
 import ReplayNotice from "../components/Replay/ReplayNotice";
-import { TournamentCover } from "../components/UI/covers";
+import { EventsCover } from "../components/UI/covers";
 import { PageHeader, SearchBar, matchesSearch } from "../components/UI/ui";
 import TournamentCard from "../components/Tournament/TournamentCard";
 import { fetchTournaments, type Tournament, type TournamentFailure } from "../../services/tournament-api";
@@ -143,7 +143,7 @@ export default function TournamentsPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TournamentCover />
+            <EventsCover />
 
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader

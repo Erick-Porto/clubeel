@@ -17,7 +17,7 @@ import Header from "../components/Common/header";
 import Footer from "../components/Common/footer";
 import { Loading } from "../components/Common/loading";
 import ReplayNotice from "../components/Replay/ReplayNotice";
-import { TicketCover } from "../components/UI/covers";
+import { EventsCover } from "../components/UI/covers";
 import { PageHeader, SearchBar, matchesSearch } from "../components/UI/ui";
 import EventCard from "../components/Ticket/EventCard";
 import { fetchEvents, type TicketEvent, type TicketFailure } from "../../services/ticket-api";
@@ -104,7 +104,7 @@ export default function TicketEventsPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TicketCover />
+            <EventsCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader
                     title="Eventos"

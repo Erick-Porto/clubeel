@@ -40,7 +40,7 @@ import Footer from "../../components/Common/footer";
 import { Loading } from "../../components/Common/loading";
 import ReplayNotice from "../../components/Replay/ReplayNotice";
 import SocialFlashBox from "../../components/Social/SocialFlashBox";
-import { TournamentCover } from "../../components/UI/covers";
+import { EventsCover } from "../../components/UI/covers";
 import { Media, Note, Pill } from "../../components/UI/ui";
 import { TournamentStatusPill } from "../../components/Tournament/TournamentCard";
 import TournamentPaymentPanel from "../../components/Tournament/TournamentPaymentPanel";
@@ -498,7 +498,7 @@ export default function TournamentDetailPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TournamentCover />
+            <EventsCover />
 
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <Link href="/torneios" className={style.backLink}>

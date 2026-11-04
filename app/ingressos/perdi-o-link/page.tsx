@@ -14,7 +14,7 @@ import ui from "../../../styles/ui.module.css";
 import style from "../../../styles/ticket.module.css";
 import Header from "../../components/Common/header";
 import Footer from "../../components/Common/footer";
-import { TicketCover } from "../../components/UI/covers";
+import { EventsCover } from "../../components/UI/covers";
 import { Note, PageHeader } from "../../components/UI/ui";
 import { resendGuestLink } from "../../../services/ticket-api";
 import { isValidCpf, maskCpf, onlyDigits } from "../../../utils/ticket";
@@ -50,7 +50,7 @@ export default function LostLinkPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TicketCover />
+            <EventsCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader
                     backHref="/ingressos"

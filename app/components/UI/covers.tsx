@@ -5,7 +5,7 @@
  * mostrarem as mesmas abas, na mesma ordem.
  */
 
-import { faChampagneGlasses, faTicket, faTrophy, faVideo } from "@fortawesome/free-solid-svg-icons";
+import { faChampagneGlasses, faTicket, faVideo } from "@fortawesome/free-solid-svg-icons";
 import { ModuleCover } from "./ui";
 
 export function ReplayCover() {
@@ -39,39 +39,30 @@ export function SocialCover() {
 }
 
 /**
- * Torneios. "Minhas inscrições" é do sócio; a lista é aberta a qualquer
- * visitante (quem não está logado cai no login ao tocar na aba).
+ * Eventos: ingressos e torneios numa capa só (decisão de 2026-11-04 — o módulo
+ * Ingressos virou "Eventos" e os torneios passaram a morar dentro dele). As
+ * URLs continuam `/ingressos/...` e `/torneios/...`: o link que a Lara manda
+ * por e-mail ao não sócio é `/ingressos/pedido/{id}?token=…`.
+ *
+ * A capa tem a cor de Eventos (chave `ingressos` do `Area`) em todas as abas;
+ * os cartões e as telas do torneio seguem com a cor dos torneios.
+ *
+ * Vitrine, lista de torneios e "Meus ingressos" são abertos (sem login, "Meus
+ * ingressos" é o do não sócio, por CPF + e-mail + código); "Minhas inscrições"
+ * é do sócio (quem não está logado cai no login ao tocar na aba).
  */
-export function TournamentCover() {
-    return (
-        <ModuleCover
-            area="torneios"
-            icon={faTrophy}
-            title="Torneios"
-            lead="Inscrições, times, chaveamento e resultados dos torneios do clube."
-            tabs={[
-                { label: "Torneios", href: "/torneios" },
-                { label: "Minhas inscrições", href: "/torneios/inscricoes" },
-            ]}
-        />
-    );
-}
-
-/**
- * Ingressos de eventos. A vitrine e a compra são abertas (o não sócio compra
- * sem login); "Meus ingressos" é do sócio — o não sócio abre o pedido pelo
- * link do e-mail.
- */
-export function TicketCover() {
+export function EventsCover() {
     return (
         <ModuleCover
             area="ingressos"
             icon={faTicket}
-            title="Ingressos"
-            lead="Eventos do clube: compra, QR Code e ingressos em PDF."
+            title="Eventos"
+            lead="Ingressos dos eventos e torneios do clube."
             tabs={[
-                { label: "Eventos", href: "/ingressos" },
+                { label: "Ingressos", href: "/ingressos" },
+                { label: "Torneios", href: "/torneios" },
                 { label: "Meus ingressos", href: "/ingressos/meus" },
+                { label: "Minhas inscrições", href: "/torneios/inscricoes" },
             ]}
         />
     );
