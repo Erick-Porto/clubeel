@@ -378,6 +378,93 @@ test.describe('fluxo completo', () => {
   });
 });
 
+test.describe('signatários', () => {
+  const CARLA = {
+    name: 'Carla Mendes',
+    role: 'Contratante',
+    me: false,
+    signed: true,
+    signed_at: '2026-11-09T10:12:00-03:00',
+    status: 'Assinado',
+  };
+  const JOAO = { name: 'João da Silva', role: 'Testemunha', me: true, signed: false, signed_at: null, status: 'Pendente' };
+
+  async function irParaLeitura(page: Page) {
+    await comecar(page);
+    await confirmarCpf(page);
+    await expect(page.getByRole('heading', { name: 'Leia o documento' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Página 3 de 3' })).toBeVisible();
+  }
+
+  test('um signatário só: o bloco não aparece', async ({ page, request }) => {
+    await cenario(request, { semFormulario: true, semAnexos: true, signers: [JOAO] });
+    await irParaLeitura(page);
+    await expect(page.getByTestId('signatarios')).toHaveCount(0);
+  });
+
+  test('dois signatários, um já assinado: "1 de 2", data formatada, sem rolagem lateral', async ({ page, request }) => {
+    await cenario(request, { semFormulario: true, semAnexos: true, signers: [CARLA, JOAO] });
+    const logs: string[] = [];
+    page.on('console', (m) => logs.push(m.text()));
+    await irParaLeitura(page);
+
+    const bloco = page.getByTestId('signatarios');
+    await expect(bloco.getByRole('heading', { name: '1 de 2 já assinaram' })).toBeVisible();
+    const itens = bloco.getByTestId('signatario');
+    await expect(itens).toHaveCount(2);
+    await expect(itens.nth(0)).toContainText('Carla Mendes — Contratante');
+    await expect(itens.nth(0)).toContainText('assinou em 09/11 às 10:12');
+    await expect(itens.nth(1)).toContainText('João da Silva — Testemunha');
+    await expect(itens.nth(1)).toContainText('você');
+    await expect(itens.nth(1)).not.toContainText('pendente');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+
+    // Privacidade: nomes de outras pessoas fora do console e das meta tags.
+    expect(logs.join('\n')).not.toContain('Carla Mendes');
+    const metas = await page.locator('meta').evaluateAll((els) => els.map((e) => e.outerHTML).join('\n'));
+    expect(metas).not.toContain('Carla Mendes');
+    expect(await page.title()).not.toContain('Carla Mendes');
+  });
+
+  test('outro pendente aparece com o status da Lara em minúsculas', async ({ page, request }) => {
+    const ana = { name: 'Ana Lima', role: null, me: false, signed: false, signed_at: null, status: 'Aguardando' };
+    await cenario(request, { semFormulario: true, semAnexos: true, signers: [CARLA, JOAO, ana] });
+    await irParaLeitura(page);
+    const bloco = page.getByTestId('signatarios');
+    await expect(bloco).toContainText('1 de 3 já assinaram');
+    await expect(bloco.getByTestId('signatario').nth(2)).toHaveText(/Ana Lima\s*aguardando/);
+  });
+
+  test('sessão sem signers: a tela segue normal', async ({ page, request }) => {
+    await cenario(request, { semFormulario: true, semAnexos: true });
+    await irParaLeitura(page);
+    await expect(page.getByTestId('signatarios')).toHaveCount(0);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(page.getByTestId('fim-leitura')).toContainText('Você chegou ao fim do documento');
+    await page.getByRole('button', { name: 'Li o documento, continuar' }).click();
+    await expect(page.getByRole('button', { name: 'Continuar para a assinatura' })).toBeVisible();
+  });
+
+  test('PDF sem cache: pedido de novo a cada leitura, com o Cache-Control da Lara', async ({ page, request }) => {
+    await cenario(request, { semFormulario: true, semAnexos: true, signers: [CARLA, JOAO] });
+    const cabecalhos: string[] = [];
+    page.on('response', (r) => {
+      if (r.url().endsWith('/assinar/api/pdf')) cabecalhos.push(r.headers()['cache-control'] ?? '');
+    });
+    await irParaLeitura(page);
+    expect(cabecalhos).toEqual(['private, max-age=0, no-store']);
+
+    // Outra pessoa pode assinar sem `pdf_version` mudar: voltar à leitura busca de novo.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.getByRole('button', { name: 'Li o documento, continuar' }).click();
+    await expect(page.getByRole('button', { name: 'Continuar para a assinatura' })).toBeVisible();
+    await page.getByRole('button', { name: 'Voltar' }).click();
+    await expect(page.getByRole('img', { name: 'Página 3 de 3' })).toBeVisible();
+    await expect.poll(() => cabecalhos.length).toBe(2);
+    expect(cabecalhos[1]).toBe('private, max-age=0, no-store');
+  });
+});
+
 test.describe('câmera', () => {
   test('sem câmera, avisa na entrada e não deixa começar', async ({ page, request }) => {
     await cenario(request);

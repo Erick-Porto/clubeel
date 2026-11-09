@@ -73,8 +73,27 @@ export interface ListaAnexos {
   accepted_types: string[];
 }
 
+/**
+ * Um signatário do documento (Lara, 09/11/2026), na ordem do documento. Sem
+ * CPF, e-mail nem telefone, de propósito. Os nomes são de outras pessoas: só
+ * aparecem na tela, nunca em log, analytics ou meta tag.
+ */
+export interface Signatario {
+  name: string;
+  role?: string | null;
+  /** Quem está com o link. */
+  me: boolean;
+  signed: boolean;
+  /** ISO 8601, ou `null` enquanto não assinou. */
+  signed_at: string | null;
+  /** Texto da situação, em português ("Assinado", "Pendente"…). */
+  status: string;
+}
+
 export interface Sessao {
   document: { id: number; title: string; pdf_url: string | null; pdf_version: string | null };
+  /** Opcional: Lara anterior a 09/11/2026 não manda. */
+  signers?: Signatario[] | null;
   form: { answered: boolean; fields: CampoFormulario[] } | null;
   signer: { name: string; role?: string | null; has_email: boolean };
   rules: {

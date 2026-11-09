@@ -11,6 +11,9 @@
  * Cenário `vinculado`: modelo que exige outro junto. Mesmo contrato da API,
  * só maior: PDF com os dois textos seguidos, perguntas e anexos dos dois.
  *
+ * Cenário `signers`: lista de signatários que a sessão devolve (Lara de
+ * 09/11/2026). Sem ele, a sessão sai SEM o campo, como numa Lara anterior.
+ *
  * NUNCA aponte o site real para isto; é só para `npm run test:e2e`.
  */
 
@@ -137,6 +140,7 @@ function sessaoInfo() {
   const c = estado.cenario;
   return {
     document: { id: 812, title: 'Contrato de locação — Salão Nobre', pdf_url: null, pdf_version: estado.versao },
+    ...(c.signers !== undefined ? { signers: c.signers } : {}),
     form: c.semFormulario
       ? null
       : {
@@ -302,7 +306,7 @@ const servidor = http.createServer(async (req, res) => {
   }
 
   if (rota === 'pdf') {
-    res.writeHead(200, { 'Content-Type': 'application/pdf' });
+    res.writeHead(200, { 'Content-Type': 'application/pdf', 'Cache-Control': 'private, max-age=0, no-store' });
     const contrato = estado.versao === 'v1' ? 'Contrato' : 'Contrato respondido';
     if (estado.cenario.vinculado) {
       // 6 páginas do contrato + 6 do regulamento vinculado, num PDF só.
