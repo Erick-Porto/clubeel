@@ -16,7 +16,8 @@ const basePath = rawBasePath && !rawBasePath.startsWith("/") ? `/${rawBasePath}`
 // eles cobrem as páginas. `source` já recebe o basePath sozinho.
 const HEADERS_ASSINATURA = [
   { key: "X-Robots-Tag", value: "noindex, nofollow" },
-  { key: "Cache-Control", value: "no-store, max-age=0" },
+  // Mesmo valor que a Lara manda no PDF; este header vence o da rota.
+  { key: "Cache-Control", value: "private, max-age=0, no-store" },
   { key: "Referrer-Policy", value: "no-referrer" },
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
   { key: "X-Frame-Options", value: "DENY" },

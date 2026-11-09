@@ -428,6 +428,43 @@ describe('anexos e PDF', () => {
     expect(await res.text()).toBe('%PDF-1.4 bytes');
   });
 
+  it('PDF: busca a Lara a cada pedido, sem cache no Next, com o mesmo Cache-Control dela', async () => {
+    respostaLara = () =>
+      new Response('%PDF-1.4 bytes', {
+        status: 200,
+        headers: { 'Content-Type': 'application/pdf', 'Cache-Control': 'private, max-age=0, no-store' },
+      });
+    const primeira = await pdf(pedido('pdf', { method: 'GET', sessao: true }));
+    const segunda = await pdf(pedido('pdf', { method: 'GET', sessao: true }));
+    // O arquivo muda quando outra pessoa assina, sem `pdf_version` mudar.
+    expect(chamadas).toHaveLength(2);
+    expect(chamadas.every((c) => c.init.cache === 'no-store')).toBe(true);
+    expect(primeira.headers.get('cache-control')).toBe('private, max-age=0, no-store');
+    expect(segunda.headers.get('cache-control')).toBe('private, max-age=0, no-store');
+  });
+
+  it('PDF: Cache-Control diferente vindo da Lara não passa', async () => {
+    respostaLara = () =>
+      new Response('%PDF-1.4 bytes', {
+        status: 200,
+        headers: { 'Content-Type': 'application/pdf', 'Cache-Control': 'public, max-age=3600' },
+      });
+    const res = await pdf(pedido('pdf', { method: 'GET', sessao: true }));
+    expect(res.headers.get('cache-control')).toBe('private, max-age=0, no-store');
+  });
+
+  it('sessão: `signers` passa ao navegador como veio, sem o segredo', async () => {
+    const signers = [
+      { name: 'Maria de Souza', role: 'Contratante', me: false, signed: true, signed_at: '2026-11-09T10:12:00-03:00', status: 'Assinado' },
+      { name: 'João da Silva', role: 'Testemunha', me: true, signed: false, signed_at: null, status: 'Pendente' },
+    ];
+    respostaLara = () => jsonLara(200, { session_token: SEGREDO, signers });
+    const res = await sessao(pedido('sessao', { method: 'GET', sessao: true }));
+    const corpo = await res.json();
+    expect(corpo.signers).toEqual(signers);
+    expect(corpo.session_token).toBeUndefined();
+  });
+
   it('PDF antes do CPF: identity_required repassado', async () => {
     respostaLara = () => jsonLara(409, { error: 'Confirme o CPF.', reason: 'identity_required' });
     const res = await pdf(pedido('pdf', { method: 'GET', sessao: true }));

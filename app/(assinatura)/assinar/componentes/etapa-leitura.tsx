@@ -9,7 +9,12 @@
  * `assinar`; o front não exige um mínimo — isso é regra da Lara, se houver.
  *
  * O PDF fica só na memória da aba (nada de cache, blob salvo ou download) e é
- * buscado de novo quando `pdf_version` muda (depois das respostas).
+ * buscado de novo toda vez que a leitura aparece, além de quando `pdf_version`
+ * muda (depois das respostas). Desde 09/11/2026 o arquivo também muda quando
+ * OUTRA pessoa assina (traço, visto e data dela entram no texto) sem que
+ * `pdf_version` mude — por isso nada de guardar o PDF entre uma visita e outra.
+ *
+ * Acima do PDF, a lista de signatários (`signers`), quando houver mais de um.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -29,6 +34,7 @@ import { Note } from '../../../components/UI/ui';
 import { baixarPdf } from '../cliente';
 import { carregarPdfJs } from '../pdf';
 import type { Recusa } from '../tipos';
+import ListaSignatarios from './lista-signatarios';
 
 export interface Leitura {
   segundos: number;
@@ -37,6 +43,8 @@ export interface Leitura {
 
 interface Props {
   versao: string | null;
+  /** `signers` da sessão, como veio (pode faltar). */
+  signatarios?: unknown;
   inicial: Leitura;
   tratar: (recusa: Recusa) => boolean;
   /** Ao sair da leitura (Continuar): o pai registra o `visualizado`. */
@@ -56,7 +64,7 @@ const ZOOMS = [1, 1.5, 2] as const;
  */
 const PIXELS_POR_PAGINA = 2_000_000;
 
-export default function EtapaLeitura({ versao, inicial, tratar, aoContinuar, ocupado, erroAoContinuar }: Props) {
+export default function EtapaLeitura({ versao, signatarios, inicial, tratar, aoContinuar, ocupado, erroAoContinuar }: Props) {
   const [estado, setEstado] = useState<'carregando' | 'pronto' | 'erro'>('carregando');
   const [erro, setErro] = useState<string | null>(null);
   const [paginas, setPaginas] = useState(0);
@@ -211,6 +219,8 @@ export default function EtapaLeitura({ versao, inicial, tratar, aoContinuar, ocu
       <p className={styles.lead}>
         Leia com atenção até o fim. Se a letra estiver pequena, use os botões de aumentar.
       </p>
+
+      <ListaSignatarios signers={signatarios} />
 
       <div className={styles.pdfBarra}>
         <span>

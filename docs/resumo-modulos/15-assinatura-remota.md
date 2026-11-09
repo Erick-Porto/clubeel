@@ -10,7 +10,7 @@
 2. **O navegador nunca fala com a Lara.** Navegador → rotas do Next em `/assinar/api/*` (Route Handlers) → Lara. Uma rota fixa por endpoint, sem proxy genérico e **fora** da allowlist de `pages/api/backend` (que é do sócio).
 3. **Credencial própria**: `LARA_SIGNATURE_API_TOKEN`. Não é o `INTERNAL_LARA_API_TOKEN` das reservas nem o JWT da aprovação.
 4. **Token do link e segredo da sessão só em cookie httpOnly** (`path=/assinar`). Nunca em `localStorage`, `sessionStorage`, IndexedDB, estado de React ou URL depois da primeira carga.
-5. **Nada fica no aparelho** (pode ser um computador compartilhado): respostas com `Cache-Control: no-store`; PDF, anexos, foto e assinatura só na memória da aba; cookies apagados no fim.
+5. **Nada fica no aparelho** (pode ser um computador compartilhado): respostas com `Cache-Control: private, max-age=0, no-store` (o mesmo valor que a Lara manda no PDF); PDF, anexos, foto e assinatura só na memória da aba; cookies apagados no fim.
 6. **Fora dos buscadores e não descobrível**: nenhum link no site, `noindex` no HTML e no header, `Disallow` no `robots.txt`, sem analytics nem script de terceiro.
 7. **Sem sessão de sócio**: o layout raiz não monta `NextAuthProvider`, `CartProvider` nem `TokenValidator` em `/assinar` ([casca-do-site.tsx](../../app/components/casca-do-site.tsx)). O navegador ainda manda o cookie do NextAuth (path `/`), mas nada da área o lê.
 
@@ -27,13 +27,15 @@
 | `app/(assinatura)/assinar/cliente.ts` | cliente | `api()` e `baixarPdf()` para `/assinar/api/*` (`no-store`); `errosPorCampo` |
 | `app/(assinatura)/assinar/tipos.ts` | compartilhado | Contratos (`LinkInfo`, `Sessao`, `ListaAnexos`, `Recusa`, `Traco`…) |
 | `app/(assinatura)/assinar/formato.ts` | puro | Datas em `America/Sao_Paulo`, máscaras (CPF, CNPJ, CEP, telefone), tamanhos |
+| `app/(assinatura)/assinar/signatarios.ts` | puro | `signers` da sessão: leitura defensiva (`lerSignatarios`), quando mostrar, "N de M já assinaram", "dd/mm às hh:mm" em São Paulo |
 | `app/(assinatura)/assinar/pdf.ts` | cliente | Carga sob demanda do PDF.js (build `legacy`, worker empacotado pelo Next) |
 | `componentes/fluxo-assinatura.tsx` | cliente | Máquina de etapas, `tratar` (recusas que mudam de tela), consulta à sessão, envio e conferência de resposta perdida |
 | `componentes/etapa-*.tsx`, `quadro-assinatura.tsx` | cliente | Entrada, CPF, perguntas, anexos, leitura, aceite, assinatura/visto (canvas), foto |
+| `componentes/lista-signatarios.tsx` | cliente | Bloco de signatários acima do PDF, na leitura |
 | `componentes/telas-finais.tsx`, `recusar-documento.tsx` | cliente | Sucesso, recusado, recusas finais (moldura por `reason`); modal de recusa |
 | [styles/assinatura.module.css](../../styles/assinatura.module.css) | CSS | Letra 17px, botões ≥ 52px, coluna de 680px |
 
-Fora da pasta: [app/robots.ts](../../app/robots.ts) (`Disallow: /assinar` e `/homolog/assinar`), `headers()` em [next.config.ts](../../next.config.ts) (X-Robots-Tag, no-store, no-referrer, `frame-ancestors 'none'`), tokens `--pad`/`--pad-ink` em `globals.css`.
+Fora da pasta: [app/robots.ts](../../app/robots.ts) (`Disallow: /assinar` e `/homolog/assinar`), `headers()` em [next.config.ts](../../next.config.ts) (X-Robots-Tag, no-store, no-referrer, `frame-ancestors 'none'`; esses headers **vencem** os que a rota põe, então o `Cache-Control` da área se muda lá e em `HEADERS_DA_AREA` juntos), tokens `--pad`/`--pad-ink` em `globals.css`.
 
 ## Endereço e cookies
 
@@ -83,12 +85,16 @@ Falta a TI confirmar a configuração do nginx da produção e da homologação 
 | 2 | CPF | `rules.identity_confirmed` falso | `identidade`; mostra `attempts_left`; `link_locked` → tela final |
 | 3 | Perguntas | `form` não nulo e com campos | `respostas`; erros em `errors[key]`; resposta = sessão nova (`pdf_version` muda) |
 | 4 | Anexos | `attachments.items` não vazia | `anexos` GET/POST/DELETE; Continuar só com `missing_required` vazia |
-| 5 | Leitura | sempre | `pdf` (PDF.js, zoom 1×/1,5×/2×); todas as páginas desenhadas, com teto de ~2 milhões de pixels por página (memória no celular; no mesmo tamanho na tela, nunca abaixo de 1 pixel por ponto); mede segundos com a aba visível e se chegou ao fim (depois da última página); ao sair, `visualizado` |
+| 5 | Leitura | sempre | bloco de signatários (ver abaixo); `pdf` buscado de novo **toda vez** que a leitura aparece (PDF.js, zoom 1×/1,5×/2×); todas as páginas desenhadas, com teto de ~2 milhões de pixels por página (memória no celular; no mesmo tamanho na tela, nunca abaixo de 1 pixel por ponto); mede segundos com a aba visível e se chegou ao fim (depois da última página); ao sair, `visualizado` |
 | 6 | Aceite | sempre | termos (`accepted`), foto com `photo_consent_text` **exato**, via por e-mail se `signer.has_email` |
 | 7 | Assinatura | sempre | canvas com pointer events, `touch-action: none`; Continuar a partir de 30 pontos |
 | 8 | Visto | `rules.requires_initials` | mesmo quadro, 8 pontos |
 | 9 | Foto | `rules.requires_photo` | câmera frontal, 3 s, recorte 600×600, JPEG 0,82; câmera desligada logo depois |
 | 10 | Envio | — | `assinar` (tudo numa requisição). Sucesso: data, `validation_code`, aviso da via |
+
+**Signatários** (Lara, 09/11/2026): o objeto da sessão (`abrir`, `sessao`, `respostas`) traz `signers` — todos os signatários, na ordem do documento, com `name`, `role`, `me` (quem está com o link), `signed`, `signed_at` (ISO ou `null`) e `status` (texto em português); sem CPF, e-mail nem telefone. Na leitura, acima do PDF, aparece "N de M já assinaram" e um item por pessoa: nome — papel; "assinou em dd/mm às hh:mm" (fuso de São Paulo, selo verde) para quem assinou; "você" (selo grená) para quem tem `me`; o `status` em minúsculas para os outros pendentes. Só com **mais de um** signatário; sem o campo (Lara anterior), não aparece e a tela segue igual. A lista se atualiza com a consulta à `sessao` a cada 15 s. Os nomes são de outras pessoas: nunca em log, analytics, título ou meta tag. O site não decide nada sobre ordem ou quem pode assinar: se a Lara recusar a abertura (ex.: link de diretor antes da vez dele), mostra o `error` como em qualquer recusa. O diretor do clube também pode receber link e, para o site, é uma pessoa como outra qualquer.
+
+**PDF com quem já assinou** (Lara, 09/11/2026): depois que alguém assina, `pdf` devolve o texto com o traço, o visto e a data dessa pessoa. `pdf_version` **não** muda por isso (só muda quando as respostas refazem o texto), então o PDF nunca é guardado entre uma visita à leitura e outra: a etapa busca de novo ao aparecer, sem cache no navegador (`cache: 'no-store'`) nem no Next (`fetch` `no-store`, rota `force-dynamic`), e responde com `Cache-Control: private, max-age=0, no-store`.
 
 **Modelo vinculado** (Lara, 29/10/2026): um modelo pode exigir outro junto. A API não muda: o PDF continua um só (mais páginas, os dois textos seguidos), e `form.fields` e `attachments.items` podem trazer itens dos dois modelos. O front não sabe nem precisa saber que há vínculo: não há limite de páginas, de perguntas ou de anexos, nem altura fixa (tudo rola com a página). Campos "só o atendente responde" nunca chegam ao formulário, e a conferência das respostas pelo atendente (`answer_check`) só existe no tablet do balcão.
 
@@ -108,8 +114,8 @@ Falta a TI confirmar a configuração do nginx da produção e da homologação 
 
 ## Testes
 
-- `npm run test` (Vitest, `tests/unit/`): rotas de servidor com `fetch` mockado — credencial, IP/UA, cookies, segredo fora do corpo, cada `reason` da tabela, limpeza de cookies, stream do multipart, headers.
-- `npm run test:e2e` (Playwright, `tests/e2e/`): sobe uma **Lara falsa** (`lara-falsa.mjs`, porta 4010) e o `next dev` na porta 3100 apontado para ela, e roda o fluxo inteiro num Chromium com câmera falsa, em 360×740. O cenário `vinculado` da Lara falsa simula o modelo vinculado (PDF de 12 páginas com dois textos, 12 perguntas, anexo do segundo modelo). Na primeira vez: `npx playwright install chromium`.
+- `npm run test` (Vitest, `tests/unit/`): rotas de servidor com `fetch` mockado — credencial, IP/UA, cookies, segredo fora do corpo, cada `reason` da tabela, limpeza de cookies, stream do multipart, headers, PDF sem cache; `signatarios.test.ts` cobre a leitura do `signers`, o resumo e a data.
+- `npm run test:e2e` (Playwright, `tests/e2e/`): sobe uma **Lara falsa** (`lara-falsa.mjs`, porta 4010) e o `next dev` na porta 3100 apontado para ela, e roda o fluxo inteiro num Chromium com câmera falsa, em 360×740. O cenário `signers` da Lara falsa põe a lista na sessão (sem ele, a sessão sai sem o campo, como numa Lara anterior); os testes de signatários cobrem um signatário só (sem bloco), dois com um assinado ("1 de 2" e data), sessão sem `signers` e o PDF pedido de novo ao voltar à leitura. O cenário `vinculado` da Lara falsa simula o modelo vinculado (PDF de 12 páginas com dois textos, 12 perguntas, anexo do segundo modelo). Na primeira vez: `npx playwright install chromium`.
 
 ## Fica de fora / limitações conhecidas
 

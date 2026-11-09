@@ -144,7 +144,8 @@ export function quemAssina(request: NextRequest): QuemAssina {
  * ir parar num buscador.
  */
 export const HEADERS_DA_AREA: Record<string, string> = {
-  'Cache-Control': 'no-store, max-age=0',
+  // O mesmo valor que a Lara manda no PDF e que o next.config.ts põe nas páginas.
+  'Cache-Control': 'private, max-age=0, no-store',
   Pragma: 'no-cache',
   'X-Robots-Tag': 'noindex, nofollow',
   'Referrer-Policy': 'no-referrer',

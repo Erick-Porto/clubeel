@@ -440,6 +440,68 @@
   white-space: nowrap;
 }
 
+/* ------------------------------------------------------------ Signatários */
+/* Acima do PDF. Cabe em 360 px: nome e selos quebram linha, nada rola de lado. */
+
+.signatarios {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.signatariosResumo {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.signatariosLista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.signatario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.signatarioAssinou {
+  border-left-color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.signatarioEu {
+  border-left-color: var(--grena);
+}
+
+.signatarioNome {
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.signatarioPapel {
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.signatarioSelos {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 /* ------------------------------------------------------------ Leitura do PDF */
 
 .pdfBarra {
