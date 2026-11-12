@@ -12,6 +12,7 @@ import {
     faBagShopping,
     faCalendarCheck,
     faChampagneGlasses,
+    faChartColumn,
     faChevronDown,
     faHouse,
     faLightbulb,
@@ -234,6 +235,13 @@ export default function Header() {
                                         {moduloVisivel('ingressos') && (
                                             <Link href="/ingressos/meus" className={styles.menuItem} role="menuitem">
                                                 <FontAwesomeIcon icon={faTicket} /> Meus ingressos
+                                            </Link>
+                                        )}
+                                        {/* Só conveniência: quem protege o painel é a Lara, a cada página.
+                                            `site_role` vem do login; sessões antigas não têm o campo (= usuario). */}
+                                        {session.user.site_role === 'administrador' && moduloVisivel('painel') && (
+                                            <Link href="/painel" className={styles.menuItem} role="menuitem">
+                                                <FontAwesomeIcon icon={faChartColumn} /> Painel
                                             </Link>
                                         )}
                                         <div className={styles.menuSection}>

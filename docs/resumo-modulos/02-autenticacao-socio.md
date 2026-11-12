@@ -23,7 +23,8 @@
 
 - **Provider**: `CredentialsProvider` com campos `login` (CPF só dígitos) e `password` (**já em SHA-256 hex**, calculado no cliente).
 - `authorize`: `API_CONSUME('POST', 'login', {}, {login, password})` — roda no servidor, então vai direto à Lara com o Bearer da aplicação. Espera `data = { user, token }`; retorna `{...user, accessToken: token}`. Erros viram `throw new Error(msg)` (o front exibe `result.error`).
-- **Sessão**: `strategy: 'jwt'`. Callbacks `jwt`/`session` copiam `id, accessToken, name, email, title, telephone, cpf` para o token e para `session.user` / `session.accessToken`.
+- **Sessão**: `strategy: 'jwt'`. Callbacks `jwt`/`session` copiam `id, accessToken, name, email, title, telephone, cpf` e `site_role` para o token e para `session.user` / `session.accessToken`.
+  - `site_role` (`usuario` | `administrador`) vem do `POST login`; ausente (conta do `register`) = `usuario`. Serve **só** para mostrar o link "Painel" no menu; a prova de acesso é a resposta de `dashboard/*` a cada página ([18](18-painel.md)). Sessão aberta antes desta mudança fica sem o link até um novo login.
   - Consequência: o `accessToken` da Lara **fica acessível ao navegador** via `GET /api/auth/session`. É o comportamento atual (a área de aprovação deliberadamente faz diferente).
 - `pages.signIn = '/login'`; `secret = NEXTAUTH_SECRET`.
 - Não há refresh de token: expirou na Lara → `TokenValidator`/interceptor desloga.

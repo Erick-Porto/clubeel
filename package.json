@@ -23,6 +23,7 @@
     "react-dom": "^19.1.1",
     "react-toastify": "^11.0.5",
     "react-zoom-pan-pinch": "^3.7.0",
+    "recharts": "^2.15.4",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
@@ -39,6 +40,9 @@
   },
   "overrides": {
     "postcss": "^8.5.31",
-    "sharp": "$sharp"
+    "sharp": "$sharp",
+    "recharts": {
+      "react-is": "^19.1.1"
+    }
   }
 }

@@ -54,5 +54,10 @@ export const config = {
     // abre é o token do pedido (cookie httpOnly). `:path+` (e não `:path*`)
     // para não casar com o próprio /ingressos/meus.
     "/ingressos/meus/:path+",
+    // Painel (dashboards do administrador): sem sessão vai ao login e volta
+    // para cá. Ser administrador NÃO é conferido aqui — quem decide é a Lara
+    // (GET /api/dashboard/access, a cada página; ver docs 18).
+    "/painel",
+    "/painel/:path*",
   ]
 }

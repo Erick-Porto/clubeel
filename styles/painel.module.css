@@ -1,0 +1,477 @@
+/* Painel (dashboards do administrador). Cor do módulo em --c/--ci (posta pela
+   PainelCasca); cor sempre por token — ver docs/resumo-modulos/14 e 18. */
+
+.casca {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--canvas);
+  display: flex;
+  flex-direction: column;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- Faixa */
+
+.faixa {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgb(var(--c));
+  color: rgb(var(--ci));
+  padding: 10px 16px 0;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+}
+
+.faixaMiolo {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+}
+
+.logo {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.faixaTitulo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.faixaTitulo strong {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+
+.faixaTitulo > span {
+  font-size: 12.5px;
+  opacity: .85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.voltar:hover {
+  background: rgb(var(--ci) / .1);
+}
+
+.abas {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  color: inherit;
+  opacity: .8;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.abaAtiva {
+  opacity: 1;
+  border-bottom-color: rgb(var(--ci));
+}
+
+/* ---------------------------------------------------------------- Miolo */
+
+.miolo {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px calc(40px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.seletor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.rotulo {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+}
+
+.seletor select {
+  width: 100%;
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.cabecalhoEvento {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.titulo {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.atualizacao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------- KPIs */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kpi dt {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.kpi dd {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------------------- Gráficos */
+
+.graficos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.grafico {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.graficoTopo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.graficoTitulo {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.area {
+  width: 100%;
+  min-width: 0;
+}
+
+.vazio {
+  margin: 0;
+  padding: 32px 8px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 14px;
+}
+
+.legenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.legenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendaCor {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legendaTraco {
+  display: inline-block;
+  width: 0;
+  height: 14px;
+  border-left: 2px dashed;
+  margin: 0 4px;
+}
+
+.dica {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 170px;
+}
+
+.dicaLinha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-2);
+}
+
+.dicaLinha > span:nth-last-child(2) {
+  flex: 1;
+}
+
+.dicaLinha > .mono {
+  color: var(--ink);
+}
+
+.roscas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.rosca {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roscaTitulo {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+}
+
+.fatias {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.fatias li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fatiaRotulo {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fatiaValor {
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- Avisos */
+
+.aviso {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.aviso strong {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+
+.aviso p {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+/* ------------------------------------------------------------ Esqueleto */
+
+.bloco {
+  border-radius: var(--radius-card);
+  background: linear-gradient(90deg, var(--subtle) 0%, var(--surface) 50%, var(--subtle) 100%);
+  background-size: 200% 100%;
+  animation: brilho 1.4s ease-in-out infinite;
+}
+
+.blocoTitulo {
+  height: 52px;
+  max-width: 420px;
+}
+
+.blocoKpi {
+  height: 82px;
+}
+
+.blocoGrafico {
+  height: 300px;
+}
+
+@keyframes brilho {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bloco { animation: none; }
+}
+
+/* --------------------------------------------------------------- Celular */
+
+@media (max-width: 900px) {
+  .graficos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi dd {
+    font-size: 18px;
+  }
+
+  .titulo {
+    font-size: 20px;
+  }
+
+  .voltar span {
+    display: none;
+  }
+
+  .roscas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

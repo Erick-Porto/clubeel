@@ -60,6 +60,11 @@ export const authOptions: NextAuthOptions = {
         if (user.title) token.title = user.title as string;
         if (user.telephone) token.telephone = user.telephone as string;
         if (user.cpf) token.cpf = user.cpf as string;
+        // Perfil do sócio no Lara. Conta criada pelo /api/register pode vir sem
+        // o campo: ausência = `usuario`. Serve SÓ para mostrar o link "Painel" no
+        // menu; a prova de acesso é a resposta de /api/dashboard/* a cada página
+        // (um administrador rebaixado recebe 403 com este mesmo token).
+        token.site_role = user.site_role === 'administrador' ? 'administrador' : 'usuario';
       }
       return token;
     },
@@ -72,6 +77,7 @@ export const authOptions: NextAuthOptions = {
         if (token.title) session.user.title = token.title as string;
         if (token.cpf) session.user.cpf = token.cpf as string;
         if (token.telephone) session.user.telephone = token.telephone as string;
+        session.user.site_role = token.site_role ?? 'usuario';
       }
       return session;
     },

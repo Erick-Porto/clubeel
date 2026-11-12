@@ -6,7 +6,7 @@
 ## 1. O que é
 
 Front-end web do **Clube dos Funcionários da CSN (CFCSN)**, Volta Redonda/RJ — produção em `espacos.clubedosfuncionarios.com.br`.
-É uma aplicação **Next.js 15 (React 19, TypeScript)** que serve oito produtos distintos:
+É uma aplicação **Next.js 15 (React 19, TypeScript)** que serve oito produtos distintos, mais o **painel** de números do administrador:
 
 | Produto | Público | Rotas | Doc |
 |---|---|---|---|
@@ -18,6 +18,7 @@ Front-end web do **Clube dos Funcionários da CSN (CFCSN)**, Volta Redonda/RJ �
 | **Luz da quadra** (sócio acende/prolonga/devolve a luz pelo celular no uso livre) | Sócio logado | `/luz` (+ banner na home e card no perfil) | [08](08-luz-da-quadra.md) |
 | **Aprovação de compras** (diretoria aprova/reprova ordens de compra do ERP Questor) | Diretor (sessão própria, sem relação com sócio) | `/aprovacao/**` | [09](09-aprovacao-compras.md) |
 | **Assinatura remota de documentos** (termos, contratos, fichas assinados pelo link enviado pelo atendimento) | Quem recebeu o link (cookie próprio, sem relação com sócio; fora dos buscadores) | `/assinar/**` | [15](15-assinatura-remota.md) |
+| **Painel** (dashboards: vendas de ingressos por evento; depois MultiVendas e MultiClubes) | Sócio com perfil `administrador` no Lara (mesmo login; a Lara confere a cada página; fora dos buscadores) | `/painel`, `/painel/ingressos` | [18](18-painel.md) |
 
 Além disso: um **webhook de WhatsApp** (Poli Digital → Lara) — [10](10-webhook-whatsapp.md).
 
@@ -42,6 +43,7 @@ Next.js (servidor, DMZ) ──────────────────�
    ├─ app/espacos-sociais/fotos/[...path] fotos da galeria (só images/*)│
    ├─ pages/api/ingressos/*            pedido do não sócio (token→cookie)│
    ├─ app/aprovacao/** (Server Components + Server Actions) → Lara      │
+   ├─ app/painel/** (Server Components; dashboard/* fora do proxy) → Lara│
    └─ app/(assinatura)/assinar/api/*  Route Handlers, token próprio │
                                                                          ▼
                                          Lara (Laravel)  ·  eRede  ·  ERP Questor (via Lara)
@@ -53,7 +55,7 @@ Regras de ouro dessa arquitetura:
 2. **`INTERNAL_LARA_API_TOKEN` nunca pode chegar ao bundle do cliente.** Variáveis sem prefixo `NEXT_PUBLIC_` são `undefined` no browser.
 3. **Todo endpoint novo da Lara usado pelo cliente precisa entrar na allowlist** de [`pages/api/backend/[...path].ts`](../../pages/api/backend/[...path].ts) (`PUBLIC_ENDPOINTS` ou `AUTHENTICATED_ENDPOINTS`). Fora da lista → 403.
 4. **Valor de cobrança nunca vem do cliente** — é recalculado no servidor (`utils/lara.ts → computeAmountInCents`).
-5. **Módulos novos (Replay, Luz, Aprovação, Espaços sociais, Torneios, Ingressos, Assinatura remota) seguem "o front não decide nada"**: janela, limite, permissão, status vêm da Lara; o front só formata e exibe a mensagem que ela mandou (`error`/`reason`). Não reimplemente regra de negócio no front.
+5. **Módulos novos (Replay, Luz, Aprovação, Espaços sociais, Torneios, Ingressos, Assinatura remota, Painel) seguem "o front não decide nada"**: janela, limite, permissão, status vêm da Lara; o front só formata e exibe a mensagem que ela mandou (`error`/`reason`). Não reimplemente regra de negócio no front.
 
 ## 3. Mapa de diretórios
 
@@ -64,7 +66,7 @@ Regras de ouro dessa arquitetura:
 | `app/components/` | Componentes por domínio: `Auth`, `Checkout`, `Common`, `Lighting`, `Profile`, `Replay`, `Schedules`, `Social` | [11](11-ui-compartilhada.md) e por domínio |
 | `app/hooks/` | `useIsMobile` (≤1024px), `useLightingAvailability` | [11](11-ui-compartilhada.md), [08](08-luz-da-quadra.md) |
 | `pages/api/` | Pages Router — **só rotas de API** (auth, proxy, pagamento, webhook) | [02](02-autenticacao-socio.md), [03](03-proxy-backend-seguranca.md), [05](05-checkout-pagamento.md), [10](10-webhook-whatsapp.md) |
-| `services/` | Clientes HTTP: `api-consume` (genérico), `replay-api`, `lighting-api`, `social-api`, `tournament-api`, `ticket-api`, `aprovacao-api` e `assinatura-api` (server-only) | [03](03-proxy-backend-seguranca.md) e por domínio |
+| `services/` | Clientes HTTP: `api-consume` (genérico), `replay-api`, `lighting-api`, `social-api`, `tournament-api`, `ticket-api`, `aprovacao-api`, `assinatura-api` e `dashboard-api` (server-only) | [03](03-proxy-backend-seguranca.md) e por domínio |
 | `context/` | `CartContext` (carrinho = agendamentos pendentes status 3) | [04](04-agendamento-quadras.md) |
 | `utils/` | Helpers: segurança (`sanitize`, `rate-limit`, `callback-url`), pagamento (`erede`, `lara`, `pending-payments`, `bank-identifier`), formatação (`replay`, `lighting`, `uriGen`) | por domínio |
 | `styles/` | CSS Modules (um por componente/tela) + `globals.css` (tokens de cor grená) | [11](11-ui-compartilhada.md) |
@@ -91,6 +93,7 @@ Regras de ouro dessa arquitetura:
 15. [15-assinatura-remota.md](15-assinatura-remota.md) — assinatura de documentos pelo link enviado pelo atendimento (e-mail, WhatsApp): área isolada, cookies httpOnly, IP de quem assina, etapas, testes.
 16. [16-torneios.md](16-torneios.md) — torneios (aba de **Eventos**): lista/detalhe públicos, elegibilidade, inscrição e pagamento eRede, times e convites, chaveamento, tela da equipe com código de lançamento.
 17. [17-ingressos.md](17-ingressos.md) — ingressos de eventos (módulo **Eventos**, que também abriga os torneios): vitrine, compra do sócio (título) e do não sócio (sem login, token do pedido em cookie httpOnly), cupom, pagamento eRede com estorno no `hold_expired`, QR/PDF, vários dias.
+18. [18-painel.md](18-painel.md) — dashboards do administrador (`site_role` do Lara): tudo no servidor, acesso conferido a cada página, KPIs e gráficos (Recharts) das vendas de ingressos por evento.
 
 ## 5. Fluxo principal do sócio (ponta a ponta)
 
@@ -108,12 +111,12 @@ Regras de ouro dessa arquitetura:
 - **Imports são relativos** (`../../services/api-consume`), não `@/…` — o alias quebrava no ambiente do usuário. Os `paths` do `tsconfig.json` existem mas estão sem uso. Mantenha imports relativos.
 - **Idioma**: UI, mensagens e comentários em **português**. Os módulos recentes (Replay, Luz, Aprovação, webhook, segurança) têm comentários longos explicando o *porquê* — preserve esse estilo ao editá-los. A área `/aprovacao` usa até identificadores em português (`lerToken`, `decidirOrdem`); siga o padrão do arquivo que estiver editando.
 - **Estilo**: identidade visual v4 (grená, tokens com tema claro/escuro, cor por módulo) — leia [14-identidade-visual.md](14-identidade-visual.md) antes de mexer em tela. CSS Modules em `styles/`, cor-tema `var(--grena)`, peças compartilhadas em `app/components/UI/`. Ícones: FontAwesome. Avisos: `react-toastify` (`toast.*`) — **somente no cliente**.
-- **Páginas de sócio são client components** que buscam dados no `useEffect` via `API_CONSUME`. A área `/aprovacao` é o oposto (Server Components + Server Actions, nenhum fetch no cliente) — não misture os padrões.
+- **Páginas de sócio são client components** que buscam dados no `useEffect` via `API_CONSUME`. As áreas `/aprovacao` e `/painel` são o oposto (Server Components, nenhum fetch no cliente para a Lara) — não misture os padrões.
 - **Ao adicionar endpoint da Lara chamado do cliente**: (1) inclua a regex na allowlist do proxy; (2) decida público × autenticado; (3) se precisar do sócio, nunca aceite `member_id` do cliente como autoridade — a Lara usa o header `Session`.
 - **Ao adicionar rota de sócio protegida**: inclua no `matcher` de `middleware.ts`.
 - **Segredos**: `.env` contém credenciais reais (Lara, eRede, NextAuth, WhatsApp). Nunca imprima, logue ou commite valores. Logs de pagamento nunca devem conter `cardData`.
 - **Homologação (`/homolog`)**: segunda instância da branch `homolog` no mesmo domínio. **Nunca use caminho absoluto** (`'/api/...'`, `'/images/...'`, `callbackUrl: '/login'`, `path` de cookie) sem `comBase` de `utils/base-path.ts` — `<Link>`, `router.push` e `redirect()` já prefixam sozinhos. Ver [01](01-infraestrutura-config.md#homologação-homolog).
-- **Módulos ainda não liberados em produção** (hoje só espaços sociais; Eventos — ingressos + torneios — foi liberado em 2026-11-04): [utils/modulos.ts](../../utils/modulos.ts). Na homologação aparecem; em produção somem só as **entradas** (menu, abas e atalhos da home, portas da página pública, avisos do perfil) — as páginas seguem acessíveis por URL. Entrada nova de um desses módulos fora da pasta dele passa por `moduloVisivel(...)`. Liberar = tirar da lista. Ver [01](01-infraestrutura-config.md#módulos-não-liberados-em-produção).
+- **Módulos ainda não liberados em produção** (hoje espaços sociais e o link do painel; Eventos — ingressos + torneios — foi liberado em 2026-11-04): [utils/modulos.ts](../../utils/modulos.ts). Na homologação aparecem; em produção somem só as **entradas** (menu, abas e atalhos da home, portas da página pública, avisos do perfil) — as páginas seguem acessíveis por URL. Entrada nova de um desses módulos fora da pasta dele passa por `moduloVisivel(...)`. Liberar = tirar da lista. Ver [01](01-infraestrutura-config.md#módulos-não-liberados-em-produção).
 - **Single-instance**: rate limit e cache de pagamentos pendentes são **em memória** (1 processo `next start`, serviço systemd atrás do nginx). Escalar horizontalmente exige Redis.
 - Leia [12-pontos-de-atencao.md](12-pontos-de-atencao.md) antes de "consertar" algo que parece estranho — vários comportamentos são intencionais e documentados.
 

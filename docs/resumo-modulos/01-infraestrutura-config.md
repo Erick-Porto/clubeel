@@ -36,8 +36,9 @@ Scripts (`package.json`): `dev` (`next dev --turbo`), `build`, `start`, `lint` (
 
 `matcher` atual (rotas que **exigem sessão de sócio**):
 ```
-/profile  /checkout  /cart  /places/:path*  /place/:path*  /meus-videos  /luz  /espacos-sociais  /espacos-sociais/:path*  /torneios/inscricoes  /torneios/times/:path*  /ingressos/meus/:path+
+/profile  /checkout  /cart  /places/:path*  /place/:path*  /meus-videos  /luz  /espacos-sociais  /espacos-sociais/:path*  /torneios/inscricoes  /torneios/times/:path*  /ingressos/meus/:path+  /painel  /painel/:path*
 ```
+`/painel` só exige **sessão** aqui; ser administrador quem decide é a Lara, a cada página (ver [18](18-painel.md)).
 Ficam **fora de propósito**:
 - `/replay` e `/replay/*` — galeria pública por decisão de negócio.
 - `/login`, `/forgot-password`.
@@ -124,7 +125,7 @@ navegador ── espacos.clubedosfuncionarios.com.br (proxy reverso, 443)
 
 ### Módulos não liberados em produção
 
-[utils/modulos.ts](../../utils/modulos.ts) lista os módulos que já estão no código mas ainda não aparecem em produção (hoje só `social`; na liberação de 2026-10-29 eram `social`, `torneios` e `ingressos` — **Eventos**, que junta ingressos e torneios, foi liberado em 2026-11-04). `moduloVisivel(chave)` responde `true` na homologação (`EM_HOMOLOGACAO`) ou com `NEXT_PUBLIC_MODULOS_EXTRAS=1`; em produção, `false` para os da lista. Nenhum `.env` precisa mudar.
+[utils/modulos.ts](../../utils/modulos.ts) lista os módulos que já estão no código mas ainda não aparecem em produção (hoje `social` e `painel` — este só o link "Painel" do menu do usuário; na liberação de 2026-10-29 eram `social`, `torneios` e `ingressos` — **Eventos**, que junta ingressos e torneios, foi liberado em 2026-11-04). `moduloVisivel(chave)` responde `true` na homologação (`EM_HOMOLOGACAO`) ou com `NEXT_PUBLIC_MODULOS_EXTRAS=1`; em produção, `false` para os da lista. Nenhum `.env` precisa mudar.
 
 O que some: itens do menu (topo, folha "Menu" do celular e menu do usuário), abas e atalhos da home do sócio (as leituras de `social/groups` e da lista de torneios nem são feitas), portas da página pública, dica do link "Voltar ao início" no login, seção "Espaços sociais" e aviso de reserva social no perfil. **As páginas, o middleware e o proxy não mudam**: quem tiver a URL (ex.: link de pedido de ingresso do e-mail) continua entrando — decisão do clube. Para liberar um módulo, tire-o da lista.
 

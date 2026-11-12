@@ -13,8 +13,10 @@ import { EM_HOMOLOGACAO } from "./base-path";
  * de 2026-10-29. Para liberar um módulo, basta tirá-lo da lista.
  *
  * Eventos (chaves `ingressos` e `torneios`) foi liberado em 2026-11-04.
+ * `painel` (dashboards do administrador) entrou em 2026-11-12: some só o link
+ * do menu do usuário.
  */
-const OCULTOS_EM_PRODUCAO = ["social"];
+const OCULTOS_EM_PRODUCAO = ["social", "painel"];
 
 const MOSTRAR_TUDO = EM_HOMOLOGACAO || process.env.NEXT_PUBLIC_MODULOS_EXTRAS === "1";
 

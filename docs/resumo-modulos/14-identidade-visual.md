@@ -58,6 +58,9 @@ Texto sobre botão grená é sempre branco (`#fff`). `--pad` / `--pad-ink` (bran
 | `compras` | Aprovação de compras | `#ECE5DB` / `#6A4F2F` | compras |
 | `torneios` | Torneios | `#D6ECF6` / `#12567A` | — (**proposta do site**; escuro `#102836` / `#80C4E8`). Se o Lara publicar a cor de torneios, troque nos três blocos de `globals.css`. |
 | `ingressos` | Eventos (ingressos; também a capa e o item de menu dos torneios) | `#F9E0F0` / `#8A1F6E` | — (**proposta do site**, rosa-magenta; escuro `#33142A` / `#F09AD3`). Se o Lara publicar a cor de ingressos, troque nos três blocos de `globals.css`. |
+| `painel` | Painel (dashboards do administrador) | `#D4EFEC` / `#11625C` | — (**proposta do site**, verde-azulado; escuro `#0F2E2C` / `#7FD3CA`). Se o Lara publicar a cor, troque nos três blocos de `globals.css`. |
+
+**Gráficos** (painel): séries categóricas nos tokens `--viz-1..4` (azul, laranja, verde-água, amarelo; paleta validada para daltonismo, com passos próprios no escuro), sempre nessa ordem e nunca recicladas; texto, eixos e grade com `--ink-*` e `--line`. Um eixo por gráfico. Ver [18](18-painel.md).
 
 As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo do Lara não as trazia); se o Lara publicar as dele, troque nos dois blocos escuros de `globals.css`. Para aplicar: `style={areaStyle("social")}` define `--c`/`--ci` (canais) e o CSS usa `rgb(var(--c))` / `rgb(var(--ci))`. Módulo novo: tokens `--a-<chave>-rgb`/`--a-<chave>-ink-rgb` nos **três** blocos de `globals.css` e a chave no tipo `Area` de `ui.tsx`.
 
@@ -94,6 +97,7 @@ As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo d
 
 - A área `/aprovacao` tem casca própria (`aprovacao.module.css`, Server Components) e não usa `Header`/barra inferior; a busca da fila é um componente de cliente que só filtra o HTML já renderizado.
 - As telas da equipe do torneio (`/torneios/equipe` e `/torneios/<id>/equipe`) têm casca própria (`StaffShell`: faixa na cor do módulo com logo, título e uma ação; coluna de 760px, sem barra inferior): são usadas no celular, na beira da quadra.
+- A área `/painel` tem casca própria (`PainelCasca`: faixa na cor do módulo com logo, "Painel", nome do administrador, "Voltar ao site" e as abas dos painéis; miolo de 1200px; sem barra inferior).
 - A área `/assinar` também tem casca própria (`assinatura.module.css`): só o logo e "Assinatura de documentos", coluna de 680px, letra 17px, botões de 52px (público amplo, pouca familiaridade com celular). Avisos com `Note` dentro de `.aviso` (16px).
 - Login e "esqueci a senha" são páginas próprias (sem cabeçalho). No celular o login mostra o formulário num cartão translúcido sobre as fotos do carrossel (fixas ao fundo). A raiz sem sessão é a **página de boas-vindas** (`public-home.module.css`): fotos ao fundo com véu de `--canvas`, e as portas Entrar / RePET / Torneios usam as duas cores do seu módulo invertidas (`areaStyle`: tinta no fundo, tom claro no texto) para contrastar nos dois temas. O login termina num link "Voltar ao início".
 
