@@ -6,7 +6,7 @@
  */
 
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faTicket } from "@fortawesome/free-solid-svg-icons";
+import { faCashRegister, faTicket } from "@fortawesome/free-solid-svg-icons";
 
 const FUSO = "America/Sao_Paulo";
 
@@ -58,9 +58,33 @@ export function formatarDiaLongo(dia: string): string {
 
 /**
  * Painéis que o site sabe mostrar, por `key` da Lara. Painel com chave
- * desconhecida (o MultiVendas e o MultiClubes, quando chegarem) não aparece até
- * ganhar tela aqui.
+ * desconhecida (o MultiClubes, quando chegar) não aparece até ganhar tela aqui.
  */
 export const PAINEIS_CONHECIDOS: Record<string, { href: string; icon: IconDefinition }> = {
     ingressos: { href: "/painel/ingressos", icon: faTicket },
+    vendas: { href: "/painel/vendas", icon: faCashRegister },
 };
+
+/* ------------------------------------------------- Datas do filtro de vendas */
+
+/** Hoje no fuso do clube, AAAA-MM-DD (o servidor pode estar em UTC). */
+export function hojeNoClube(): string {
+    // en-CA escreve a data como AAAA-MM-DD.
+    return new Date().toLocaleDateString("en-CA", { timeZone: FUSO });
+}
+
+/** Soma dias a uma data AAAA-MM-DD (aritmética de calendário, sem fuso). */
+export function somarDias(dia: string, dias: number): string {
+    const [ano, mes, d] = dia.split("-").map(Number);
+    const data = new Date(Date.UTC(ano, mes - 1, d + dias));
+    return data.toISOString().slice(0, 10);
+}
+
+/** Dias corridos entre duas datas AAAA-MM-DD, contando as duas pontas. */
+export function diasNoPeriodo(de: string, ate: string): number {
+    const [a1, m1, d1] = de.split("-").map(Number);
+    const [a2, m2, d2] = ate.split("-").map(Number);
+    return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / 86_400_000) + 1;
+}
+
+export const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;

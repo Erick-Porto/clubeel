@@ -18,3 +18,22 @@ export default function EsqueletoDoEvento() {
         </div>
     );
 }
+
+/** Carregando Vendas: 3 cards e os blocos dos gráficos. */
+export function EsqueletoDeVendas() {
+    return (
+        <div className={style.conteudo} aria-busy="true" aria-label="Carregando as vendas">
+            <div className={style.kpis3}>
+                {Array.from({ length: 3 }, (_, i) => (
+                    <div key={i} className={`${style.bloco} ${style.blocoKpi}`} />
+                ))}
+            </div>
+            <div className={style.graficosVendas}>
+                <div className={`${style.bloco} ${style.blocoGrafico} ${style.graficoInteiro}`} />
+                <div className={`${style.bloco} ${style.blocoGrafico} ${style.graficoInteiro}`} />
+                <div className={`${style.bloco} ${style.blocoGrafico}`} />
+                <div className={`${style.bloco} ${style.blocoGrafico}`} />
+            </div>
+        </div>
+    );
+}

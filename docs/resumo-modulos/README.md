@@ -18,7 +18,7 @@ Front-end web do **Clube dos Funcionários da CSN (CFCSN)**, Volta Redonda/RJ �
 | **Luz da quadra** (sócio acende/prolonga/devolve a luz pelo celular no uso livre) | Sócio logado | `/luz` (+ banner na home e card no perfil) | [08](08-luz-da-quadra.md) |
 | **Aprovação de compras** (diretoria aprova/reprova ordens de compra do ERP Questor) | Diretor (sessão própria, sem relação com sócio) | `/aprovacao/**` | [09](09-aprovacao-compras.md) |
 | **Assinatura remota de documentos** (termos, contratos, fichas assinados pelo link enviado pelo atendimento) | Quem recebeu o link (cookie próprio, sem relação com sócio; fora dos buscadores) | `/assinar/**` | [15](15-assinatura-remota.md) |
-| **Painel** (dashboards: vendas de ingressos por evento; depois MultiVendas e MultiClubes) | Sócio com perfil `administrador` no Lara (mesmo login; a Lara confere a cada página; fora dos buscadores) | `/painel`, `/painel/ingressos` | [18](18-painel.md) |
+| **Painel** (dashboards: vendas de ingressos por evento e vendas das lojas — MultiVendas; depois MultiClubes) | Sócio com perfil `administrador` no Lara (mesmo login; a Lara confere a cada página; fora dos buscadores) | `/painel`, `/painel/ingressos`, `/painel/vendas` | [18](18-painel.md) |
 
 Além disso: um **webhook de WhatsApp** (Poli Digital → Lara) — [10](10-webhook-whatsapp.md).
 
@@ -93,7 +93,7 @@ Regras de ouro dessa arquitetura:
 15. [15-assinatura-remota.md](15-assinatura-remota.md) — assinatura de documentos pelo link enviado pelo atendimento (e-mail, WhatsApp): área isolada, cookies httpOnly, IP de quem assina, etapas, testes.
 16. [16-torneios.md](16-torneios.md) — torneios (aba de **Eventos**): lista/detalhe públicos, elegibilidade, inscrição e pagamento eRede, times e convites, chaveamento, tela da equipe com código de lançamento.
 17. [17-ingressos.md](17-ingressos.md) — ingressos de eventos (módulo **Eventos**, que também abriga os torneios): vitrine, compra do sócio (título) e do não sócio (sem login, token do pedido em cookie httpOnly), cupom, pagamento eRede com estorno no `hold_expired`, QR/PDF, vários dias.
-18. [18-painel.md](18-painel.md) — dashboards do administrador (`site_role` do Lara): tudo no servidor, acesso conferido a cada página, KPIs e gráficos (Recharts) das vendas de ingressos por evento.
+18. [18-painel.md](18-painel.md) — dashboards do administrador (`site_role` do Lara): tudo no servidor, acesso conferido a cada página, KPIs e gráficos (Recharts) das vendas de ingressos por evento e das lojas (MultiVendas, com filtro de período e lojas na URL).
 
 ## 5. Fluxo principal do sócio (ponta a ponta)
 

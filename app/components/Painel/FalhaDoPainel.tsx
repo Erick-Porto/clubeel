@@ -39,6 +39,16 @@ export default function FalhaDoPainel({ falha }: { falha: Falha }) {
                 </div>
             );
 
+        case "invalido":
+            // Normalmente o 422 aparece junto do filtro (FiltroDeVendas); isto é
+            // só a rede de segurança para uma tela sem filtro.
+            return (
+                <div className={style.aviso} role="alert">
+                    <strong>Filtro inválido</strong>
+                    {falha.mensagem && <p>{falha.mensagem}</p>}
+                </div>
+            );
+
         case "limite":
             return (
                 <div className={style.aviso} role="alert">

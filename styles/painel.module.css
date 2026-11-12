@@ -387,6 +387,173 @@
   color: var(--ink);
 }
 
+/* ---------------------------------------------------------------- Vendas */
+
+.kpis3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.graficosVendas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.graficoInteiro {
+  grid-column: 1 / -1;
+}
+
+/* Barras com muitos itens rolam dentro do cartão, nunca a página. */
+.rolagem {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.filtro {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filtroLinha {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lojas {
+  position: relative;
+}
+
+.lojas > summary {
+  list-style: none;
+  cursor: pointer;
+  max-width: 280px;
+}
+
+.lojas > summary::-webkit-details-marker {
+  display: none;
+}
+
+.lojasResumo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lojasPainel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  width: min(300px, calc(100vw - 32px));
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-pop);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lojasItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 6px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.lojasItem:hover {
+  background: var(--subtle);
+}
+
+.lojasItem input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--grena);
+}
+
+.lojasPainel > button {
+  margin-top: 8px;
+}
+
+.personalizado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.personalizado label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.personalizado input {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.periodo {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.erroFiltro {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.anterior {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.anteriorAviso {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.anteriorConteudo {
+  opacity: .5;
+  pointer-events: none;
+}
+
 /* ---------------------------------------------------------------- Avisos */
 
 .aviso {
@@ -449,12 +616,22 @@
 /* --------------------------------------------------------------- Celular */
 
 @media (max-width: 900px) {
-  .graficos {
+  .graficos,
+  .graficosVendas {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lojasPainel {
+    left: 0;
+    right: auto;
   }
 }
 
 @media (max-width: 600px) {
+  .kpis3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

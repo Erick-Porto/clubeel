@@ -59,6 +59,7 @@
   /* Séries dos gráficos do painel (categóricas, nesta ordem, nunca recicladas).
      Paleta validada para daltonismo (skill de dataviz); o escuro tem passos próprios. */
   --viz-1-rgb: 42 120 214;  --viz-2-rgb: 235 104 52;  --viz-3-rgb: 27 175 122;  --viz-4-rgb: 237 161 0;
+  --viz-5-rgb: 232 123 164; --viz-6-rgb: 0 131 0;
 
   --shadow-card: 0 1px 2px rgb(30 18 21 / .05), 0 4px 14px rgb(30 18 21 / .05);
   --shadow-pop: 0 12px 40px rgb(30 18 21 / .18), 0 2px 6px rgb(30 18 21 / .08);
@@ -97,6 +98,8 @@
   --viz-2: rgb(var(--viz-2-rgb));
   --viz-3: rgb(var(--viz-3-rgb));
   --viz-4: rgb(var(--viz-4-rgb));
+  --viz-5: rgb(var(--viz-5-rgb));
+  --viz-6: rgb(var(--viz-6-rgb));
 
   /* Tipografia */
   --font-display: 'Unbounded', 'Figtree', system-ui, sans-serif;
@@ -169,6 +172,7 @@
     --a-ingressos-rgb: 51 20 42;  --a-ingressos-ink-rgb: 240 154 211;
     --a-painel-rgb: 15 46 44;    --a-painel-ink-rgb: 127 211 202;
     --viz-1-rgb: 57 135 229;  --viz-2-rgb: 217 89 38;  --viz-3-rgb: 25 158 112;  --viz-4-rgb: 201 133 0;
+    --viz-5-rgb: 213 81 129;  --viz-6-rgb: 0 131 0;
     --shadow-card: 0 1px 2px rgb(0 0 0 / .3), 0 4px 14px rgb(0 0 0 / .25);
     --shadow-pop: 0 12px 40px rgb(0 0 0 / .55);
   }
@@ -207,6 +211,7 @@
   --a-ingressos-rgb: 51 20 42;  --a-ingressos-ink-rgb: 240 154 211;
   --a-painel-rgb: 15 46 44;    --a-painel-ink-rgb: 127 211 202;
   --viz-1-rgb: 57 135 229;  --viz-2-rgb: 217 89 38;  --viz-3-rgb: 25 158 112;  --viz-4-rgb: 201 133 0;
+  --viz-5-rgb: 213 81 129;  --viz-6-rgb: 0 131 0;
   --shadow-card: 0 1px 2px rgb(0 0 0 / .3), 0 4px 14px rgb(0 0 0 / .25);
   --shadow-pop: 0 12px 40px rgb(0 0 0 / .55);
 }

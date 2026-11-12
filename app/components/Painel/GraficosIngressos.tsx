@@ -10,7 +10,7 @@
  * gráfico sem dado mostra uma frase curta, nunca um eixo vazio.
  */
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import {
     Area,
     AreaChart,
@@ -29,6 +29,7 @@ import {
 } from "recharts";
 import style from "../../../styles/painel.module.css";
 import ui from "../../../styles/ui.module.css";
+import { CORES, EIXO, GRADE, CaixaDica, Cartao, Legenda, Vazio, corDaFatia, linhaDaDica, type DicaProps } from "./graficos-comuns";
 import {
     formatarDiaCurto,
     formatarDiaLongo,
@@ -36,74 +37,6 @@ import {
     formatarInteiro,
 } from "../../../utils/painel";
 import type { FatiaDeCanal, LinhaDeForma, LinhaDeLote, VendaDoDia } from "../../../services/dashboard-api";
-
-const CORES = ["var(--viz-1)", "var(--viz-2)", "var(--viz-3)", "var(--viz-4)"];
-/** Mais fatias do que cores: o resto fica cinza (nunca uma cor inventada). */
-const corDaFatia = (i: number) => CORES[i] ?? "var(--ink-3)";
-
-const EIXO = { fill: "var(--ink-3)", fontSize: 12 };
-const GRADE = "var(--line)";
-
-/* ------------------------------------------------------------ Peças comuns */
-
-function Cartao({ titulo, acao, children }: { titulo: string; acao?: ReactNode; children: ReactNode }) {
-    return (
-        <section className={style.grafico}>
-            <div className={style.graficoTopo}>
-                <h3 className={style.graficoTitulo}>{titulo}</h3>
-                {acao}
-            </div>
-            {children}
-        </section>
-    );
-}
-
-function Vazio({ children }: { children: ReactNode }) {
-    return <p className={style.vazio}>{children}</p>;
-}
-
-function Legenda({ itens }: { itens: { cor: string; rotulo: string; tracejado?: boolean }[] }) {
-    return (
-        <ul className={style.legenda}>
-            {itens.map((item) => (
-                <li key={item.rotulo}>
-                    <span
-                        className={item.tracejado ? style.legendaTraco : style.legendaCor}
-                        style={{ background: item.tracejado ? undefined : item.cor, borderColor: item.cor }}
-                        aria-hidden="true"
-                    />
-                    {item.rotulo}
-                </li>
-            ))}
-        </ul>
-    );
-}
-
-/** Caixa do tooltip: título e linhas "rótulo — valor", com a cor da série ao lado. */
-function CaixaDica({ titulo, linhas }: { titulo: string; linhas: { rotulo: string; valor: string; cor?: string }[] }) {
-    return (
-        <div className={style.dica}>
-            <strong>{titulo}</strong>
-            {linhas.map((linha) => (
-                <div key={linha.rotulo} className={style.dicaLinha}>
-                    {linha.cor && <span className={style.legendaCor} style={{ background: linha.cor }} aria-hidden="true" />}
-                    <span>{linha.rotulo}</span>
-                    <span className={style.mono}>{linha.valor}</span>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-/* Recharts entrega o tooltip com `active` e `payload` (a linha de dados em `payload[0].payload`). */
-// `T` só documenta qual linha o gráfico entrega; o tipo da Recharts é genérico.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type DicaProps<T> = { active?: boolean; payload?: { payload?: unknown }[] };
-
-function linhaDaDica<T>(props: DicaProps<T>): T | null {
-    const linha = props.active && props.payload && props.payload.length > 0 ? props.payload[0].payload : null;
-    return (linha as T | undefined) ?? null;
-}
 
 /* ------------------------------------------------------------ Vendas por dia */
 
@@ -166,7 +99,7 @@ function VendasPorDia({ serie }: { serie: VendaDoDia[] }) {
                                 }}
                             />
                             <Area
-                                type="monotone"
+                                type="linear"
                                 dataKey={medida}
                                 stroke="var(--viz-1)"
                                 strokeWidth={2}

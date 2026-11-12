@@ -103,6 +103,34 @@ export interface LinhaDeForma {
     received: number;
 }
 
+/* Vendas (MultiVendas) */
+
+export interface FiltroDeVendas {
+    /** AAAA-MM-DD, repassados como vieram da URL (quem valida é a Lara: 422). */
+    de?: string;
+    ate?: string;
+    /** Vazio = todas as lojas (não manda `stores[]`). */
+    lojas: string[];
+}
+
+export interface ItemDeValor {
+    label: string;
+    amount: number;
+}
+
+export interface Vendas {
+    period: { from: string; to: string; days: number };
+    stores: { selected: string[]; all: boolean };
+    kpis: Kpi[];
+    by_store: ItemDeValor[];
+    top_products: ItemDeValor[];
+    by_hour: { hour: number; amount: number }[];
+    by_day: { date: string; amount: number; sales: number }[];
+    payment_methods: ItemDeValor[];
+    sellers: ItemDeValor[];
+    generated_at: string | null;
+}
+
 export interface DadosDoEvento {
     resumo: Resumo;
     porDia: VendaDoDia[];
@@ -114,9 +142,11 @@ export interface DadosDoEvento {
 /**
  * Falha já traduzida para o que a tela faz (tabela de erros do contrato):
  * 400/401 → login (e volta ao painel); 403 → sem acesso; 404 → evento não
- * encontrado; 429 → muitas atualizações; o resto → indisponível.
+ * encontrado; 422 → filtro inválido (mensagem da Lara junto do filtro);
+ * 429 → muitas atualizações; o resto (inclusive o 503 do MultiVendas fora do
+ * ar) → indisponível, com a mensagem da Lara.
  */
-export type TipoDeFalha = "login" | "sem-acesso" | "nao-encontrado" | "limite" | "indisponivel";
+export type TipoDeFalha = "login" | "sem-acesso" | "nao-encontrado" | "invalido" | "limite" | "indisponivel";
 
 export interface Falha {
     ok: false;
@@ -127,12 +157,13 @@ export interface Falha {
 export type Resultado<T> = { ok: true; dados: T } | Falha;
 
 /** Quando várias chamadas falham juntas, vale a mais grave. */
-const GRAVIDADE: TipoDeFalha[] = ["login", "sem-acesso", "nao-encontrado", "limite", "indisponivel"];
+const GRAVIDADE: TipoDeFalha[] = ["login", "sem-acesso", "nao-encontrado", "invalido", "limite", "indisponivel"];
 
 function tipoPorStatus(status: number): TipoDeFalha {
     if (status === 400 || status === 401) return "login";
     if (status === 403) return "sem-acesso";
     if (status === 404) return "nao-encontrado";
+    if (status === 422) return "invalido";
     if (status === 429) return "limite";
     return "indisponivel";
 }
@@ -192,6 +223,40 @@ export async function lerDadosDoEvento(id: number): Promise<Resultado<DadosDoEve
             porLote: porLote.dados.rows ?? [],
             porCanal: { origin: porCanal.dados.origin ?? [], buyer: porCanal.dados.buyer ?? [] },
             porForma: porForma.dados.rows ?? [],
+        },
+    };
+}
+
+/** `GET /api/dashboard/sales/stores` — nomes das lojas, já em ordem, usados exatamente como vêm. */
+export const lerLojas = cache(() => chamar<{ stores: string[] }>("sales/stores"));
+
+/**
+ * `GET /api/dashboard/sales?from&to&stores[]` — tudo calculado pela Lara
+ * (faturamento, ticket médio, vendas = `ID_Venda` distinto). As listas já vêm
+ * do maior para o menor; o site não reordena. Sem cache aqui: quem guarda os
+ * números (60 s / 10 min) é a Lara.
+ */
+export async function lerVendas(filtro: FiltroDeVendas): Promise<Resultado<Vendas>> {
+    const consulta = new URLSearchParams();
+    if (filtro.de) consulta.set("from", filtro.de);
+    if (filtro.ate) consulta.set("to", filtro.ate);
+    for (const loja of filtro.lojas) consulta.append("stores[]", loja);
+    const texto = consulta.toString();
+    const resultado = await chamar<Vendas>(texto ? `sales?${texto}` : "sales");
+    if (!resultado.ok) return resultado;
+
+    const v = resultado.dados;
+    return {
+        ok: true,
+        dados: {
+            ...v,
+            kpis: v.kpis ?? [],
+            by_store: v.by_store ?? [],
+            top_products: v.top_products ?? [],
+            by_hour: v.by_hour ?? [],
+            by_day: v.by_day ?? [],
+            payment_methods: v.payment_methods ?? [],
+            sellers: v.sellers ?? [],
         },
     };
 }

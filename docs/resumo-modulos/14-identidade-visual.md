@@ -60,7 +60,7 @@ Texto sobre botão grená é sempre branco (`#fff`). `--pad` / `--pad-ink` (bran
 | `ingressos` | Eventos (ingressos; também a capa e o item de menu dos torneios) | `#F9E0F0` / `#8A1F6E` | — (**proposta do site**, rosa-magenta; escuro `#33142A` / `#F09AD3`). Se o Lara publicar a cor de ingressos, troque nos três blocos de `globals.css`. |
 | `painel` | Painel (dashboards do administrador) | `#D4EFEC` / `#11625C` | — (**proposta do site**, verde-azulado; escuro `#0F2E2C` / `#7FD3CA`). Se o Lara publicar a cor, troque nos três blocos de `globals.css`. |
 
-**Gráficos** (painel): séries categóricas nos tokens `--viz-1..4` (azul, laranja, verde-água, amarelo; paleta validada para daltonismo, com passos próprios no escuro), sempre nessa ordem e nunca recicladas; texto, eixos e grade com `--ink-*` e `--line`. Um eixo por gráfico. Ver [18](18-painel.md).
+**Gráficos** (painel): séries categóricas nos tokens `--viz-1..6` (azul, laranja, verde-água, amarelo, rosa, verde; paleta validada para daltonismo, com passos próprios no escuro), sempre nessa ordem e nunca recicladas; texto, eixos e grade com `--ink-*` e `--line`. Um eixo por gráfico. Ver [18](18-painel.md).
 
 As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo do Lara não as trazia); se o Lara publicar as dele, troque nos dois blocos escuros de `globals.css`. Para aplicar: `style={areaStyle("social")}` define `--c`/`--ci` (canais) e o CSS usa `rgb(var(--c))` / `rgb(var(--ci))`. Módulo novo: tokens `--a-<chave>-rgb`/`--a-<chave>-ink-rgb` nos **três** blocos de `globals.css` e a chave no tipo `Area` de `ui.tsx`.
 
