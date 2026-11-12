@@ -4,7 +4,7 @@
  * Vitrine de eventos — aberta a qualquer visitante (o não sócio compra sem
  * login). Cartões com imagem, título, data, local e "a partir de" (o menor
  * preço à venda para quem está vendo: sócio logado → preço de sócio).
- * Encerrados ficam no fim da lista.
+ * A Lara só manda eventos publicados (encerrado não vem), em ordem de data.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -53,7 +53,7 @@ export default function TicketEventsPage() {
     const kind = status === "authenticated" ? "member" : "guest";
     const visible = events
         .filter((event) => matchesSearch(query, event.title, event.venue, event.description))
-        .sort((a, b) => Number(a.status === "finished") - Number(b.status === "finished") || startTime(a) - startTime(b));
+        .sort((a, b) => startTime(a) - startTime(b));
 
     let body: React.ReactNode;
     if (loading) {

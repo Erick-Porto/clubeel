@@ -87,7 +87,7 @@ export interface TicketEvent {
     description: string | null;
     image_url: string | null;
     venue: string | null;
-    /** `published` | `finished` (rascunho e cancelado nunca chegam). */
+    /** Sempre `published`: encerrado, rascunho e cancelado não chegam (404 `event_not_found` no detalhe). */
     status: string;
     starts_at: string | null;
     ends_at: string | null;
@@ -724,14 +724,14 @@ const id = (value: number) => encodeURIComponent(String(value));
 
 /* ---------------------------------------------------------------- Vitrine */
 
-/** Publicados e encerrados. */
+/** Só publicados (encerrado não vem). */
 export async function fetchEvents(): Promise<TicketResult<TicketEvent[]>> {
     const response = await publicCall("GET", "tickets/events");
     if (!response.ok) return failure(response);
     return { ok: true, status: response.status, data: listOf(response.data, "events").map(toEvent) };
 }
 
-/** 404 `event_not_found` para rascunho, cancelado ou inexistente. */
+/** 404 `event_not_found` para encerrado, rascunho, cancelado ou inexistente (também no mapa, cupom e pedido). */
 export async function fetchEvent(eventId: number): Promise<TicketResult<TicketEvent>> {
     const response = await publicCall("GET", `tickets/events/${id(eventId)}`);
     if (!response.ok) return failure(response);

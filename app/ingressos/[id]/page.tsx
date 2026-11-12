@@ -39,6 +39,7 @@ import ReplayNotice from "../../components/Replay/ReplayNotice";
 import { EventsCover } from "../../components/UI/covers";
 import { Media, Note } from "../../components/UI/ui";
 import { EventStatusPill } from "../../components/Ticket/EventCard";
+import EventUnavailable from "../../components/Ticket/EventUnavailable";
 import TicketTypeCard from "../../components/Ticket/TicketTypeCard";
 import { fetchEvent, type TicketEvent, type TicketFailure } from "../../../services/ticket-api";
 import {
@@ -90,37 +91,32 @@ export default function TicketEventPage() {
     let body: React.ReactNode;
     if (loading) {
         body = <Loading />;
-    } else if (!eventId || error || !event) {
-        const notFound = !eventId || error?.status === 404;
+    } else if (!eventId || error?.status === 404) {
+        // Encerrado, cancelado ou fora do ar: a Lara responde 404 `event_not_found`.
+        body = <EventUnavailable />;
+    } else if (error || !event) {
         body = (
             <ReplayNotice
                 icon={faCircleExclamation}
-                title={notFound ? "Evento não encontrado" : "Não conseguimos carregar o evento"}
-                description={notFound ? "Ele pode ter sido retirado do site." : error?.error}
+                title="Não conseguimos carregar o evento"
+                description={error?.error}
                 tone="alert"
                 action={
-                    notFound ? (
-                        <Link href="/ingressos" className={`${ui.btn} ${ui.btnPrimary}`}>
-                            Ver eventos
-                        </Link>
-                    ) : (
-                        <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={() => load()}>
-                            <FontAwesomeIcon icon={faRotateRight} /> Tentar novamente
-                        </button>
-                    )
+                    <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={() => load()}>
+                        <FontAwesomeIcon icon={faRotateRight} /> Tentar novamente
+                    </button>
                 }
             />
         );
     } else {
         const groups = groupTypes(event);
-        const canBuy = event.sales_open && event.status !== "finished" && event.types.some((type) => type.available);
-        const salesText = event.status === "finished"
-            ? "Evento encerrado."
-            : !event.sales_open && event.sales_starts_at && Date.parse(event.sales_starts_at) > Date.now()
-              ? `Vendas a partir de ${formatInstant(event.sales_starts_at)}.`
-              : !event.sales_open
-                ? "Vendas encerradas."
-                : null;
+        const canBuy = event.sales_open && event.types.some((type) => type.available);
+        const salesText =
+            !event.sales_open && event.sales_starts_at && Date.parse(event.sales_starts_at) > Date.now()
+                ? `Vendas a partir de ${formatInstant(event.sales_starts_at)}.`
+                : !event.sales_open
+                  ? "Vendas encerradas."
+                  : null;
         const typeCard = (type: TicketEvent["types"][number]) => (
             <TicketTypeCard key={type.id} type={type} kind={kind} loginHref={kind === "guest" ? loginHref : undefined} />
         );
@@ -164,7 +160,7 @@ export default function TicketEventPage() {
                                     </dd>
                                 </>
                             )}
-                            {event.capacity_left !== null && event.status !== "finished" && (
+                            {event.capacity_left !== null && (
                                 <>
                                     <dt>Lugares</dt>
                                     <dd>

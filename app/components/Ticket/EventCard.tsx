@@ -10,15 +10,14 @@ import type { TicketEvent } from "../../../services/ticket-api";
 import { eventHref, formatBRL, formatInstant, formatWhen, lowestPrice, seatBlockTitle, type BuyerKind } from "../../../utils/ticket";
 
 /**
- * Selo do evento, só pelo que a Lara mandou: encerrado (`status`), vendas
- * abertas (`sales_open`), esgotado (`capacity_left` 0), "vendas a partir de…"
- * (a janela ainda não abriu) ou "vendas encerradas".
+ * Selo do evento, só pelo que a Lara mandou: vendas abertas (`sales_open`),
+ * esgotado (`capacity_left` 0), "vendas a partir de…" (a janela ainda não
+ * abriu) ou "vendas encerradas". Evento encerrado não chega à vitrine nem ao
+ * detalhe (a Lara responde 404 `event_not_found`).
  */
 export function EventStatusPill({ event }: { event: TicketEvent }) {
     let pill: React.ReactNode;
-    if (event.status === "finished") {
-        pill = <Pill kind="off">Evento encerrado</Pill>;
-    } else if (event.sales_open && event.capacity_left === 0) {
+    if (event.sales_open && event.capacity_left === 0) {
         pill = <Pill kind="danger">Esgotado</Pill>;
     } else if (event.sales_open) {
         pill = (
