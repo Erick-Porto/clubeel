@@ -17,6 +17,9 @@
  */
 
 import API_CONSUME from "./api-consume";
+import type { SocialPhoto } from "../utils/social-fotos";
+
+export type { SocialPhoto };
 
 /* -------------------------------------------------------------------------- */
 /* Contratos                                                                   */
@@ -62,6 +65,12 @@ export interface SocialPlace {
     /** Faixa permitida para o início ("HH:MM"); `null` = sem limite. */
     event_earliest_start: string | null;
     event_latest_start: string | null;
+    /**
+     * Galeria montada pela equipe no painel da Lara: só as visíveis, já na
+     * ordem certa (não reordenar). Pode ser `[]`. A capa continua em `image`.
+     * A tela usa só o `path` (ver utils/social-fotos.ts).
+     */
+    photos: SocialPhoto[];
 }
 
 export interface SocialGroupPlaces {
@@ -358,6 +367,27 @@ function toPlace(raw: unknown): SocialPlace {
         event_duration_hours: toNumberOrNull(obj.event_duration_hours),
         event_earliest_start: toTimeOrNull(obj.event_earliest_start),
         event_latest_start: toTimeOrNull(obj.event_latest_start),
+        photos: listOf(obj.photos, "photos")
+            .map(toPhoto)
+            .filter((photo): photo is SocialPhoto => photo !== null),
+    };
+}
+
+/** Foto sem `path` não tem como passar pela rota de fotos: fica de fora. */
+function toPhoto(raw: unknown): SocialPhoto | null {
+    const obj = asObj(raw);
+    const path = toStringOrNull(obj.path);
+    if (!path) return null;
+    const width = toNumberOrNull(obj.width);
+    const height = toNumberOrNull(obj.height);
+    return {
+        id: toNumber(obj.id),
+        path,
+        thumb_path: toStringOrNull(obj.thumb_path),
+        url: toStringOrNull(obj.url),
+        width: width && width > 0 ? width : null,
+        height: height && height > 0 ? height : null,
+        caption: toStringOrNull(obj.caption),
     };
 }
 

@@ -39,6 +39,7 @@ Next.js (servidor, DMZ) ──────────────────�
    ├─ pages/api/success.ts             verifica na eRede + confirma Lara│
    ├─ pages/api/whatsapp/webhook.ts    Poli Digital → Lara              │
    ├─ app/api/replay/media/[...path]   stream de vídeo (Range) da Lara  │
+   ├─ app/espacos-sociais/fotos/[...path] fotos da galeria (só images/*)│
    ├─ pages/api/ingressos/*            pedido do não sócio (token→cookie)│
    ├─ app/aprovacao/** (Server Components + Server Actions) → Lara      │
    └─ app/(assinatura)/assinar/api/*  Route Handlers, token próprio │

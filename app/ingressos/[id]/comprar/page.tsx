@@ -28,6 +28,7 @@ import { EventsCover } from "../../../components/UI/covers";
 import { PageHeader } from "../../../components/UI/ui";
 import MemberCheckout from "../../../components/Ticket/MemberCheckout";
 import GuestCheckout from "../../../components/Ticket/GuestCheckout";
+import EventUnavailable from "../../../components/Ticket/EventUnavailable";
 import { fetchEvent, type TicketEvent, type TicketFailure } from "../../../../services/ticket-api";
 import { eventHref, formatInstant, formatWhen, idFromParam } from "../../../../utils/ticket";
 
@@ -72,34 +73,30 @@ function BuyContent() {
     let body: React.ReactNode;
     if (loading || status === "loading") {
         body = <Loading />;
-    } else if (!eventId || error || !event) {
-        const notFound = !eventId || error?.status === 404;
+    } else if (!eventId || error?.status === 404) {
+        // Encerrado, cancelado ou fora do ar: a Lara responde 404 `event_not_found`.
+        body = <EventUnavailable />;
+    } else if (error || !event) {
         body = (
             <ReplayNotice
                 icon={faCircleExclamation}
-                title={notFound ? "Evento não encontrado" : "Não conseguimos carregar o evento"}
-                description={notFound ? "Ele pode ter sido retirado do site." : error?.error}
+                title="Não conseguimos carregar o evento"
+                description={error?.error}
                 tone="alert"
                 action={
-                    notFound ? (
-                        <Link href="/ingressos" className={`${ui.btn} ${ui.btnPrimary}`}>
-                            Ver eventos
-                        </Link>
-                    ) : (
-                        <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={() => load()}>
-                            <FontAwesomeIcon icon={faRotateRight} /> Tentar novamente
-                        </button>
-                    )
+                    <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={() => load()}>
+                        <FontAwesomeIcon icon={faRotateRight} /> Tentar novamente
+                    </button>
                 }
             />
         );
-    } else if (!event.sales_open || event.status === "finished") {
+    } else if (!event.sales_open) {
         body = (
             <ReplayNotice
                 icon={faCircleExclamation}
-                title={event.status === "finished" ? "Evento encerrado" : "Vendas fechadas"}
+                title="Vendas fechadas"
                 description={
-                    event.status !== "finished" && event.sales_starts_at && Date.parse(event.sales_starts_at) > Date.now()
+                    event.sales_starts_at && Date.parse(event.sales_starts_at) > Date.now()
                         ? `As vendas abrem em ${formatInstant(event.sales_starts_at)}.`
                         : "As vendas deste evento não estão abertas."
                 }
