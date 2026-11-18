@@ -1,4 +1,6 @@
-# 17 — Ingressos de eventos (`/ingressos`)
+# 17 — Eventos: ingressos (`/ingressos`)
+
+> **Eventos** (2026-11-04): o módulo Ingressos passou a se chamar **Eventos** e os torneios moram dentro dele. Só mudaram nomes e navegação — as URLs seguem `/ingressos/...` e `/torneios/...` (o link do e-mail da Lara ao não sócio é `/ingressos/pedido/{id}?token=…`) e as chaves internas (`Area`, `moduloVisivel`) seguem `ingressos` e `torneios`. Uma capa só, `EventsCover` ([covers.tsx](../../app/components/UI/covers.tsx)), na cor de `ingressos`, com as abas **Ingressos** (`/ingressos`) · **Torneios** (`/torneios`) · **Meus ingressos** (`/ingressos/meus`) · **Minhas inscrições** (`/torneios/inscricoes`); no menu, um item só, **Eventos** (`/ingressos`), aceso nas duas pastas; na página de boas-vindas, uma porta **Eventos**. Os torneios em si estão em [16](16-torneios.md).
 
 Venda de ingressos dos eventos do clube: vitrine, página do evento, compra do **sócio** (para as pessoas do título dele, preço de sócio) e do **não sócio** (sem login e sem cadastro), pagamento na eRede, "meus ingressos" com QR Code, código e PDF — do sócio pelo login e do não sócio por CPF + e-mail + código —, "perdi o link", eventos de vários dias (diária × passaporte) e **lugar marcado** (mesa, bistrô, camarote escolhidos num mapa). Backend: rotas `api/tickets/*` da Lara. Contrato: versões v1 a v4 (v2 cupom, v3 compra para o título, v4 vários dias) + lugares marcados.
 
@@ -21,7 +23,7 @@ Venda de ingressos dos eventos do clube: vitrine, página do evento, compra do *
 
 | Arquivo | Papel |
 |---|---|
-| [app/ingressos/page.tsx](../../app/ingressos/page.tsx) | Vitrine (pública): cartões, busca; encerrados no fim |
+| [app/ingressos/page.tsx](../../app/ingressos/page.tsx) | Vitrine (pública): cartões, busca, por data; a Lara só manda publicados |
 | [app/ingressos/[id]/page.tsx](../../app/ingressos/[id]/page.tsx) | Evento (público): detalhes, regras, tipos com o lote e os dois preços; vários dias em blocos por dia + passaporte em destaque |
 | [app/ingressos/[id]/comprar/page.tsx](../../app/ingressos/[id]/comprar/page.tsx) | Compra (pública): relê o evento; sócio logado → `MemberCheckout`; sem login ou `?modo=nao-socio` → `GuestCheckout` |
 | [app/ingressos/pedido/[id]/page.tsx](../../app/ingressos/pedido/[id]/page.tsx) | Pedido do não sócio (link do e-mail e confirmação) |
@@ -83,7 +85,7 @@ O site não cria nem edita mapas (o desenho é feito no Lara).
 
 | Endpoint (Lara, `/api/…`) | Via | Chamado por |
 |---|---|---|
-| `GET tickets/events`, `GET tickets/events/{id}` | proxy, público | vitrine, evento, compra |
+| `GET tickets/events`, `GET tickets/events/{id}` | proxy, público | vitrine (só `published`), evento, compra; evento encerrado/rascunho/cancelado → 404 `event_not_found` (também mapa, cupom e pedido) |
 | `POST tickets/events/{id}/coupon-check` | proxy, público (limite 20/min por IP no proxy) | `CouponField` |
 | `GET tickets/events/{id}/maps/{mapId}?day_id=` | proxy, público (limite 120/min por IP no proxy) | mapa do lugar marcado (`SeatPicker`), visitante e não sócio |
 | `GET tickets/events/{id}/maps/{mapId}/member?day_id=` | proxy, autenticado (limite 120/min por IP no proxy) | mapa do sócio logado: a cativa da matrícula dele vem livre |
@@ -115,10 +117,10 @@ Cupom de 100%: o pedido já nasce pago; a tela do pedido mostra os ingressos dir
 
 ## Telas
 
-Visual v4 ([14](14-identidade-visual.md)), módulo `ingressos` (rosa-magenta, cor proposta pelo site). Capa `TicketCover` com abas **Eventos** / **Meus ingressos**.
+Visual v4 ([14](14-identidade-visual.md)), módulo `ingressos` (rosa-magenta, cor proposta pelo site). Capa `EventsCover` (ver o aviso no topo).
 
-- **Vitrine**: cartões (imagem ou ingresso na cor do módulo, "N dias" e as datas "13/02 a 14/02" no evento de vários dias, selo: Vendas abertas / Vendas a partir de… / Vendas encerradas / Esgotado (`capacity_left` 0) / Evento encerrado), data e local, "a partir de" (menor preço à venda para quem vê). Busca.
-- **Evento**: hero (quando — "13/02 a 14/02" no evento de vários dias —, local, janela de vendas, lugares restantes), descrição, regras (`<details>`), tipos com lote e os dois preços (o de quem vê realçado; visitante vê "Sócio? Entre para pagar R$ y"), selo "Últimos ingressos" com `remaining ≤ 10` (número escolhido pelo site, só apresentação; `remaining: null` = lote sem limite de quantidade → sem selo e sem contagem — quem diz se o tipo está à venda é só o `available`), tipo indisponível com "Próximo lote a partir de…" e os preços dele. Vários dias: passaporte em destaque ("vale todos os dias", só se houver tipo `passport`) e um bloco por dia (`label` + horário; "Dia esgotado" com `capacity_left` 0 do dia). Botão Comprar e barra fixa com "a partir de".
+- **Vitrine**: cartões (imagem ou ingresso na cor do módulo, "N dias" e as datas "13/02 a 14/02" no evento de vários dias, selo: Vendas abertas / Vendas a partir de… / Vendas encerradas / Esgotado (`capacity_left` 0)), data e local, "a partir de" (menor preço à venda para quem vê). Busca.
+- **Evento**: hero (quando — "13/02 a 14/02" no evento de vários dias —, local, janela de vendas, lugares restantes), descrição, regras (`<details>`), tipos com lote e os dois preços (o de quem vê realçado; visitante vê "Sócio? Entre para pagar R$ y"), selo "Últimos ingressos" com `remaining ≤ 10` (número escolhido pelo site, só apresentação; `remaining: null` = lote sem limite de quantidade → sem selo e sem contagem — quem diz se o tipo está à venda é só o `available`), tipo indisponível com "Próximo lote a partir de…" e os preços dele. Vários dias: passaporte em destaque ("vale todos os dias", só se houver tipo `passport`) e um bloco por dia (`label` + horário; "Dia esgotado" com `capacity_left` 0 do dia). Botão Comprar e barra fixa com "a partir de". **Evento fora do ar** (404 `event_not_found`: encerrado, cancelado, rascunho — link antigo ou compartilhado), no evento e na compra: aviso neutro "Este evento não está mais disponível" + "Ver eventos" (`EventUnavailable`), não tela de erro. O pedido de evento encerrado continua em "Meus ingressos", que usa o `event` de dentro do pedido e nunca relê `tickets/events/{id}`.
 - **Compra do sócio**: pessoas do título (`is_me` primeiro, titular/dependente, CPF mascarado) com caixa "comprar" e o tipo; `has_ticket` desabilita ("Já tem ingresso"). Vários dias: Diárias (uma caixa por dia, com o tipo daquele dia; `days_taken` desabilita o dia) ou Passaporte (desabilitado se tem algum dia). Cupom, resumo (nome + tipo + preço, prévia do desconto), barra "Reservar e pagar". Atalho **"Comprar para quem não é do seu título"** → compra de não sócio (`?modo=nao-socio`). Recusa com `context.index` marca a pessoa do item (ou pelo CPF mascarado); `already_has_ticket` com `context.day_id` diz o dia ("já tem ingresso em Sáb 13/02"; `null` → "já tem passaporte"); `already_has_ticket`/`invalid_holder`/`holder_not_in_title` relêem o título; `sold_out`/`capacity_full`/`sales_closed`/`type_not_found`/`members_only` relêem o evento.
 - **Compra do não sócio**: aviso "É sócio? Entre…" (ou, no atalho do sócio, "Voltar à compra de sócio"); dados de quem compra (nome, CPF, telefone, e-mail); um bloco por ingresso (tipo com o dia no rótulo, nome, CPF; "É para mim" copia os dados de quem compra); até `max_per_order`. No cliente: dígitos do CPF e CPF repetido (só em diárias de dias diferentes). Erros de campo do Laravel (`tickets.0.holder_cpf`) e `context.index`/`context.field` marcam o campo; `holder_is_member` → "o sócio compra pelo login de sócio"; `already_has_ticket` sem índice destaca o ingresso cujo CPF bate com o `context.cpf` mascarado. A mensagem de CPF repetido só cita passaporte se o evento tiver passaporte.
 - **Pedido** (`TicketOrderView`, sócio e não sócio): selo + nº, evento, aviso por situação (`expired` → "Comprar de novo"; `withdrawn`; `cancelled` + `payment.refunded_amount`; `paid`), contador até `hold_until` (ao zerar relê o pedido; o botão Pagar continua enquanto a Lara disser `pending_payment`), resumo (preço por ingresso — lotes podem diferir —, "de R$ 80,00 por R$ 72,00", linha "Desconto (cupom X)", "Cortesia"), Pagar/Desistir (com confirmação), e pago: ingressos com QR (SVG da Lara sobre `--pad`, branco nos dois temas), código grande (`ING-…`), "Diária · Sáb 13/02"/"Passaporte · todos os dias", entradas registradas ("Entrou em Sáb 13/02, 21:14") e **Baixar PDF**. Passaporte com `status: "used"` antes do fim do evento (maior `ends_at` do evento e dos dias) mostra "Válido nos outros dias", não "Utilizado"; na diária e no evento sem dias, `used` é "Utilizado".
@@ -127,7 +129,7 @@ Visual v4 ([14](14-identidade-visual.md)), módulo `ingressos` (rosa-magenta, co
 
 ## Integração com o resto do app
 
-- Navegação: item **Ingressos** no topo (desktop) e na folha "Menu" do celular; "Meus ingressos" no menu do usuário; porta **Ingressos** na página de boas-vindas ([header.tsx](../../app/components/Common/header.tsx), [public-home.tsx](../../app/components/Common/public-home.tsx)). A entrada do módulo trouxe a **nova barra inferior** do celular (Início · Menu · Perfil) — ver [11](11-ui-compartilhada.md).
+- Navegação: item **Eventos** no topo (desktop) e na folha "Menu" do celular (vale para `/ingressos` e `/torneios`); "Meus ingressos" e "Minhas inscrições em torneios" no menu do usuário; porta **Eventos** na página de boas-vindas ([header.tsx](../../app/components/Common/header.tsx), [public-home.tsx](../../app/components/Common/public-home.tsx)). A entrada do módulo trouxe a **nova barra inferior** do celular (Início · Menu · Perfil) — ver [11](11-ui-compartilhada.md).
 
 ## Pontos a confirmar com a Lara
 

@@ -57,7 +57,7 @@ Texto sobre botão grená é sempre branco (`#fff`). `--pad` / `--pad-ink` (bran
 | `perfil` | Perfil, avatar | `#DDE3F0` / `#34426A` | cartao |
 | `compras` | Aprovação de compras | `#ECE5DB` / `#6A4F2F` | compras |
 | `torneios` | Torneios | `#D6ECF6` / `#12567A` | — (**proposta do site**; escuro `#102836` / `#80C4E8`). Se o Lara publicar a cor de torneios, troque nos três blocos de `globals.css`. |
-| `ingressos` | Ingressos de eventos | `#F9E0F0` / `#8A1F6E` | — (**proposta do site**, rosa-magenta; escuro `#33142A` / `#F09AD3`). Se o Lara publicar a cor de ingressos, troque nos três blocos de `globals.css`. |
+| `ingressos` | Eventos (ingressos; também a capa e o item de menu dos torneios) | `#F9E0F0` / `#8A1F6E` | — (**proposta do site**, rosa-magenta; escuro `#33142A` / `#F09AD3`). Se o Lara publicar a cor de ingressos, troque nos três blocos de `globals.css`. |
 
 As cores do **tema escuro** dos módulos foram propostas no rebrand (o arquivo do Lara não as trazia); se o Lara publicar as dele, troque nos dois blocos escuros de `globals.css`. Para aplicar: `style={areaStyle("social")}` define `--c`/`--ci` (canais) e o CSS usa `rgb(var(--c))` / `rgb(var(--ci))`. Módulo novo: tokens `--a-<chave>-rgb`/`--a-<chave>-ink-rgb` nos **três** blocos de `globals.css` e a chave no tipo `Area` de `ui.tsx`.
 

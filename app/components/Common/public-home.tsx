@@ -16,7 +16,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRight, faRightToBracket, faTicket, faTrophy, faUser, faVideo } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight, faRightToBracket, faTicket, faUser, faVideo } from "@fortawesome/free-solid-svg-icons";
 import style from "../../../styles/public-home.module.css";
 import Carousel from "./carousel";
 import Footer from "./footer";
@@ -41,9 +41,9 @@ const TODAS: Door[] = [
         icon: faUser,
         hint: "Sou sócio",
         title: "Entrar",
-        lead: moduloVisivel("social") || moduloVisivel("torneios")
+        lead: moduloVisivel("social")
             ? "Reserve quadras e espaços sociais, acenda a luz da quadra e inscreva-se nos torneios."
-            : "Reserve quadras, acenda a luz da quadra e veja os seus replays.",
+            : "Reserve quadras, acenda a luz da quadra e inscreva-se nos torneios.",
         action: "Entrar ou criar conta",
     },
     {
@@ -55,22 +55,14 @@ const TODAS: Door[] = [
         lead: "Assista aos replays gravados nas quadras.",
         action: "Ver replays",
     },
-    {
-        href: "/torneios",
-        area: "torneios",
-        icon: faTrophy,
-        hint: "Não precisa de conta",
-        title: "Torneios",
-        lead: "Categorias, chaveamento e resultados dos torneios do clube.",
-        action: "Ver torneios",
-    },
+    // Eventos = ingressos + torneios (as abas ficam na capa de /ingressos).
     {
         href: "/ingressos",
         area: "ingressos",
         icon: faTicket,
         hint: "Não precisa de conta",
-        title: "Ingressos",
-        lead: "Eventos do clube: compre sem cadastro. Sócio paga menos com a conta dele.",
+        title: "Eventos",
+        lead: "Ingressos sem cadastro (sócio paga menos com a conta dele) e chaveamento e resultados dos torneios.",
         action: "Ver eventos",
     },
 ];

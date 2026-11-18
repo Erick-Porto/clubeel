@@ -124,9 +124,9 @@ navegador ── espacos.clubedosfuncionarios.com.br (proxy reverso, 443)
 
 ### Módulos não liberados em produção
 
-[utils/modulos.ts](../../utils/modulos.ts) lista os módulos que já estão no código mas ainda não aparecem em produção (desde a liberação de 2026-10-29: `social`, `torneios`, `ingressos`). `moduloVisivel(chave)` responde `true` na homologação (`EM_HOMOLOGACAO`) ou com `NEXT_PUBLIC_MODULOS_EXTRAS=1`; em produção, `false` para os da lista. Nenhum `.env` precisa mudar.
+[utils/modulos.ts](../../utils/modulos.ts) lista os módulos que já estão no código mas ainda não aparecem em produção (hoje só `social`; na liberação de 2026-10-29 eram `social`, `torneios` e `ingressos` — **Eventos**, que junta ingressos e torneios, foi liberado em 2026-11-04). `moduloVisivel(chave)` responde `true` na homologação (`EM_HOMOLOGACAO`) ou com `NEXT_PUBLIC_MODULOS_EXTRAS=1`; em produção, `false` para os da lista. Nenhum `.env` precisa mudar.
 
-O que some: itens do menu (topo, folha "Menu" do celular e menu do usuário), abas e atalhos da home do sócio (as leituras de `social/groups` e da lista de torneios nem são feitas), portas da página pública, dica do link "Voltar ao início" no login, seção "Espaços sociais" e avisos de reserva social/torneio no perfil. **As páginas, o middleware e o proxy não mudam**: quem tiver a URL (ex.: link de pedido de ingresso do e-mail) continua entrando — decisão do clube. Para liberar um módulo, tire-o da lista.
+O que some: itens do menu (topo, folha "Menu" do celular e menu do usuário), abas e atalhos da home do sócio (as leituras de `social/groups` e da lista de torneios nem são feitas), portas da página pública, dica do link "Voltar ao início" no login, seção "Espaços sociais" e aviso de reserva social no perfil. **As páginas, o middleware e o proxy não mudam**: quem tiver a URL (ex.: link de pedido de ingresso do e-mail) continua entrando — decisão do clube. Para liberar um módulo, tire-o da lista.
 
 ### Montar no servidor (uma vez)
 

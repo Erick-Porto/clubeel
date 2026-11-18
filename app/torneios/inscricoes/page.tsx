@@ -41,7 +41,7 @@ import Footer from "../../components/Common/footer";
 import { Loading, LoadingScreen } from "../../components/Common/loading";
 import ReplayNotice from "../../components/Replay/ReplayNotice";
 import SocialFlashBox from "../../components/Social/SocialFlashBox";
-import { TournamentCover } from "../../components/UI/covers";
+import { EventsCover } from "../../components/UI/covers";
 import { PageHeader, Pill, SearchBar, matchesSearch } from "../../components/UI/ui";
 import TournamentPaymentPanel from "../../components/Tournament/TournamentPaymentPanel";
 import type { SocialPaymentOutcome } from "../../components/Checkout/CheckoutPayment";
@@ -537,7 +537,7 @@ export default function MyRegistrationsPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TournamentCover />
+            <EventsCover />
 
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader

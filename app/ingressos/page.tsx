@@ -4,7 +4,7 @@
  * Vitrine de eventos — aberta a qualquer visitante (o não sócio compra sem
  * login). Cartões com imagem, título, data, local e "a partir de" (o menor
  * preço à venda para quem está vendo: sócio logado → preço de sócio).
- * Encerrados ficam no fim da lista.
+ * A Lara só manda eventos publicados (encerrado não vem), em ordem de data.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -17,7 +17,7 @@ import Header from "../components/Common/header";
 import Footer from "../components/Common/footer";
 import { Loading } from "../components/Common/loading";
 import ReplayNotice from "../components/Replay/ReplayNotice";
-import { TicketCover } from "../components/UI/covers";
+import { EventsCover } from "../components/UI/covers";
 import { PageHeader, SearchBar, matchesSearch } from "../components/UI/ui";
 import EventCard from "../components/Ticket/EventCard";
 import { fetchEvents, type TicketEvent, type TicketFailure } from "../../services/ticket-api";
@@ -53,7 +53,7 @@ export default function TicketEventsPage() {
     const kind = status === "authenticated" ? "member" : "guest";
     const visible = events
         .filter((event) => matchesSearch(query, event.title, event.venue, event.description))
-        .sort((a, b) => Number(a.status === "finished") - Number(b.status === "finished") || startTime(a) - startTime(b));
+        .sort((a, b) => startTime(a) - startTime(b));
 
     let body: React.ReactNode;
     if (loading) {
@@ -104,7 +104,7 @@ export default function TicketEventsPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TicketCover />
+            <EventsCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <PageHeader
                     title="Eventos"

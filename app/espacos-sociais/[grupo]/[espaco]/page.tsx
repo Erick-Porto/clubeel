@@ -53,6 +53,8 @@ import {
     type SocialFlash,
 } from "../../../../utils/social";
 import { placeImageUrl } from "../../../../utils/lighting";
+import { capaSrc } from "../../../../utils/social-fotos";
+import SocialGallery from "../../../components/Social/SocialGallery";
 
 /** Sem antecedência máxima informada, deixa navegar um ano (os dias vêm `out_of_window` mesmo). */
 const DEFAULT_MONTHS_AHEAD = 12;
@@ -213,7 +215,10 @@ export default function SocialPlacePage() {
 
     if (status === "loading") return <LoadingScreen />;
 
-    const banner = placeImageUrl(place?.image ?? null) ?? placeImageUrl(group?.image_horizontal ?? null);
+    const cover = place ? capaSrc(place.image, place.photos) : null;
+    const banner = cover ?? placeImageUrl(group?.image_horizontal ?? null);
+    // Com galeria, o carrossel (capa + fotos) toma o lugar da faixa de imagem.
+    const hasGallery = !!place && place.photos.length > 0;
     const startMonth = currentClubMonth();
     const lastMonth = lastNavigableMonth(group?.maximum_antecedence ?? 0);
     const activeLimitReached = limits?.active ? limits.active.remaining <= 0 : false;
@@ -329,7 +334,11 @@ export default function SocialPlacePage() {
                     lead={place ? <>Diária de <strong className={ui.mono}>{formatBRL(place.price)}</strong>. Escolha uma data disponível no calendário para fazer a pré-reserva.</> : undefined}
                 />
 
-                {banner && <Media src={banner} alt={`Foto de ${place?.name ?? "espaço social"}`} area="social" ratio="short" className={style.placeHero} />}
+                {hasGallery && place ? (
+                    <SocialGallery placeName={place.name} cover={cover} photos={place.photos} />
+                ) : (
+                    banner && <Media src={banner} alt={`Foto de ${place?.name ?? "espaço social"}`} area="social" ratio="short" className={style.placeHero} />
+                )}
 
                 {body}
             </main>

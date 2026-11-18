@@ -34,7 +34,9 @@ export const config = {
     // Luz da quadra: acender é ação de sócio.
     "/luz",
     // Espaços sociais: vitrine, calendário, pré-reserva e "minhas reservas"
-    // são todos do sócio (a Lara responde pelo Session dele).
+    // são todos do sócio (a Lara responde pelo Session dele). As fotos da
+    // galeria (/espacos-sociais/fotos/...) também: só associados veem os
+    // espaços, por decisão do clube.
     "/espacos-sociais",
     "/espacos-sociais/:path*",
     // Torneios: só "minhas inscrições" e a tela do time são do sócio. Lista,

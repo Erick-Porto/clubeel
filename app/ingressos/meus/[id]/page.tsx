@@ -18,7 +18,7 @@ import Header from "../../../components/Common/header";
 import Footer from "../../../components/Common/footer";
 import { Loading } from "../../../components/Common/loading";
 import ReplayNotice from "../../../components/Replay/ReplayNotice";
-import { TicketCover } from "../../../components/UI/covers";
+import { EventsCover } from "../../../components/UI/covers";
 import TicketOrderView from "../../../components/Ticket/TicketOrderView";
 import { fetchMyOrder, withdrawMyOrder, type TicketFailure, type TicketOrder } from "../../../../services/ticket-api";
 import { idFromParam, isSilent } from "../../../../utils/ticket";
@@ -80,7 +80,7 @@ export default function MyTicketOrderPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TicketCover />
+            <EventsCover />
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <Link href="/ingressos/meus" className={style.backLink}>
                     <FontAwesomeIcon icon={faArrowLeft} /> Meus ingressos

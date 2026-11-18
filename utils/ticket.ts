@@ -442,7 +442,7 @@ export function orderValueText(order: Pick<TicketOrder, "courtesy" | "total">): 
 /* ----------------------------------------------------------------- Recusas */
 
 const REASON_TITLES: Record<string, string> = {
-    event_not_found: "Evento não encontrado",
+    event_not_found: "Este evento não está mais disponível",
     sales_closed: "Vendas fechadas",
     type_not_found: "Esse tipo de ingresso não está mais à venda",
     sold_out: "Esse ingresso esgotou",

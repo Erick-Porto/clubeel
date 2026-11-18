@@ -615,6 +615,7 @@ export default function FluxoAssinatura({ temSessao }: { temSessao: boolean }) {
       {etapa === 'leitura' && (
         <EtapaLeitura
           versao={sessao?.document.pdf_version ?? null}
+          signatarios={sessao?.signers}
           inicial={leitura}
           tratar={tratar}
           aoContinuar={sairDaLeitura}

@@ -16,6 +16,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faArrowRight,
     faChampagneGlasses,
+    faImages,
     faCircleExclamation,
     faMagnifyingGlass,
     faRotateRight,
@@ -39,7 +40,7 @@ import {
     type SocialPlace,
 } from "../../services/social-api";
 import { formatBRL, socialSlug } from "../../utils/social";
-import { placeImageUrl } from "../../utils/lighting";
+import { capaSrc, fotoSrc } from "../../utils/social-fotos";
 
 interface GroupWithPlaces {
     group: SocialGroup;
@@ -151,7 +152,11 @@ export default function SocialSpacesPage() {
                                 {places.map((place) => (
                                     <article key={place.id} className={style.placeCard}>
                                         <Media
-                                            src={placeImageUrl(place.image)}
+                                            src={
+                                                // Sem capa, a miniatura da primeira foto da galeria.
+                                                capaSrc(place.image, place.photos) ??
+                                                fotoSrc(place.photos[0]?.thumb_path ?? place.photos[0]?.path)
+                                            }
                                             alt={`Foto de ${place.name}`}
                                             area="social"
                                             icon={faChampagneGlasses}
@@ -160,6 +165,11 @@ export default function SocialSpacesPage() {
                                             <MediaTag>
                                                 <span className={ui.mono}>{formatBRL(place.price)}</span>&nbsp;/ diária
                                             </MediaTag>
+                                            {place.photos.length > 0 && (
+                                                <MediaTag side="right" icon={faImages}>
+                                                    {place.photos.length} foto{place.photos.length === 1 ? "" : "s"}
+                                                </MediaTag>
+                                            )}
                                         </Media>
                                         <div className={style.placeBody}>
                                             <h3 className={style.placeName}>{place.name}</h3>

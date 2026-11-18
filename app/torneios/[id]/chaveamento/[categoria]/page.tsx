@@ -24,7 +24,7 @@ import Header from "../../../../components/Common/header";
 import Footer from "../../../../components/Common/footer";
 import { Loading } from "../../../../components/Common/loading";
 import ReplayNotice from "../../../../components/Replay/ReplayNotice";
-import { TournamentCover } from "../../../../components/UI/covers";
+import { EventsCover } from "../../../../components/UI/covers";
 import { PageHeader } from "../../../../components/UI/ui";
 import BracketView from "../../../../components/Tournament/BracketView";
 import {
@@ -171,7 +171,7 @@ export default function BracketPage() {
     return (
         <div className={globalStyle.page}>
             <Header />
-            <TournamentCover />
+            <EventsCover />
 
             <main className={`${globalStyle.main} ${ui.page}`}>
                 <Link href={backHref} className={style.backLink}>

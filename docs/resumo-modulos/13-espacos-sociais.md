@@ -23,8 +23,10 @@ Reserva de **churrasqueiras, salões e áreas de festa**. Diferente das quadras:
 | [app/espacos-sociais/reservas/[id]/page.tsx](../../app/espacos-sociais/reservas/[id]/page.tsx) | Detalhe: horário, mesas, valores, pagamento, convidados, editar, desistir |
 | [services/social-api.ts](../../services/social-api.ts) | Contratos, normalização e chamadas (via proxy) |
 | [utils/social.ts](../../utils/social.ts) | Formatação (BRL, dias, prazos no fuso do clube, CPF, horários, mesas/cadeiras), estimativas (valor, fim do evento, mesas/cadeiras), títulos por `reason` (+ frases com o `context` de `item_limit`/`invalid_time`; orientação de falar com a secretaria em `contract_closed`/`invalid_stage`), `CONTACT_NOTICE`, slugs |
-| [app/components/Social/](../../app/components/Social/) | `SocialCalendar`, `SocialBookingForm`, `SocialGuestsEditor`, `SocialPlaceFacts`, `SocialStageBadge`, `SocialFlashBox`, `QuantityStepper`, `SocialPendingPaymentBanner` |
-| [styles/social.module.css](../../styles/social.module.css) | Estilos próprios; reaproveita `replay.module.css` (seção, botões, `ReplayNotice`) e o flash de `lighting.module.css` |
+| [app/components/Social/](../../app/components/Social/) | `SocialCalendar`, `SocialBookingForm`, `SocialGuestsEditor`, `SocialPlaceFacts`, `SocialStageBadge`, `SocialFlashBox`, `QuantityStepper`, `SocialPendingPaymentBanner`, `SocialGallery` (carrossel de fotos) |
+| [utils/social-fotos.ts](../../utils/social-fotos.ts) | Galeria: contrato `SocialPhoto`, validador de caminho (`segmentosDeFoto`), `fotoSrc` (endereço pela rota do site) e `capaSrc` (capa da Lara → rota; link externo → como veio) |
+| [app/espacos-sociais/fotos/[...path]/route.ts](../../app/espacos-sociais/fotos/[...path]/route.ts) | Entrega as fotos da Lara no domínio do site (o navegador não alcança a Lara) |
+| [styles/social.module.css](../../styles/social.module.css) | Estilos próprios; reaproveita `replay.module.css` (seção, botões, `ReplayNotice`) e o flash de `lighting.module.css`. O carrossel tem o seu: `social-gallery.module.css` |
 
 URLs: `/espacos-sociais/<grupo>-<groupId>/<espaco>-<placeId>` (só o id importa, como nas quadras) e `/espacos-sociais/reservas/<bookingId>`. Todas no `matcher` do middleware.
 
@@ -46,7 +48,8 @@ URLs: `/espacos-sociais/<grupo>-<groupId>/<espaco>-<placeId>` (só o id importa,
 As rotas de quadra (`places/group`, `places`, `schedule/time-options`, `POST schedule`) **não** listam nem aceitam espaço social.
 
 Contratos principais (ver `services/social-api.ts`):
-- `SocialPlace`: `price`, `capacity`, `max_guests`, `extra_guests`, `extra_guest_price`, `base_tables`, `base_chairs`, `event_duration_hours` (`null` = sem horário), `event_earliest_start`/`event_latest_start` (`null` = sem limite).
+- `SocialPlace`: `price`, `capacity`, `max_guests`, `extra_guests`, `extra_guest_price`, `base_tables`, `base_chairs`, `event_duration_hours` (`null` = sem horário), `event_earliest_start`/`event_latest_start` (`null` = sem limite), `image` (capa, URL) e `photos` (galeria, ver abaixo).
+- `SocialPhoto` (em `photos`, desde 10/11/2026): `id`, `path`, `thumb_path`, `url`, `thumb_url`, `width`, `height`, `caption` (pode ser `null`). Vem só o que está visível, **já na ordem** da equipe (não reordenar); `[]` = sem galeria. Foto sem `path` é descartada na normalização.
 - `SocialCatalogItem` (bebida ou mobiliário): `id`, `category` (`bebida`/`mobiliario`), `price`, `tables_per_unit`, `chairs_per_unit`, `max_quantity` (`null` = sem limite). Bebidas e mobiliário vão **no mesmo `items`** do pedido, com **`item_id`** (`beverage_id` é o nome antigo, só lido como fallback).
 - `SocialBooking`: além de valores e estágio, `origin`, `start_time`/`end_time`/`duration_hours`/`ends_next_day`, `base_tables`/`base_chairs`/`tables_total`/`chairs_total`, `items[]` com `category`, `payment` (`paid_amount`, `paid_at`, `method`, `method_label`, `manual`, `refunded_amount`) e os `can_*`.
 
@@ -58,8 +61,16 @@ Falha: `{ok:false, status, kind: 'rule'|'validation'|'throttled'|'unauthorized'|
 
 Visual v4 ([14](14-identidade-visual.md)): capa do módulo `social` com abas **Espaços** / **Minhas reservas** em todas as telas. Vitrine e "Minhas reservas" têm **busca** na página. Selo de estágio (`SocialStageBadge` → `Pill`): `requested` e `awaiting_payment` em tom de atenção (relógio / cartão), `confirmed` ok, `refused` e `cancelled` em tom de erro (`stageTone` devolve `danger`), demais neutros — o texto continua sendo o `stage_label` da Lara. No celular, o calendário vem antes da ficha e a barra "Total estimado + Enviar pré-reserva" acompanha a rolagem do formulário.
 
+### Galeria de fotos
+A equipe monta a galeria no painel da Lara (sem upload pelo site). As fotos são arquivos estáticos da Lara (`images/galeria/...`), e o navegador do sócio **não alcança a Lara**: o HTML nunca leva `url`/`thumb_url` nem o host da Lara.
+- **Rota de fotos** `/espacos-sociais/fotos/<path>` (com `comBase`): o servidor busca `${INTERNAL_LARA_API_URL}/<path>` e devolve no domínio do site. Só aceita `images/...` com `.jpg`/`.jpeg`/`.png`/`.webp`, segmentos `[A-Za-z0-9._-]` e sem `..` — não é proxy genérico. 404 da Lara vira 404; resposta que não seja `image/*` vira 502. Cache `private, max-age=31536000, immutable` (nome de arquivo nunca muda). Fica sob o `matcher` do middleware: **exige login**, como o resto do módulo (só associados veem os espaços — por isso `private`).
+- **Capa**: `image` continua sendo a capa. Se começar pela origem da Lara (deduzida de `url` − `path` de alguma foto), passa pela rota de fotos; senão (imgur, postimg) é usada como veio. Sem fotos não há como deduzir a origem, e a capa vai como veio (comportamento de antes).
+- **Carrossel** (`SocialGallery`, na página do espaço, no lugar da faixa de imagem quando há `photos`): capa primeiro, depois as fotos; setas, bolinhas, contador, arrastar no celular, ← → com foco; faixa de miniaturas (`thumb_path`) no computador; legenda abaixo e como `alt` (sem legenda: "Foto N de <espaço>"); quadro na proporção da primeira foto com medidas (entre 4:3 e 2,2:1); só a capa e o primeiro slide carregam de cara, os outros quando o sócio chega perto. Sem tela cheia (o projeto não tem lightbox).
+- Sem `photos`: a página mostra a faixa de imagem de antes, sem controles.
+- A vitrine pública da Lara (`GET /api/social-showcase`) **não é usada**: por decisão do clube, só associados logados veem os espaços.
+
 ### Vitrine
-`social/groups` → para cada grupo, `social/groups/{id}/places` em paralelo. Grupo sem espaço não aparece. Card (`SocialPlaceFacts`): foto, diária, capacidade, convidados incluídos, extras, "Inclui X mesas e Y cadeiras", "Evento de N horas · início entre A e B" (quando há duração), `amenities`, `description` (destacado), regras do grupo em `<details>`.
+`social/groups` → para cada grupo, `social/groups/{id}/places` em paralelo. Grupo sem espaço não aparece. Card (`SocialPlaceFacts`): foto (capa; sem capa, a miniatura da primeira foto da galeria; selo "N fotos" quando há galeria), diária, capacidade, convidados incluídos, extras, "Inclui X mesas e Y cadeiras", "Evento de N horas · início entre A e B" (quando há duração), `amenities`, `description` (destacado), regras do grupo em `<details>`.
 
 ### Espaço
 - Carrega em paralelo: espaços do grupo, lista de grupos (só `maximum_antecedence` e imagem), limites e os dois catálogos.

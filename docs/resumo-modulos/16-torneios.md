@@ -73,7 +73,7 @@ Mesmo pipeline das quadras e dos espaços sociais ([05](05-checkout-pagamento.md
 
 ## Telas
 
-Visual v4 ([14](14-identidade-visual.md)), módulo `torneios` (azul, cor proposta pelo site). Capa `TournamentCover` com abas **Torneios** / **Minhas inscrições**.
+Visual v4 ([14](14-identidade-visual.md)), módulo `torneios` (azul, cor proposta pelo site). Os torneios ficam **dentro de Eventos** (2026-11-04): a capa é a `EventsCover`, na cor de Eventos, com as abas Ingressos · **Torneios** · Meus ingressos · **Minhas inscrições**; cartões e telas do torneio seguem azuis. No menu não há mais item próprio: `/torneios` acende **Eventos**. Ver [17](17-ingressos.md).
 
 - **Lista**: cartões (imagem ou troféu na cor do módulo, modalidade, datas, selo "Inscrições abertas" pelo `registration_open`; "Em andamento"/"Encerrado" pelo `status`). Busca por torneio/categoria e filtro por modalidade.
 - **Detalhe**: descrição, regulamento (`<details>`), datas e período. Categorias com `summary`, preço, vagas (`vacancies_left`, `null` = sem limite), como o time se forma, times (`categories[].teams`) e o link **Chaveamento** só com `bracket_published`. Deslogado com inscrição aberta → aviso com link de login (`callbackUrl`). Logado → caixas de seleção pela `eligibility`: não elegível desabilitada com o motivo ("Categoria de outro sexo"; "Seu cadastro no clube está incompleto: procure a secretaria"; "Fora da faixa de idade da categoria"); com inscrição ativa mostra a situação e "Pagar". `member_not_found` → aviso "procure a secretaria". Barra fixa com total e **Inscrever-me**; sucesso abre o pagamento com `total_due` e `pay_until`.

@@ -220,7 +220,7 @@ const HomeContent = () => {
     };
 
     if (status === "loading") return <LoadingScreen />;
-    // Sem sessão a raiz é a página de boas-vindas (Entrar, RePET, Torneios):
+    // Sem sessão a raiz é a página de boas-vindas (Entrar, RePET, Eventos):
     // `/` saiu do matcher do middleware de propósito.
     if (status === "unauthenticated") return <PublicHome />;
 
