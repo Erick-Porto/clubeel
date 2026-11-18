@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]";
 import { ticketOrderRoute, type TicketPayer } from "../../../../../utils/lara";
 import { parseOrderId, readGuestToken } from "../../../../../utils/ticket-guest";
+import { logarRecusaDoToken, recusaDoTokenDaLara, RESPOSTA_LARA_INDISPONIVEL } from "../../../../../utils/lara-token";
 
 /**
  * PDF dos ingressos de um pedido pago. Rota própria porque o proxy só repassa
@@ -67,6 +68,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data = await response.json();
     } catch {
         data = null;
+    }
+    const recusa = recusaDoTokenDaLara(response.status, data);
+    if (recusa) {
+        logarRecusaDoToken("ingressos", "tickets/orders/pdf", recusa);
+        return res.status(503).json(RESPOSTA_LARA_INDISPONIVEL);
     }
     return res.status(response.ok ? 502 : response.status).json(data ?? { message: "Não foi possível gerar o PDF." });
 }

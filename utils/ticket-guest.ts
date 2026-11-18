@@ -17,6 +17,7 @@
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { comBase } from "./base-path";
+import { logarRecusaDoToken, recusaDoTokenDaLara, RESPOSTA_LARA_INDISPONIVEL } from "./lara-token";
 
 const COOKIE_PREFIX = "ingresso_pedido_";
 
@@ -142,6 +143,12 @@ export async function callLara(
             data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
         } catch {
             data = null;
+        }
+        // Token da aplicação recusado: erro de configuração, não "acesso venceu".
+        const recusa = recusaDoTokenDaLara(response.status, data);
+        if (recusa) {
+            logarRecusaDoToken("ingressos", path.split("/").slice(0, 2).join("/"), recusa);
+            return { status: 503, data: { ...RESPOSTA_LARA_INDISPONIVEL } };
         }
         return { status: response.status, data };
     } catch (error: unknown) {

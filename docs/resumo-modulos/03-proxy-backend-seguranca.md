@@ -31,9 +31,24 @@ Pipeline de cada requisição `/<método> /api/backend/<path>?<query>`:
 3. `getServerSession` → endpoint autenticado sem `accessToken` → **401**.
 4. `guardRequest` (anti-injeção em body e query) → **400**.
 5. Repassa para `${INTERNAL_LARA_API_URL}/api/<path>?<query>` com `Content-Type/Accept: application/json`, `Authorization: Bearer <appToken>`, e `Session: <accessToken>` **se houver sessão** (também em endpoints públicos).
-6. Resposta JSON → mesmo status + JSON. Não-JSON com erro → `{message, raw_response (100 chars)}`. Falha de conexão → **502** `Proxy Connection Failed`.
+6. Recusa do **token da aplicação** (401/403 com uma das mensagens abaixo) → log no servidor e **503** `{message, reason: 'unavailable'}`.
+7. Resposta JSON → mesmo status + JSON. Não-JSON com erro → `{message, raw_response (100 chars)}`. Falha de conexão → **502** `Proxy Connection Failed`.
 
 `bodyParser.sizeLimit = '4mb'`.
+
+### Recusa do token da aplicação
+
+[utils/lara-token.ts](../../utils/lara-token.ts) reconhece as respostas da Lara ao `INTERNAL_LARA_API_TOKEN` (token por instalação, escopo `site`, desde 17/11/2026):
+
+| HTTP | `message` | Causa |
+|---|---|---|
+| 401 | `Invalid API Token` | token errado, ausente ou o antigo depois de desligado |
+| 401 | `Token revogado, vencido ou de integração desativada` | venceu ou a TI revogou: gerar outro |
+| 403 | `Este token não tem acesso a esta API` | token de outro sistema (sem escopo `site`) |
+
+É erro de configuração, não do sócio: repassar o 401/403 faria o `API_CONSUME` do cliente deslogar ("sessão expirou") e o login mostraria a mensagem crua. Por isso o proxy, o `API_CONSUME` no servidor (login do NextAuth, `register`, `success.ts`, webhook), `callLara` (`utils/ticket-guest.ts`) e as rotas `pages/api/ingressos/pedidos/*` logam `[origem] A Lara recusou INTERNAL_LARA_API_TOKEN em <rota>: <status> "<mensagem>"` (nunca o token) e respondem **503** com a mensagem genérica *Não foi possível falar com o servidor. Tente de novo em instantes.* O 401 do `Session` do sócio tem outra mensagem e continua passando como antes. `utils/lara.ts` (recálculo de cobrança) já lança erro genérico em qualquer não-ok e não cobra.
+
+O token `site` alcança: `login`, `register`, `check-member`, `change-password`, `send-email`, `verify-token`, `member/*`, `places*`, `place/*`, `schedule*`, `social/*`, `social-showcase*`, `tournaments*`, `tickets*`, `lighting/*`, `dashboard/*`, `replay/places*`, `replay/my-videos`. **Fora dessa lista** o site ainda chama `webhooks/whatsapp` (webhook, servidor) e `image/{id}` (avatar, já quebrado) — ver [12](12-pontos-de-atencao.md).
 
 ### Allowlist atual
 

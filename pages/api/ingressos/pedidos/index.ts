@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { guardRequest } from "../../../../utils/sanitize";
 import { getClientIp, rateLimit } from "../../../../utils/rate-limit";
 import { isGuestToken, parseOrderId, writeGuestToken } from "../../../../utils/ticket-guest";
+import { logarRecusaDoToken, recusaDoTokenDaLara, RESPOSTA_LARA_INDISPONIVEL } from "../../../../utils/lara-token";
 
 /**
  * Cria o pedido de ingressos do NÃO SÓCIO (sem login):
@@ -63,6 +64,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
     } catch {
         data = null;
+    }
+
+    const recusa = recusaDoTokenDaLara(response.status, data);
+    if (recusa) {
+        logarRecusaDoToken("ingressos", "tickets/events/guest-orders", recusa);
+        return res.status(503).json(RESPOSTA_LARA_INDISPONIVEL);
     }
 
     if (!response.ok) {

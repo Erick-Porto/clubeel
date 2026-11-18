@@ -160,8 +160,11 @@ cp .env.example .env.local
 Variáveis Necessárias (.env.local)
 
 # Backend (Laravel API)
-NEXT_PUBLIC_LARA_API=[https://api.clubeel.com.br](https://api.clubeel.com.br)
-NEXT_PUBLIC_LARA_API_TOKEN=seu_token_integracao
+# Só servidor: NUNCA use prefixo NEXT_PUBLIC_ (iria para o navegador).
+INTERNAL_LARA_API_URL=http://endereco-interno-da-lara
+# Token da instalação (lara_ + 48 caracteres), gerado pela TI em
+# Administração › Integrações, escopo "site". Produção e homologação têm tokens diferentes.
+INTERNAL_LARA_API_TOKEN=lara_...
 
 # Autenticação (NextAuth)
 NEXTAUTH_URL=http://localhost:3000

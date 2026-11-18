@@ -28,6 +28,10 @@ export default async function LoginHandler(req: NextApiRequest, res: NextApiResp
                 }
             );
 
+            if (response.status === 503) {
+                return res.status(503).json({ error: response.message });
+            }
+
             if (!response.ok || !response.data) {
                 return res.status(401).json({ error: response.message || 'Invalid login credentials' });
             }

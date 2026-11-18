@@ -225,8 +225,17 @@ export function normalizarRecusa(
   // Token da API errado, ou este servidor fora da lista de IPs da Lara. É
   // configuração: log para a TI, mensagem genérica para quem assina. 403 COM
   // reason é outra coisa (ex.: attachment_refused) e passa como veio.
+  // O log leva status e reason (nunca o token) para a TI separar 401 de 403.
   if (reason === 'unauthorized' || status === 401 || (status === 403 && !reason)) {
-    console.error(`[assinatura] ${rotulo} -> ${status}: a Lara recusou o site (token ou IP).`);
+    const causa =
+      status === 401
+        ? 'LARA_SIGNATURE_API_TOKEN ausente, errado, vencido, revogado ou o antigo já desligado'
+        : status === 403
+          ? 'token sem o escopo assinatura-remota (o token "site" na variável errada?) ou IP deste servidor fora da lista'
+          : 'token ou IP';
+    console.error(
+      `[assinatura] ${rotulo} -> ${status} reason=${reason ?? '(sem reason)'}: a Lara recusou o site (${causa}).`
+    );
     return { status: 502, corpo: { error: MENSAGENS.configuracao, reason: 'unauthorized' } };
   }
 

@@ -61,7 +61,7 @@ Falta a TI confirmar a configuração do nginx da produção e da homologação 
 
 ## Infraestrutura (TI)
 
-- **`.env` do site** (produção e homologação): `LARA_SIGNATURE_API_TOKEN` = mesmo valor de `SIGNATURE_REMOTE_API_TOKEN` no Lara. A URL é a `INTERNAL_LARA_API_URL` já existente.
+- **`.env` do site** (produção e homologação): `LARA_SIGNATURE_API_TOKEN` = token de escopo `assinatura-remota` gerado pela TI em Administração › Integrações do Lara (desde 18/11/2026; antes era o valor fixo `SIGNATURE_REMOTE_API_TOKEN`). Um por instalação: não copie o de produção na homologação nem o contrário, e não troque pelo `INTERNAL_LARA_API_TOKEN` (escopo `site`, recebe 403 aqui). A URL é a `INTERNAL_LARA_API_URL` já existente.
 - **No Lara**: `SIGNATURE_REMOTE_SITE_URL` = endereço público deste site (na homologação, com `/homolog`); `SIGNATURE_REMOTE_ALLOWED_IPS` = IP deste servidor.
 - **nginx — limite de corpo dos anexos**: o padrão é `client_max_body_size 1m`. Libere só a rota de anexos, nas duas instâncias (folga sobre o `max_kb` de 10 MB):
   ```nginx
@@ -100,7 +100,7 @@ Falta a TI confirmar a configuração do nginx da produção e da homologação 
 
 ## Mapeamento de recusas (`servidor.ts` → `normalizarRecusa`)
 
-- `unauthorized`, 401, ou 403 **sem** `reason` → 502 `{ reason: 'unauthorized' }` com mensagem genérica; log `[assinatura] <método> <caminho> -> <status>`. 403 com `reason` (ex.: `attachment_refused`) passa como veio.
+- `unauthorized`, 401, ou 403 **sem** `reason` → 502 `{ reason: 'unauthorized' }` com mensagem genérica; log `[assinatura] <método> <caminho> -> <status> reason=<reason da Lara>: … (<causa>)` — 401 = token ausente/errado/vencido/revogado/antigo desligado; 403 = token sem escopo `assinatura-remota` ou IP fora da lista. Nunca o token. 403 com `reason` (ex.: `attachment_refused`) passa como veio.
 - 429 sem `reason` → `rate_limited` (limite da Lara: 20/min em `link`/`abrir`, 120/min no resto).
 - 422 do Laravel (`{ message, errors }`) → `error` = primeira mensagem de campo; `errors` segue junto.
 - Corpo não-JSON → `server_error`. Lara fora do ar → 503 `unavailable`.

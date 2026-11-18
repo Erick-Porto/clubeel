@@ -40,6 +40,7 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 10. Mensagens da aprovação citam `LARA_API_URL`, mas a variável real é `INTERNAL_LARA_API_URL` (fila e action de login).
 11. `/cart` está no matcher do middleware, mas a página não existe.
 12. `useEffect` de `places/[slug]` que define `dateDifference` roda só na montagem (`[]`) enquanto `useIsMobile` começa `false` → no mobile pode usar 20 dias em vez de 8 no primeiro render.
+13. **Escopo do token `site` (17/11/2026) não inclui `webhooks/whatsapp` nem `image/{id}`** — o webhook ([10](10-webhook-whatsapp.md)) repassa à Lara com o `INTERNAL_LARA_API_TOKEN`; com o token novo a Lara deve responder 403 `Este token não tem acesso a esta API` (o site loga e responde 503 à Poli). Confirmar com a TI se o escopo `site` cobre o webhook ou se ele precisa de outro token. O avatar já não funcionava (item 1).
 
 ## Espaços sociais — pontos a confirmar com a Lara
 

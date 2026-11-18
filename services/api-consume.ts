@@ -1,6 +1,7 @@
 import { signOut } from "next-auth/react";
 import { toast } from "react-toastify";
 import { comBase } from "../utils/base-path";
+import { logarRecusaDoToken, MENSAGEM_LARA_INDISPONIVEL, recusaDoTokenDaLara } from "../utils/lara-token";
 
 const IS_SERVER = typeof window === 'undefined';
 const INTERNAL_API = process.env.INTERNAL_LARA_API_URL;
@@ -67,6 +68,14 @@ async function API_CONSUME<T = any>(
         const responseText = await response.text();
         let responseData = null;
         try { responseData = JSON.parse(responseText); } catch {}
+
+        // Token da aplicação recusado (só acontece no servidor; no cliente o
+        // proxy já trocou por 503): não é "credencial inválida" do sócio.
+        const recusa = IS_SERVER ? recusaDoTokenDaLara(response.status, responseData) : null;
+        if (recusa) {
+            logarRecusaDoToken('API_CONSUME', cleanEndpoint.split('/').slice(0, 2).join('/'), recusa);
+            return { data: null, status: 503, ok: false, message: MENSAGEM_LARA_INDISPONIVEL };
+        }
 
         if (IS_SERVER && !response.ok) {
             console.error(`[API_CONSUME ERROR] Status: ${response.status} | Body: ${responseText.substring(0, 200)}`);

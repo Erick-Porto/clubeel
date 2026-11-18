@@ -57,8 +57,8 @@ Arquivos: `.env` (produção/host) e `.env.development.local` (só `NEXTAUTH_URL
 | Variável | Onde é usada | Lado |
 |---|---|---|
 | `INTERNAL_LARA_API_URL` | `api-consume` (server), proxy, `utils/lara`, `aprovacao-api`, rota de mídia do replay | servidor |
-| `INTERNAL_LARA_API_TOKEN` | Bearer da aplicação para a Lara (proxy, `api-consume` server, `utils/lara`) | servidor |
-| `LARA_SIGNATURE_API_TOKEN` | Bearer da assinatura remota (`services/assinatura-api.ts`); mesmo valor de `SIGNATURE_REMOTE_API_TOKEN` no Lara. **Outro** token, não reaproveitar o das reservas | servidor |
+| `INTERNAL_LARA_API_TOKEN` | Bearer da aplicação para a Lara (proxy, `api-consume` server, `utils/lara`, `utils/ticket-guest`, `pages/api/ingressos/*`). Desde 17/11/2026 é **um token por instalação** (`lara_` + 48 caracteres), gerado pela TI em Administração › Integrações com escopo `site` e validade: produção e homologação têm tokens **diferentes**, não copie um no outro. Recusa do token → ver [03](03-proxy-backend-seguranca.md#recusa-do-token-da-aplicação) | servidor |
+| `LARA_SIGNATURE_API_TOKEN` | Bearer da assinatura remota (`services/assinatura-api.ts`); desde 18/11/2026 é um token por instalação (`lara_` + 48 caracteres) gerado pela TI em Administração › Integrações com escopo `assinatura-remota` — produção e homologação diferentes. **Outro** token: o `site` recebe 403 na assinatura e este recebe 403 no resto | servidor |
 | `NEXTAUTH_URL`, `NEXTAUTH_SECRET` | NextAuth | servidor |
 | `INTERNAL_EREDE_CLIENT_ID`, `INTERNAL_EREDE_SECRET_ID`, `INTERNAL_EREDE_API_URL`, `INTERNAL_EREDE_AUTH_URL` | `utils/erede.ts` | servidor |
 | `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | webhook (obrigatório; sem ele → 503) | servidor |

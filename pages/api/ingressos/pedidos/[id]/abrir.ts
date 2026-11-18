@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { guardRequest } from "../../../../../utils/sanitize";
 import { getClientIp, rateLimit } from "../../../../../utils/rate-limit";
 import { isGuestToken, parseOrderId, writeGuestToken } from "../../../../../utils/ticket-guest";
+import { logarRecusaDoToken, recusaDoTokenDaLara, RESPOSTA_LARA_INDISPONIVEL } from "../../../../../utils/lara-token";
 
 /**
  * Abre o pedido do não sócio pelo link do e-mail
@@ -55,6 +56,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data = await response.json();
     } catch {
         data = null;
+    }
+
+    const recusa = recusaDoTokenDaLara(response.status, data);
+    if (recusa) {
+        logarRecusaDoToken("ingressos", "tickets/guest-orders", recusa);
+        return res.status(503).json(RESPOSTA_LARA_INDISPONIVEL);
     }
 
     if (response.ok) writeGuestToken(res, orderId, token);

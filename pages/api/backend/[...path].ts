@@ -4,6 +4,7 @@ import { authOptions } from "../auth/[...nextauth]";
 import { guardRequest } from "../../../utils/sanitize";
 import { getClientIp, rateLimit } from "../../../utils/rate-limit";
 import { readGuestToken } from "../../../utils/ticket-guest";
+import { logarRecusaDoToken, recusaDoTokenDaLara, RESPOSTA_LARA_INDISPONIVEL } from "../../../utils/lara-token";
 
 interface SessionWithToken {
     accessToken?: string;
@@ -236,6 +237,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (isJson) {
             const data = await response.json();
+            // Token da aplicação recusado: erro de configuração. Repassar o
+            // 401/403 faria o cliente deslogar o sócio ("sessão expirou").
+            const recusa = recusaDoTokenDaLara(response.status, data);
+            if (recusa) {
+                logarRecusaDoToken('proxy', pathString, recusa);
+                return res.status(503).json(RESPOSTA_LARA_INDISPONIVEL);
+            }
             return res.status(response.status).json(data);
         } 
         

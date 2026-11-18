@@ -7,9 +7,10 @@
  * (services/aprovacao-api.ts); não usa `api-consume` nem o proxy
  * `pages/api/backend`, que carregam o token e a sessão do SÓCIO.
  *
- * Credencial própria: `LARA_SIGNATURE_API_TOKEN` (o mesmo valor de
- * `SIGNATURE_REMOTE_API_TOKEN` no Lara). NÃO é o `INTERNAL_LARA_API_TOKEN` das
- * reservas nem o JWT da aprovação — misturar daria a esta área os poderes das
+ * Credencial própria: `LARA_SIGNATURE_API_TOKEN`, token de escopo
+ * `assinatura-remota` gerado em Administração › Integrações do Lara (um por
+ * instalação). NÃO é o `INTERNAL_LARA_API_TOKEN` (escopo `site`, recebe 403
+ * aqui) nem o JWT da aprovação — misturar daria a esta área os poderes das
  * outras. A URL é a mesma `INTERNAL_LARA_API_URL` do resto do site.
  *
  * Toda chamada leva o IP e o navegador de quem assina (`X-Signer-Ip`,
