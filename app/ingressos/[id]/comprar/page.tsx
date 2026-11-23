@@ -9,6 +9,10 @@
  * O evento é RELIDO ao abrir (o lote vira sozinho: esgotou ou passou a data);
  * o site nunca usa preço guardado de outra tela. Criado o pedido, a pessoa
  * segue para a página dele, onde estão o contador e o pagamento.
+ *
+ * [sessões] Com a tela aberta, relê o evento quando passa o `sales_ends_at`
+ * mais próximo (a diária para de vender no fim da sessão): o checkout tira do
+ * pedido o que fechou antes de a pessoa reservar.
  */
 
 import { Suspense, useCallback, useEffect, useState } from "react";
@@ -29,6 +33,7 @@ import { PageHeader } from "../../../components/UI/ui";
 import MemberCheckout from "../../../components/Ticket/MemberCheckout";
 import GuestCheckout from "../../../components/Ticket/GuestCheckout";
 import EventUnavailable from "../../../components/Ticket/EventUnavailable";
+import useSalesChangeReload from "../../../components/Ticket/useSalesChangeReload";
 import { fetchEvent, type TicketEvent, type TicketFailure } from "../../../../services/ticket-api";
 import { eventHref, formatInstant, formatWhen, idFromParam } from "../../../../utils/ticket";
 
@@ -69,6 +74,8 @@ function BuyContent() {
     }, [load]);
 
     const reloadQuiet = useCallback(() => load(true), [load]);
+    useSalesChangeReload(event, reloadQuiet);
+
 
     let body: React.ReactNode;
     if (loading || status === "loading") {

@@ -19,9 +19,16 @@
  * para lugares. Os itens de lugar vão DEPOIS das entradas no pedido (é por essa
  * ordem que `tickets.N` e o `context.index` das recusas são lidos), e um pedido
  * só de lugar é aceito (a Lara decide).
+ *
+ * [sessões] Evento com vários horários na mesma data: cada ingresso escolhe a
+ * DATA, depois o HORÁRIO (se a data tiver mais de um) e o tipo daquele horário.
+ * O mesmo CPF pode estar em horários diferentes da mesma data (o "um por CPF"
+ * vale por sessão). Sessão que terminou não vende; se fecha com a tela aberta
+ * (o evento é relido) ou o pedido volta `session_closed`, o tipo sai do
+ * ingresso e a pessoa escolhe outro horário.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -37,14 +44,19 @@ import {
     type CouponPreview,
     type GuestTicketItem,
     type TicketEvent,
+    type TicketType,
 } from "../../../services/ticket-api";
 import {
     COUPON_REASONS,
     EVENT_RELOAD_REASONS,
     SEAT_REASONS,
+    closedTypeText,
     couponPreviewDiscount,
     cpfMatchesMasked,
     formatBRL,
+    formatDayHours,
+    groupTypes,
+    hasSessions,
     isBuyable,
     isMembersOnly,
     isSeatType,
@@ -65,7 +77,18 @@ interface Row {
     typeId: number | null;
     name: string;
     cpf: string;
+    /** [sessões] Data escolhida (`date` de `event.dates`) ou `"passport"`; só no evento com sessões. */
+    date: string | null;
+    /** [sessões] Horário (id do dia) escolhido na data. */
+    dayId: number | null;
 }
+
+const PASSPORT = "passport";
+
+const newRow = (key: number): Row => ({ key, typeId: null, name: "", cpf: "", date: null, dayId: null });
+
+/** Texto da sessão encerrada no campo do ingresso. */
+const SESSION_CLOSED_TEXT = "Esta sessão já terminou. Escolha outro horário.";
 
 /** Responsável pelo lugar: quem compra (padrão) ou outra pessoa. */
 interface SeatHolder {
@@ -106,7 +129,7 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
     const pathname = usePathname() ?? "";
     const nextKey = useRef(1);
     const [buyer, setBuyer] = useState<Buyer>({ cpf: "", name: "", email: "", phone: "" });
-    const [rows, setRows] = useState<Row[]>([{ key: 0, typeId: null, name: "", cpf: "" }]);
+    const [rows, setRows] = useState<Row[]>([newRow(0)]);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [coupon, setCoupon] = useState<CouponPreview | null>(null);
     const [couponError, setCouponError] = useState<string | null>(null);
@@ -124,6 +147,33 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
     const anyMembersOnly = event.types.some((type) => type.available && isMembersOnly(type.lot));
     // [v4] Só fala de passaporte se o evento tiver algum.
     const hasPassport = event.types.some((type) => type.validity === "passport");
+    const groups = useMemo(() => groupTypes(event), [event]);
+    // [sessões] Escolha em dois passos (data → horário) só quando há sessão.
+    const sessions = event.multi_day && hasSessions(event);
+
+    // [sessões] Evento relido (a tela relê no fim de cada sessão): ingresso de
+    // sessão que fechou perde o tipo, e o lugar marcado dela sai do carrinho.
+    const [seenEvent, setSeenEvent] = useState(event);
+    if (seenEvent !== event) {
+        setSeenEvent(event);
+        const closed = new Set(event.types.filter((type) => type.session_closed).map((type) => type.id));
+        const hit = rows.some((row) => row.typeId !== null && closed.has(row.typeId));
+        const seatHit = cart.seats.some((seat) => closed.has(seat.typeId));
+        if (hit || seatHit) {
+            setRows(rows.map((row) => (row.typeId !== null && closed.has(row.typeId) ? { ...row, typeId: null } : row)));
+            const marks: Record<string, string> = {};
+            rows.forEach((row, index) => {
+                if (row.typeId !== null && closed.has(row.typeId)) marks[`tickets.${index}.type_id`] = SESSION_CLOSED_TEXT;
+            });
+            setErrors((current) => ({ ...current, ...marks }));
+            cart.removeTypes(closed);
+            setFlash({
+                tone: "neutral",
+                title: "Uma sessão escolhida já terminou",
+                text: "Tiramos esse ingresso do pedido. Escolha outro horário antes de seguir.",
+            });
+        }
+    }
 
     const showFlash = (next: TicketFlash) => {
         setFlash(next);
@@ -149,7 +199,7 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
 
     const addRow = () => {
         if (max !== null && rows.length >= max) return;
-        setRows((current) => [...current, { key: nextKey.current++, typeId: null, name: "", cpf: "" }]);
+        setRows((current) => [...current, newRow(nextKey.current++)]);
     };
 
     const holderOf = (seatId: number) => seatHolders[seatId] ?? BUYER_HOLDER;
@@ -196,7 +246,14 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
         if (onlyDigits(buyer.phone).length < 10) found["buyer.phone"] = "Telefone com DDD.";
 
         rows.forEach((row, index) => {
-            if (row.typeId === null) found[`tickets.${index}.type_id`] = "Escolha o tipo de ingresso.";
+            if (row.typeId === null) {
+                found[`tickets.${index}.type_id`] =
+                    sessions && row.date === null
+                        ? "Escolha a data."
+                        : sessions && row.date !== PASSPORT && row.dayId === null
+                          ? "Escolha o horário."
+                          : "Escolha o tipo de ingresso.";
+            }
             if (!row.name.trim()) found[`tickets.${index}.holder_name`] = "Informe o nome de quem vai usar.";
             if (!isValidCpf(row.cpf)) found[`tickets.${index}.holder_cpf`] = "CPF inválido.";
         });
@@ -280,6 +337,16 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                 return;
             }
 
+            // [sessões] A sessão da diária terminou: o tipo sai do(s) ingresso(s) e do carrinho de lugares.
+            const closedType = reason === "session_closed" ? Number(result.context.type_id) : NaN;
+            const closedRows = Number.isInteger(closedType)
+                ? rows.flatMap((row, i) => (row.typeId === closedType ? [i] : []))
+                : [];
+            if (Number.isInteger(closedType)) {
+                setRows((current) => current.map((row) => (row.typeId === closedType ? { ...row, typeId: null } : row)));
+                cart.removeTypes(new Set([closedType]));
+            }
+
             // [lugares] Itens depois das entradas são os lugares do carrinho.
             const seatAt = (i: number) => (i >= rows.length ? cart.seats[i - rows.length] : undefined);
             const nextSeatErrors: Record<number, string> = {};
@@ -308,7 +375,10 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                 nextSeatErrors[seatPick.seatId] = refusalFlash(result).text || refusalFlash(result).title;
             }
             if (SEAT_REASONS.has(reason) || reason === "map_not_found") cart.handleRefusal(result, seatAt);
-            if (Number.isInteger(index) && index >= 0 && index < rows.length) {
+            closedRows.forEach((i) => {
+                fieldErrors[`tickets.${i}.type_id`] = SESSION_CLOSED_TEXT;
+            });
+            if (Number.isInteger(index) && index >= 0 && index < rows.length && reason !== "session_closed") {
                 const field =
                     typeof result.context.field === "string"
                         ? result.context.field
@@ -342,6 +412,100 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
     const fieldClass = (key: string, full = false) =>
         `${full ? style.fieldFull : style.field} ${errors[key] ? style.fieldInvalid : ""}`;
     const fieldError = (key: string) => errors[key] && <span className={style.fieldError}>{errors[key]}</span>;
+
+    /** Uma opção de tipo: o preço, ou por que não está à venda. */
+    const typeOption = (type: TicketType, label: string) => {
+        const price = priceFor(type.lot, "guest");
+        const buyable = isBuyable(type, "guest");
+        const why =
+            closedTypeText(type, event.days)?.toLowerCase() ??
+            (!type.available ? "indisponível" : isMembersOnly(type.lot) ? "só para sócios" : "");
+        return (
+            <option key={type.id} value={type.id} disabled={!buyable}>
+                {label}
+                {buyable && price !== null ? ` — ${formatBRL(price)}` : why ? ` (${why})` : ""}
+            </option>
+        );
+    };
+
+    /**
+     * [sessões] Data → horário → tipo. Data com um item só pula o horário. O
+     * tipo de um horário só, à venda, já vem escolhido.
+     */
+    const sessionFields = (row: Row, index: number): ReactNode => {
+        const date = row.date && row.date !== PASSPORT ? groups.dates.find((item) => item.date === row.date) : undefined;
+        const dayGroup = date?.days.find((group) => group.day.id === row.dayId);
+        const types = row.date === PASSPORT ? groups.passport : (dayGroup?.types ?? []);
+        const pickDay = (dayId: number | null, dateKey: string | null) => {
+            const group = groups.dates.find((item) => item.date === dateKey)?.days.find((item) => item.day.id === dayId);
+            const choices = dateKey === PASSPORT ? groups.passport : (group?.types ?? []);
+            const open = choices.filter((type) => isBuyable(type, "guest"));
+            setRow(index, { date: dateKey, dayId, typeId: open.length === 1 ? open[0].id : null });
+        };
+        return (
+            <>
+                <div className={fieldClass(`tickets.${index}.date`)}>
+                    <label htmlFor={`data-${row.key}`}>Data</label>
+                    <select
+                        id={`data-${row.key}`}
+                        value={row.date ?? ""}
+                        onChange={(e) => {
+                            const value = e.target.value || null;
+                            const picked = groups.dates.find((item) => item.date === value);
+                            // Data com um item só: o horário já está escolhido.
+                            pickDay(picked && !picked.sessions ? picked.days[0].day.id : null, value);
+                        }}
+                        disabled={pending}
+                    >
+                        <option value="">Escolha a data</option>
+                        {groups.dates.map((item) => (
+                            <option key={item.date} value={item.date} disabled={item.closed}>
+                                {item.label}
+                                {item.sessions ? ` · ${item.days.length} horários` : ""}
+                                {item.closed ? " (encerrado)" : ""}
+                            </option>
+                        ))}
+                        {groups.passport.length > 0 && <option value={PASSPORT}>Passaporte (todos os dias)</option>}
+                    </select>
+                </div>
+                {date?.sessions && (
+                    <div className={fieldClass(`tickets.${index}.day`)}>
+                        <label htmlFor={`horario-${row.key}`}>Horário</label>
+                        <select
+                            id={`horario-${row.key}`}
+                            value={row.dayId ?? ""}
+                            onChange={(e) => pickDay(e.target.value ? Number(e.target.value) : null, row.date)}
+                            disabled={pending}
+                        >
+                            <option value="">Escolha o horário</option>
+                            {date.days.map(({ day }) => (
+                                <option key={day.id} value={day.id} disabled={day.closed}>
+                                    {formatDayHours(day) || day.label}
+                                    {day.name ? ` · ${day.name}` : ""}
+                                    {day.closed ? " (sessão encerrada)" : ""}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+                <div className={fieldClass(`tickets.${index}.type_id`, true)}>
+                    <label htmlFor={`tipo-${row.key}`}>Tipo</label>
+                    <select
+                        id={`tipo-${row.key}`}
+                        value={row.typeId ?? ""}
+                        onChange={(e) => setRow(index, { typeId: e.target.value ? Number(e.target.value) : null })}
+                        disabled={pending || types.length === 0}
+                    >
+                        <option value="">
+                            {row.date === null ? "Escolha a data primeiro" : row.date !== PASSPORT && row.dayId === null ? "Escolha o horário primeiro" : "Escolha o tipo"}
+                        </option>
+                        {types.map((type) => typeOption(type, type.name))}
+                    </select>
+                    {fieldError(`tickets.${index}.type_id`)}
+                </div>
+            </>
+        );
+    };
 
     return (
         <div className={style.stack}>
@@ -452,33 +616,26 @@ export default function GuestCheckout({ event, onEventReload, onMemberMode }: Gu
                                 </div>
                             </div>
                             <div className={style.fieldGrid}>
-                                <div className={fieldClass(`tickets.${index}.type_id`, true)}>
-                                    <label htmlFor={`tipo-${row.key}`}>Tipo</label>
-                                    <select
-                                        id={`tipo-${row.key}`}
-                                        value={row.typeId ?? ""}
-                                        onChange={(e) => setRow(index, { typeId: e.target.value ? Number(e.target.value) : null })}
-                                        disabled={pending}
-                                    >
-                                        <option value="">Escolha o tipo</option>
-                                        {event.types.filter((type) => !isSeatType(type)).map((type) => {
-                                            const price = priceFor(type.lot, "guest");
-                                            const buyable = isBuyable(type, "guest");
-                                            const why = !type.available
-                                                ? "indisponível"
-                                                : isMembersOnly(type.lot)
-                                                  ? "só para sócios"
-                                                  : "";
-                                            return (
-                                                <option key={type.id} value={type.id} disabled={!buyable}>
-                                                    {typeLabel(type, event.days)}
-                                                    {buyable && price !== null ? ` — ${formatBRL(price)}` : why ? ` (${why})` : ""}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                    {fieldError(`tickets.${index}.type_id`)}
-                                </div>
+                                {sessions ? (
+                                    sessionFields(row, index)
+                                ) : (
+                                    <div className={fieldClass(`tickets.${index}.type_id`, true)}>
+                                        <label htmlFor={`tipo-${row.key}`}>Tipo</label>
+                                        <select
+                                            id={`tipo-${row.key}`}
+                                            value={row.typeId ?? ""}
+                                            onChange={(e) => setRow(index, { typeId: e.target.value ? Number(e.target.value) : null })}
+                                            disabled={pending}
+                                        >
+                                            <option value="">Escolha o tipo</option>
+                                            {event.types
+                                                .filter((type) => !isSeatType(type))
+                                                .map((type) => typeOption(type, typeLabel(type, event.days)))}
+                                        </select>
+                                        {fieldError(`tickets.${index}.type_id`)}
+                                    </div>
+                                )}
+
                                 <div className={fieldClass(`tickets.${index}.holder_name`)}>
                                     <label htmlFor={`nome-${row.key}`}>Nome de quem vai usar</label>
                                     <input id={`nome-${row.key}`} value={row.name} onChange={(e) => setRow(index, { name: e.target.value })} disabled={pending} />

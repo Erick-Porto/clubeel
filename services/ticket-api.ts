@@ -34,15 +34,45 @@ import { comBase } from "../utils/base-path";
 /** `event` = evento de um dia só; `day` = diária do `day_id`; `passport` = todos os dias. */
 export type TicketValidity = "event" | "day" | "passport" | string;
 
-export interface TicketEventDay {
+/**
+ * [sessões] Campos de data/horário de cada item de `days` (no evento, no tipo e
+ * no ingresso). Quando dois ou mais itens começam na MESMA data, eles são
+ * SESSÕES dessa data (`is_session`) — cada uma com diária, lotação e entrada
+ * próprias. Quem diz isso é a Lara; o site só agrupa por `date`.
+ */
+export interface TicketDaySchedule {
+    /** "2026-11-21": a data do início (para agrupar). */
+    date: string;
+    /** "Sáb 21/11": a data para exibir. */
+    date_label: string;
+    /** "09:00–10:30" (o fim leva a data se passar da meia-noite). */
+    time_label: string;
+    /** Há outro dia/sessão do evento na mesma data. */
+    is_session: boolean;
+    /** O dia ou a sessão já terminou. */
+    closed: boolean;
+}
+
+export interface TicketEventDay extends TicketDaySchedule {
     id: number;
     name: string | null;
-    /** Pronto para a tela: "Sábado (13/02)" ou "Sáb 13/02". */
+    /**
+     * Pronto para a tela: "Sábado (13/02)" ou "Sáb 13/02". [sessões] Na sessão
+     * leva o horário: "Sáb 21/11 · 09:00–10:30" ou "Manhã (21/11 · 09:00–10:30)".
+     */
     label: string;
     starts_at: string | null;
     ends_at: string | null;
     /** `null` = sem lotação. */
     capacity_left: number | null;
+}
+
+/** [sessões] Uma data do evento e os ids de `days[]` que começam nela, na ordem do horário. */
+export interface TicketEventDate {
+    date: string;
+    /** "Sáb 21/11". */
+    label: string;
+    days: number[];
 }
 
 export interface TicketLot {
@@ -76,6 +106,14 @@ export interface TicketType {
     seats_free: number | null;
     /** Só com `true` (e `lot`) o tipo pode ser comprado agora. */
     available: boolean;
+    /**
+     * [sessões] A sessão (ou o dia) da diária já terminou: `available` vem
+     * `false` e `lot`/`next_lot` vêm `null`. A Lara não vende a diária depois do
+     * fim do dia/sessão dela.
+     */
+    session_closed: boolean;
+    /** [sessões] Até quando o tipo vende: o fim da sessão, na diária; o `sales_ends_at` do evento, nos outros. */
+    sales_ends_at: string | null;
     /** O lote à venda agora (a Lara já escolheu). */
     lot: TicketLot | null;
     next_lot: TicketLot | null;
@@ -99,6 +137,8 @@ export interface TicketEvent {
     capacity_left: number | null;
     multi_day: boolean;
     days: TicketEventDay[];
+    /** [sessões] As datas do evento, cada uma com os ids de `days` dela (sessões, se mais de um). */
+    dates: TicketEventDate[];
     types: TicketType[];
     /** [lugares] Algum tipo ativo é de lugar marcado. */
     has_map: boolean;
@@ -207,7 +247,7 @@ export interface SeatMap {
     seats: SeatMapSeat[];
 }
 
-export interface OrderTicketDay {
+export interface OrderTicketDay extends TicketDaySchedule {
     id: number;
     name: string | null;
     label: string;
@@ -371,16 +411,67 @@ function unwrap(raw: unknown, key: string): unknown {
     return raw;
 }
 
+/** Data "AAAA-MM-DD" de um instante, no fuso do clube (só para resposta antiga, sem `date`). */
+const clubDateKey = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+});
+
+/**
+ * [sessões] Os campos de data/horário vêm prontos da Lara. Sem eles (resposta
+ * de antes da mudança), cada item fica na própria data, sem sessão — como era.
+ */
+function toSchedule(obj: Obj, label: string): TicketDaySchedule {
+    const startsAt = Date.parse(String(obj.starts_at ?? ""));
+    const date =
+        toStringOrNull(obj.date) ?? (Number.isNaN(startsAt) ? `dia-${toNumber(obj.id)}` : clubDateKey.format(startsAt));
+    return {
+        date,
+        date_label: String(obj.date_label ?? label),
+        time_label: String(obj.time_label ?? ""),
+        is_session: obj.is_session === true,
+        closed: obj.closed === true,
+    };
+}
+
 function toDay(raw: unknown): TicketEventDay {
     const obj = asObj(raw);
+    const label = String(obj.label ?? obj.name ?? "");
     return {
         id: toNumber(obj.id),
         name: toStringOrNull(obj.name),
-        label: String(obj.label ?? obj.name ?? ""),
+        label,
         starts_at: toStringOrNull(obj.starts_at),
         ends_at: toStringOrNull(obj.ends_at),
         capacity_left: toNumberOrNull(obj.capacity_left),
+        ...toSchedule(obj, label),
     };
+}
+
+/**
+ * [sessões] `dates` da Lara (só ids que existem em `days`). Sem `dates`
+ * (resposta antiga), agrupa os `days` pela `date` deles, na ordem em que vieram.
+ */
+function toDates(raw: unknown, days: TicketEventDay[]): TicketEventDate[] {
+    const known = new Set(days.map((day) => day.id));
+    const fromLara = listOf(raw, "dates")
+        .map((item) => {
+            const obj = asObj(item);
+            const ids = Array.isArray(obj.days) ? obj.days.map((id) => toNumber(id)).filter((id) => known.has(id)) : [];
+            return { date: String(obj.date ?? ""), label: String(obj.label ?? obj.date ?? ""), days: ids };
+        })
+        .filter((date) => date.days.length > 0);
+    if (fromLara.length > 0) return fromLara;
+
+    const out: TicketEventDate[] = [];
+    for (const day of days) {
+        const found = out.find((date) => date.date === day.date);
+        if (found) found.days.push(day.id);
+        else out.push({ date: day.date, label: day.date_label, days: [day.id] });
+    }
+    return out;
 }
 
 function toLot(raw: unknown): TicketLot | null {
@@ -411,6 +502,8 @@ function toType(raw: unknown): TicketType {
         seat_category: toStringOrNull(obj.seat_category),
         seats_free: toNumberOrNull(obj.seats_free),
         available: obj.available === true,
+        session_closed: obj.session_closed === true,
+        sales_ends_at: toStringOrNull(obj.sales_ends_at),
         lot: toLot(obj.lot),
         next_lot: toLot(obj.next_lot),
     };
@@ -418,6 +511,7 @@ function toType(raw: unknown): TicketType {
 
 function toEvent(raw: unknown): TicketEvent {
     const obj = asObj(unwrap(raw, "event"));
+    const days = listOf(obj.days, "days").map(toDay);
     return {
         id: toNumber(obj.id),
         title: String(obj.title ?? ""),
@@ -433,7 +527,8 @@ function toEvent(raw: unknown): TicketEvent {
         max_per_order: toNumberOrNull(obj.max_per_order),
         capacity_left: toNumberOrNull(obj.capacity_left),
         multi_day: obj.multi_day === true,
-        days: listOf(obj.days, "days").map(toDay),
+        days,
+        dates: toDates(obj.dates, days),
         types: listOf(obj.types, "types").map(toType),
         rules: toStringOrNull(obj.rules),
         has_map: obj.has_map === true,
@@ -530,14 +625,17 @@ function toPerson(raw: unknown): TitlePerson {
 function toOrderDay(raw: unknown): OrderTicketDay | null {
     const obj = objOrNull(raw);
     if (!obj) return null;
+    const label = String(obj.label ?? obj.name ?? "");
     return {
         id: toNumber(obj.id),
         name: toStringOrNull(obj.name),
-        label: String(obj.label ?? obj.name ?? ""),
+        label,
         starts_at: toStringOrNull(obj.starts_at),
         ends_at: toStringOrNull(obj.ends_at),
+        ...toSchedule(obj, label),
     };
 }
+
 
 function toNamed(raw: unknown): { id: number; name: string } | null {
     const obj = objOrNull(raw);

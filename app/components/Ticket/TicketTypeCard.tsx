@@ -6,8 +6,17 @@ import { faChair, faFire } from "@fortawesome/free-solid-svg-icons";
 import ui from "../../../styles/ui.module.css";
 import style from "../../../styles/ticket.module.css";
 import { Pill } from "../UI/ui";
-import type { TicketLot, TicketType } from "../../../services/ticket-api";
-import { SEAT_NOT_ENTRY, fewLeft, formatBRL, formatInstant, isMembersOnly, isSeatType, type BuyerKind } from "../../../utils/ticket";
+import type { TicketEventDay, TicketLot, TicketType } from "../../../services/ticket-api";
+import {
+    SEAT_NOT_ENTRY,
+    closedTypeText,
+    fewLeft,
+    formatBRL,
+    formatInstant,
+    isMembersOnly,
+    isSeatType,
+    type BuyerKind,
+} from "../../../utils/ticket";
 
 interface TicketTypeCardProps {
     type: TicketType;
@@ -17,6 +26,8 @@ interface TicketTypeCardProps {
     loginHref?: string;
     /** Nome a mostrar (ex.: com o dia, no lugar marcado do evento de vários dias). */
     title?: string;
+    /** [sessões] Os dias do evento: dizem se o tipo encerrado é de sessão ("Sessão encerrada") ou de dia. */
+    days?: TicketEventDay[];
 }
 
 function Prices({ lot, kind }: { lot: TicketLot; kind: BuyerKind }) {
@@ -48,11 +59,15 @@ function Prices({ lot, kind }: { lot: TicketLot; kind: BuyerKind }) {
  *
  * [lugares] Tipo de lugar marcado: "N lugares livres" (`seats_free`) e o aviso
  * de que não é entrada.
+ *
+ * [sessões] Diária de sessão (ou dia) que já terminou (`session_closed`):
+ * "Sessão encerrada", sem preço nem próximo lote.
  */
-export default function TicketTypeCard({ type, kind, loginHref, title }: TicketTypeCardProps) {
-    const lot = type.available ? type.lot : null;
+export default function TicketTypeCard({ type, kind, loginHref, title, days = [] }: TicketTypeCardProps) {
+    const closed = closedTypeText(type, days);
+    const lot = type.available && !closed ? type.lot : null;
     const seat = isSeatType(type);
-    const soldOut = !lot && (type.lot?.remaining === 0 || (seat && type.seats_free === 0));
+    const soldOut = !lot && !closed && (type.lot?.remaining === 0 || (seat && type.seats_free === 0));
 
     return (
         <article className={`${style.typeCard} ${lot ? "" : style.typeOff}`}>
@@ -66,11 +81,11 @@ export default function TicketTypeCard({ type, kind, loginHref, title }: TicketT
                         </Pill>
                     )
                 ) : (
-                    <Pill kind="off">{soldOut ? "Esgotado" : "Indisponível"}</Pill>
+                    <Pill kind="off">{closed ?? (soldOut ? "Esgotado" : "Indisponível")}</Pill>
                 )}
             </div>
             {type.description && <p className={style.typeDesc}>{type.description}</p>}
-            {seat && (
+            {seat && !closed && (
                 <span className={style.hint}>
                     <FontAwesomeIcon icon={faChair} />{" "}
                     {lot && type.seats_free !== null && (
@@ -105,7 +120,8 @@ export default function TicketTypeCard({ type, kind, loginHref, title }: TicketT
                         </span>
                     )}
                 </>
-            ) : type.next_lot ? (
+            ) : type.next_lot && !closed ? (
+
                 <div className={style.stack}>
                     <p className={style.nextLot}>
                         Próximo lote{type.next_lot.name ? ` (${type.next_lot.name})` : ""}

@@ -50,6 +50,7 @@ import {
 import {
     SEAT_NOT_ENTRY,
     captiveReleaseText,
+    closedTypeText,
     formatBRL,
     isBuyable,
     isMembersOnly,
@@ -120,6 +121,14 @@ export function useSeatCart() {
         setSeats((current) => current.filter((item) => !seatIds.includes(item.seatId)));
     }, []);
 
+    /** [sessões] Tira do carrinho os lugares destes tipos (a sessão deles terminou). */
+    const removeTypes = useCallback((typeIds: Set<number>) => {
+        setSeats((current) => {
+            const next = current.filter((item) => !typeIds.has(item.typeId));
+            return next.length === current.length ? current : next;
+        });
+    }, []);
+
     /**
      * Recusas de lugar no pedido. `seatAt(index)` traduz o `context.index` do
      * item recusado no lugar do carrinho (o checkout sabe a ordem dos itens).
@@ -176,6 +185,7 @@ export function useSeatCart() {
         toggle,
         remove: (seatId: number) => removeMany([seatId]),
         removeMany,
+        removeTypes,
         handleRefusal,
     };
 }
@@ -241,13 +251,15 @@ export function SeatSection({ event, kind, cart, max, renderHolder, errors, disa
                     const buyable = isBuyable(type, kind) && type.map_id !== null;
                     const price = priceFor(type.lot, kind);
                     const why =
-                        type.seats_free === 0
+                        closedTypeText(type, event.days) ??
+                        (type.seats_free === 0
                             ? "Esgotado"
                             : !type.available
                               ? "Indisponível"
                               : kind === "guest" && isMembersOnly(type.lot)
                                 ? "Só para sócios"
-                                : null;
+                                : null);
+
                     return (
                         <div key={type.id} className={`${style.seatType} ${buyable ? "" : style.typeOff}`}>
                             <div className={style.seatTypeInfo}>

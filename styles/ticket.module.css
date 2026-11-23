@@ -209,6 +209,46 @@
   color: var(--ink-2);
 }
 
+/* [sessões] Vários horários na mesma data: um sub-bloco por horário, com a
+   linha na cor do módulo à esquerda. */
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sessionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 14px;
+  border-left: 3px solid rgb(var(--a-ingressos-ink-rgb) / .35);
+}
+
+.sessionClosed {
+  border-left-color: var(--line);
+}
+
+.sessionTitle {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* [sessões] Escolha da diária do sócio quando a data tem vários horários:
+   a data numa linha e os horários abaixo. */
+.sessionDate {
+  grid-column: 1 / -1;
+  font-size: 14px;
+  font-weight: 700;
+  padding-top: 4px;
+}
+
+.sessionPick {
+  padding-left: 14px;
+}
+
 /* Passaporte em destaque: borda e fundo na cor do módulo. */
 .passport {
   padding: 16px;
@@ -697,16 +737,34 @@
   height: auto;
 }
 
-/* Código para digitar na portaria: grande, legível. */
+/* Código para digitar na portaria: grande, monoespaçado, abaixo do QR. As
+   letras e os números ficam com um respiro entre eles ("CT-  48291"); o
+   respiro é só visual (copiar leva o código como veio). */
 .code {
   align-self: center;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: .08em;
+  line-height: 1.1;
+  text-align: center;
+  overflow-wrap: anywhere;
   user-select: all;
 }
+
+.codePrefix {
+  margin-right: .35em;
+  color: var(--ink-2);
+}
+
+.codeHint {
+  align-self: center;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
 
 .entries {
   list-style: none;

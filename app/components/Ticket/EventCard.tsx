@@ -39,7 +39,12 @@ export default function EventCard({ event, kind }: { event: TicketEvent; kind: B
     return (
         <Link href={eventHref(event)} className={ui.card}>
             <Media src={event.image_url} alt={`Imagem de ${event.title}`} area="ingressos" icon={faTicket}>
-                {event.multi_day && event.days.length > 1 && <MediaTag>{event.days.length} dias</MediaTag>}
+                {/* [sessões] Conta as datas, não as sessões: 1 + 4 horários = "2 dias". */}
+                {event.multi_day && event.dates.length > 1 && <MediaTag>{event.dates.length} dias</MediaTag>}
+                {event.multi_day && event.dates.length === 1 && event.days.length > 1 && (
+                    <MediaTag>{event.days.length} horários</MediaTag>
+                )}
+
             </Media>
             <div className={ui.cardBody}>
                 <EventStatusPill event={event} />

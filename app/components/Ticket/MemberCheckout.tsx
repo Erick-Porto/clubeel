@@ -12,6 +12,12 @@
  * não escolhe a diária dele; quem tem qualquer dia não escolhe o passaporte.
  * Se cruza com outra diária ou se o dia lotou, quem decide é a Lara no pedido.
  *
+ * [sessões] Data com vários horários: a data numa linha e, abaixo, uma caixa
+ * por horário (`time_label`). A mesma pessoa pode marcar mais de um horário da
+ * mesma data (o "um por CPF" vale por sessão). Sessão que terminou não vende
+ * ("Sessão encerrada"); se ela fecha com a tela aberta (o evento é relido) ou o
+ * pedido volta `session_closed`, o tipo sai das escolhas.
+ *
  * [lugares] Mesas/bistrôs/camarotes num bloco próprio: o lugar é escolhido no
  * mapa e fica no nome de um responsável do título (padrão: o próprio sócio). O
  * "um ingresso por pessoa" não vale para o lugar, e o `max_per_order` vale para
@@ -49,6 +55,7 @@ import {
     formatBRL,
     formatDayHours,
     groupTypes,
+    hasSessions,
     isBuyable,
     isSilent,
     orderHref,
@@ -70,6 +77,27 @@ interface PersonPick {
 }
 
 const EMPTY_PICK: PersonPick = { on: false, type: null, passport: false, days: {} };
+
+/**
+ * [sessões] As escolhas sem os tipos destes ids (a sessão deles terminou). O
+ * mesmo objeto se nada mudou.
+ */
+function withoutTypes(picks: Record<string, PersonPick>, ids: Set<number>): Record<string, PersonPick> {
+    let changed = false;
+    const next: Record<string, PersonPick> = {};
+    for (const [ref, pick] of Object.entries(picks)) {
+        const days: Record<number, number> = {};
+        for (const [dayId, typeId] of Object.entries(pick.days)) if (!ids.has(typeId)) days[Number(dayId)] = typeId;
+        const type = pick.type !== null && ids.has(pick.type) ? null : pick.type;
+        if (type !== pick.type || Object.keys(days).length !== Object.keys(pick.days).length) {
+            changed = true;
+            next[ref] = { ...pick, type, days };
+        } else {
+            next[ref] = pick;
+        }
+    }
+    return changed ? next : picks;
+}
 
 /** Recusas em que a lista do título mudou: relê `my-title`. */
 const TITLE_RELOAD_REASONS = new Set(["already_has_ticket", "invalid_holder", "holder_not_in_title"]);
@@ -103,6 +131,28 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
     const buyable = (types: TicketType[]) => types.filter((type) => isBuyable(type, "member"));
     const singleTypes = buyable(groups.single);
     const passportTypes = buyable(groups.passport);
+    const sessions = hasSessions(event);
+
+    // [sessões] Evento relido (a tela relê no fim de cada sessão): o que fechou
+    // sai das escolhas e do carrinho de lugares, com um aviso.
+    const [seenEvent, setSeenEvent] = useState(event);
+    if (seenEvent !== event) {
+        setSeenEvent(event);
+        const closed = new Set(event.types.filter((type) => type.session_closed).map((type) => type.id));
+        if (closed.size > 0) {
+            const next = withoutTypes(picks, closed);
+            const seatDropped = cart.seats.some((seat) => closed.has(seat.typeId));
+            if (next !== picks || seatDropped) {
+                setPicks(next);
+                cart.removeTypes(closed);
+                setFlash({
+                    tone: "neutral",
+                    title: "Uma sessão escolhida já terminou",
+                    text: "Tiramos esse ingresso do pedido. Confira antes de seguir.",
+                });
+            }
+        }
+    }
 
     const loadTitle = useCallback(async () => {
         const result = await fetchMyTitle(event.id);
@@ -201,7 +251,11 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
             const pick = picks[person.ref];
             if (!pick?.on) continue;
             const chosen = !event.multi_day || pick.passport ? pick.type !== null : Object.keys(pick.days).length > 0;
-            if (!chosen) missing[person.ref] = event.multi_day ? "Escolha os dias ou o passaporte." : "Escolha o tipo de ingresso.";
+            if (!chosen) {
+                missing[person.ref] = event.multi_day
+                    ? `Escolha os ${sessions ? "horários" : "dias"}${passportTypes.length > 0 ? " ou o passaporte" : ""}.`
+                    : "Escolha o tipo de ingresso.";
+            }
         }
         if (Object.keys(missing).length > 0) {
             setPersonErrors(missing);
@@ -226,6 +280,15 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
             if (COUPON_REASONS.has(reason)) {
                 setCouponError(refusalFlash(result).text || refusalFlash(result).title);
                 return;
+            }
+            // [sessões] A sessão da diária terminou: o tipo sai das escolhas (e o evento é relido abaixo).
+            if (reason === "session_closed") {
+                const typeId = Number(result.context.type_id);
+                if (Number.isInteger(typeId)) {
+                    const ids = new Set([typeId]);
+                    setPicks((current) => withoutTypes(current, ids));
+                    cart.removeTypes(ids);
+                }
             }
             // Marca a pessoa do item recusado (índice do item no pedido) ou pelo CPF mascarado.
             const index = Number(result.context.index);
@@ -335,7 +398,9 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
 
                                 {blocked && (
                                     <div className={style.personBody}>
-                                        <span className={style.taken}>Já tem ingresso{event.multi_day ? " em todos os dias" : ""}</span>
+                                        <span className={style.taken}>
+                                            Já tem ingresso{event.multi_day ? (sessions ? " em todos os horários" : " em todos os dias") : ""}
+                                        </span>
                                     </div>
                                 )}
 
@@ -397,14 +462,25 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
                                                     </select>
                                                 ) : (
                                                     <div className={style.dayPick}>
-                                                        {groups.days.map(({ day, types }) => {
+                                                        {groups.dates.map((date) => (
+                                                            <Fragment key={date.date}>
+                                                                {/* [sessões] Vários horários: a data e, abaixo, os horários. */}
+                                                                {date.sessions && (
+                                                                    <span className={style.sessionDate}>
+                                                                        {date.label}
+                                                                        {date.closed && <span className={style.taken}> · Encerrado</span>}
+                                                                    </span>
+                                                                )}
+                                                                {date.days.map(({ day, types }) => {
                                                             const dayTypes = buyable(types);
                                                             const taken = person.days_taken.includes(day.id);
                                                             const chosen = pick.days[day.id];
+                                                            const closed = day.closed || types.some((type) => type.session_closed);
+                                                            const where = date.sessions ? "neste horário" : "neste dia";
                                                             const id = `dia-${person.ref}-${day.id}`;
                                                             return (
                                                                 <Fragment key={day.id}>
-                                                                    <label htmlFor={id}>
+                                                                    <label htmlFor={id} className={date.sessions ? style.sessionPick : undefined}>
                                                                         <input
                                                                             type="checkbox"
                                                                             className={style.check}
@@ -418,13 +494,28 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
                                                                                 updatePick(person.ref, { days });
                                                                             }}
                                                                         />
-                                                                        {day.label}
-                                                                        <span className={style.dayHours}>{formatDayHours(day)}</span>
+                                                                        {date.sessions ? (
+                                                                            <>
+                                                                                <span className={style.dayHours}>{formatDayHours(day)}</span>
+                                                                                {day.name}
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                {day.label}
+                                                                                <span className={style.dayHours}>{formatDayHours(day)}</span>
+                                                                            </>
+                                                                        )}
                                                                     </label>
                                                                     {taken ? (
-                                                                        <span className={style.taken}>Já tem ingresso neste dia</span>
+                                                                        <span className={style.taken}>Já tem ingresso {where}</span>
                                                                     ) : dayTypes.length === 0 ? (
-                                                                        <span className={style.taken}>Sem ingresso à venda neste dia</span>
+                                                                        <span className={style.taken}>
+                                                                            {closed
+                                                                                ? day.is_session
+                                                                                    ? "Sessão encerrada"
+                                                                                    : "Encerrado"
+                                                                                : `Sem ingresso à venda ${where}`}
+                                                                        </span>
                                                                     ) : chosen !== undefined && dayTypes.length > 1 ? (
                                                                         <select
                                                                             aria-label={`Tipo da diária de ${day.label} para ${person.name}`}
@@ -443,8 +534,11 @@ export default function MemberCheckout({ event, onEventReload, onGuestMode }: Me
                                                                     )}
                                                                 </Fragment>
                                                             );
-                                                        })}
+                                                                })}
+                                                            </Fragment>
+                                                        ))}
                                                     </div>
+
                                                 )}
                                             </>
                                         )}

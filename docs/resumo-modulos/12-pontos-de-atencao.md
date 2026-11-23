@@ -19,6 +19,8 @@ Levantamento feito na leitura do código (commit `5987f33`). Nada aqui foi corri
 | Cookies do NextAuth com nome `*.homolog` | Só na homologação; evita colisão com a produção no mesmo domínio. |
 | Ingressos se chama "Eventos", mas a URL é `/ingressos` (e torneios seguem em `/torneios`) | Intencional (2026-11-04): o link do e-mail da Lara ao não sócio é `/ingressos/pedido/{id}?token=…`; mudar a URL quebraria os links já enviados. Só nomes e navegação mudaram. Ver [17](17-ingressos.md). |
 | Espaços sociais fora do menu em produção, mas acessível por URL | Liberação parcial de 2026-10-29 (Eventos — ingressos e torneios — saiu da lista em 2026-11-04): só as entradas somem (`utils/modulos.ts`); bloquear as rotas foi descartado pelo clube. Ver [01](01-infraestrutura-config.md#módulos-não-liberados-em-produção). |
+| Ingressos: mesmo CPF em duas sessões da mesma data passa no checkout | Intencional (2026-11-23): o "um por CPF" vale por sessão (cada sessão é um item de `days`). O site só barra o mesmo `day_id`; a Lara decide o resto. Ver [17](17-ingressos.md#sessões-vários-horários-no-mesmo-dia). |
+| Ingressos: o código do ingresso não é validado (nada de `^ING-`) | Os códigos novos são iniciais do evento + 5 números (`CT-48291`) e os antigos `ING-…` continuam valendo: o site mostra o que vier. |
 | Luz: reler a disponibilidade após cada POST | O estado "aceso" só pode vir da Lara (multi-dispositivo, outros sócios). |
 | Torneios: lista, detalhe e chaveamento fora do matcher | Decisão de negócio (públicos); a Lara só devolve o que está publicado. |
 | `TokenValidator` desligado em `/torneios/equipe` e `/torneios/<id>/equipe` | A tela usa o código de lançamento; um login de sócio vencido no mesmo celular não pode tirá-la do ar. |

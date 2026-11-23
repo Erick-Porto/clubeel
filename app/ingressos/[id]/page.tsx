@@ -10,6 +10,13 @@
  * horário, e o passaporte à parte, em destaque ("vale todos os dias") — só se
  * a Lara mandou algum tipo `passport`.
  *
+ * [sessões] Os dias vêm agrupados pela data (`event.dates`). Data com mais de
+ * um horário (sessões): um bloco da data com um sub-bloco por horário
+ * (`time_label`); data com um item só: o bloco de dia de sempre. Diária de
+ * sessão (ou dia) que já terminou: "Sessão encerrada", sem compra; data com
+ * tudo encerrado: "Encerrado". A tela relê o evento quando passa o
+ * `sales_ends_at` mais próximo.
+ *
  * [lugares] Os tipos de lugar marcado (mesa, bistrô, camarote) num bloco
  * próprio, com "N lugares livres" e o aviso de que não é entrada.
  *
@@ -41,6 +48,7 @@ import { Media, Note } from "../../components/UI/ui";
 import { EventStatusPill } from "../../components/Ticket/EventCard";
 import EventUnavailable from "../../components/Ticket/EventUnavailable";
 import TicketTypeCard from "../../components/Ticket/TicketTypeCard";
+import useSalesChangeReload from "../../components/Ticket/useSalesChangeReload";
 import { fetchEvent, type TicketEvent, type TicketFailure } from "../../../services/ticket-api";
 import {
     buyHref,
@@ -65,25 +73,32 @@ export default function TicketEventPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<TicketFailure | null>(null);
 
-    const load = useCallback(async () => {
-        if (!eventId) {
+    const load = useCallback(
+        async (quiet = false) => {
+            if (!eventId) {
+                setLoading(false);
+                return;
+            }
+            if (!quiet) setLoading(true);
+            const result = await fetchEvent(eventId);
+            if (result.ok) {
+                setEvent(result.data);
+                setError(null);
+            } else if (!quiet || result.status === 404) {
+                setError(result);
+            }
             setLoading(false);
-            return;
-        }
-        setLoading(true);
-        const result = await fetchEvent(eventId);
-        if (result.ok) {
-            setEvent(result.data);
-            setError(null);
-        } else {
-            setError(result);
-        }
-        setLoading(false);
-    }, [eventId]);
+        },
+        [eventId]
+    );
 
     useEffect(() => {
         load();
     }, [load]);
+
+    // [sessões] Uma diária para de vender no fim da sessão: relê sem piscar a tela.
+    const reloadQuiet = useCallback(() => load(true), [load]);
+    useSalesChangeReload(event, reloadQuiet);
 
     const kind = status === "authenticated" ? "member" : "guest";
     const loginHref = `/login?callbackUrl=${encodeURIComponent(pathname)}`;
@@ -103,6 +118,7 @@ export default function TicketEventPage() {
                 tone="alert"
                 action={
                     <button type="button" className={`${ui.btn} ${ui.btnPrimary}`} onClick={() => load()}>
+
                         <FontAwesomeIcon icon={faRotateRight} /> Tentar novamente
                     </button>
                 }
@@ -118,7 +134,13 @@ export default function TicketEventPage() {
                   ? "Vendas encerradas."
                   : null;
         const typeCard = (type: TicketEvent["types"][number]) => (
-            <TicketTypeCard key={type.id} type={type} kind={kind} loginHref={kind === "guest" ? loginHref : undefined} />
+            <TicketTypeCard
+                key={type.id}
+                type={type}
+                kind={kind}
+                days={event.days}
+                loginHref={kind === "guest" ? loginHref : undefined}
+            />
         );
 
         body = (
@@ -230,20 +252,57 @@ export default function TicketEventPage() {
                                     <div className={style.typeList}>{groups.passport.map(typeCard)}</div>
                                 </div>
                             )}
-                            {groups.days.map(({ day, types }) => (
-                                <div key={day.id} className={style.dayBlock}>
-                                    <div className={style.dayHead}>
-                                        <h3 className={style.dayTitle}>{day.label}</h3>
-                                        <span className={style.dayHours}>{formatDayHours(day)}</span>
-                                        {day.capacity_left === 0 && <span className={style.taken}>Dia esgotado</span>}
+                            {groups.dates.map((date) =>
+                                date.sessions ? (
+                                    // [sessões] Vários horários na mesma data: a data e, dentro, cada horário.
+                                    <div key={date.date} className={style.dayBlock}>
+                                        <div className={style.dayHead}>
+                                            <h3 className={style.dayTitle}>{date.label}</h3>
+                                            <span className={style.hint}>{date.days.length} horários</span>
+                                            {date.closed && <span className={style.taken}>Encerrado</span>}
+                                        </div>
+                                        <div className={style.sessionList}>
+                                            {date.days.map(({ day, types }) => (
+                                                <div key={day.id} className={`${style.sessionBlock} ${day.closed ? style.sessionClosed : ""}`}>
+                                                    <div className={style.dayHead}>
+                                                        <h4 className={style.sessionTitle}>{formatDayHours(day) || day.label}</h4>
+                                                        {day.name && <span className={style.hint}>{day.name}</span>}
+                                                        {day.closed ? (
+                                                            <span className={style.taken}>Sessão encerrada</span>
+                                                        ) : (
+                                                            day.capacity_left === 0 && <span className={style.taken}>Sessão esgotada</span>
+                                                        )}
+                                                    </div>
+                                                    {types.length === 0 ? (
+                                                        <p className={style.hint}>Sem ingresso à venda neste horário.</p>
+                                                    ) : (
+                                                        <div className={style.typeList}>{types.map(typeCard)}</div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    {types.length === 0 ? (
-                                        <p className={style.hint}>Sem diária à venda neste dia.</p>
-                                    ) : (
-                                        <div className={style.typeList}>{types.map(typeCard)}</div>
-                                    )}
-                                </div>
-                            ))}
+                                ) : (
+                                    date.days.map(({ day, types }) => (
+                                        <div key={day.id} className={style.dayBlock}>
+                                            <div className={style.dayHead}>
+                                                <h3 className={style.dayTitle}>{day.label}</h3>
+                                                <span className={style.dayHours}>{formatDayHours(day)}</span>
+                                                {day.closed ? (
+                                                    <span className={style.taken}>Encerrado</span>
+                                                ) : (
+                                                    day.capacity_left === 0 && <span className={style.taken}>Dia esgotado</span>
+                                                )}
+                                            </div>
+                                            {types.length === 0 ? (
+                                                <p className={style.hint}>Sem diária à venda neste dia.</p>
+                                            ) : (
+                                                <div className={style.typeList}>{types.map(typeCard)}</div>
+                                            )}
+                                        </div>
+                                    ))
+                                )
+                            )}
                         </>
                     ) : (
                         <div className={style.typeList}>{groups.single.map(typeCard)}</div>
@@ -268,6 +327,7 @@ export default function TicketEventPage() {
                                     key={type.id}
                                     type={type}
                                     kind={kind}
+                                    days={event.days}
                                     title={typeLabel(type, event.days)}
                                     loginHref={kind === "guest" ? loginHref : undefined}
                                 />

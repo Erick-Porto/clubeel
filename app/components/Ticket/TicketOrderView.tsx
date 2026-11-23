@@ -15,6 +15,9 @@
  * [lugares] O ingresso de lugar marcado (`kind: "seat"`) aparece com o lugar
  * em destaque e "Não é entrada": o QR dele serve para a recepção conferir o
  * responsável, não para entrar.
+ *
+ * [sessões] A diária de sessão mostra data e horário ("Sessão · Sáb 21/11 ·
+ * 09:00–10:30"): o `label` do dia já vem com o horário da Lara.
  */
 
 import { useRef, useState } from "react";
@@ -56,6 +59,7 @@ import {
     placesText,
     refusalFlash,
     seatName,
+    splitTicketCode,
     ticketStatusText,
     ticketTone,
     validityText,
@@ -81,6 +85,29 @@ function PriceText({ ticket, courtesy }: { ticket: OrderTicket; courtesy: boolea
         );
     }
     return <span>{formatBRL(ticket.amount)}</span>;
+}
+
+/**
+ * Código do ingresso, grande e monoespaçado, abaixo do QR, com um respiro entre
+ * as letras e os números ("CT-  48291"). Mostrado como a Lara manda — sem
+ * conferir formato (os antigos `ING-…` continuam valendo). A dica dos números só
+ * aparece no código novo (iniciais + 5 números): é o que a portaria aceita.
+ */
+function TicketCode({ code, label }: { code: string; label: string }) {
+    const { prefix, rest, digits } = splitTicketCode(code);
+    return (
+        <>
+            <span className={style.code} aria-label={`${label}: ${code}`}>
+                {prefix && <span className={style.codePrefix}>{prefix}</span>}
+                {rest}
+            </span>
+            {digits === 5 && (
+                <span className={style.codeHint}>
+                    Na portaria, informe o código ou só os {digits} números.
+                </span>
+            )}
+        </>
+    );
 }
 
 /** [lugares] O lugar marcado pago: o lugar em destaque, o responsável e "Não é entrada". */
@@ -114,11 +141,7 @@ function SeatTicketCard({ ticket }: { ticket: OrderTicket }) {
                     <img src={ticket.qr_code} alt={`QR Code do lugar ${seat?.label ?? ""} (responsável ${ticket.holder_name})`} />
                 </div>
             )}
-            {ticket.code && (
-                <span className={style.code} aria-label={`Código do lugar: ${ticket.code}`}>
-                    {ticket.code}
-                </span>
-            )}
+            {ticket.code && <TicketCode code={ticket.code} label="Código do lugar" />}
             {ticket.qr_code && (
                 <span className={style.hint}>
                     Este QR serve para a recepção conferir o responsável pelo lugar. Para entrar, cada pessoa usa a própria entrada.
@@ -162,11 +185,8 @@ export function TicketCard({ ticket, order }: { ticket: OrderTicket; order: Tick
                     <img src={ticket.qr_code} alt={`QR Code do ingresso de ${ticket.holder_name}`} />
                 </div>
             )}
-            {ticket.code && (
-                <span className={style.code} aria-label={`Código do ingresso: ${ticket.code}`}>
-                    {ticket.code}
-                </span>
-            )}
+            {ticket.code && <TicketCode code={ticket.code} label="Código do ingresso" />}
+
             {entries.length > 0 ? (
                 <ul className={style.entries}>
                     {entries.map((text) => (

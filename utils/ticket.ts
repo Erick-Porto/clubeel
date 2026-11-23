@@ -117,8 +117,12 @@ export function formatWhen(
     return `${dateTimeFormatter.format(s)} a ${dateTimeFormatter.format(e)}`;
 }
 
-/** Horário do dia de um evento de vários dias: "18:00 às 02:00". */
-export function formatDayHours(day: { starts_at: string | null; ends_at: string | null }): string {
+/**
+ * Horário do dia de um evento de vários dias: "18:00 às 02:00". [sessões] Com o
+ * `time_label` da Lara ("09:00–10:30"), vale o dela.
+ */
+export function formatDayHours(day: { starts_at: string | null; ends_at: string | null; time_label?: string }): string {
+    if (day.time_label) return day.time_label;
     const start = formatTime(day.starts_at);
     const end = formatTime(day.ends_at);
     return start && end ? `${start} às ${end}` : start;
@@ -173,7 +177,19 @@ export function isMembersOnly(lot: TicketLot | null): boolean {
 
 /** O tipo pode entrar num pedido agora (a Lara diz `available` e manda o lote). */
 export function isBuyable(type: TicketType, kind: BuyerKind): boolean {
-    return type.available && priceFor(type.lot, kind) !== null;
+    return type.available && !type.session_closed && priceFor(type.lot, kind) !== null;
+}
+
+/**
+ * [sessões] Quando a tela precisa reler o evento: o primeiro `sales_ends_at`
+ * ainda por vir entre os tipos à venda (a diária para de vender no fim da
+ * sessão dela) e o do evento. `null` = nada para vigiar.
+ */
+export function nextSalesChange(event: TicketEvent, now = Date.now()): number | null {
+    const times = [event.sales_ends_at, ...event.types.filter((type) => type.available).map((type) => type.sales_ends_at)]
+        .map(parse)
+        .filter((time): time is number => time !== null && time > now);
+    return times.length ? Math.min(...times) : null;
 }
 
 /** "a partir de" da vitrine: o menor preço de ENTRADA à venda para quem está vendo (mesa não é entrada). */
@@ -253,23 +269,77 @@ export interface DayGroup {
 }
 
 /**
+ * [sessões] Uma data do evento com os dias dela. Mais de um = SESSÕES (vários
+ * horários na mesma data); um só = dia comum, escolhido direto como antes.
+ */
+export interface DateGroup {
+    date: string;
+    /** "Sáb 21/11". */
+    label: string;
+    days: DayGroup[];
+    /** A data tem mais de um horário. */
+    sessions: boolean;
+    /** Todos os dias/sessões da data já terminaram. */
+    closed: boolean;
+}
+
+/** [sessões] Algum dia do evento é sessão (há mais de um horário numa data). */
+export function hasSessions(event: Pick<TicketEvent, "days">): boolean {
+    return event.days.some((day) => day.is_session);
+}
+
+/** [sessões] "sessão" no lugar de "dia" quando o dia é sessão. */
+export function dayWord(day: Pick<TicketEventDay, "is_session"> | null | undefined): "sessão" | "dia" {
+    return day?.is_session ? "sessão" : "dia";
+}
+
+/**
+ * [sessões] O tipo não vende mais porque a sessão (ou o dia) dele terminou:
+ * "Sessão encerrada" / "Dia encerrado". `null` se não é o caso.
+ */
+export function closedTypeText(type: Pick<TicketType, "session_closed" | "day_id">, days: TicketEventDay[]): string | null {
+    if (!type.session_closed) return null;
+    const day = days.find((item) => item.id === type.day_id);
+    if (day?.is_session) return "Sessão encerrada";
+    return day ? "Dia encerrado" : "Encerrado";
+}
+
+/**
  * Tipos de ENTRADA agrupados por dia, na ordem dos `days`, e o passaporte à
  * parte. [lugares] Os tipos de lugar marcado vão em `seats` (bloco próprio).
  */
 export function groupTypes(event: TicketEvent): {
     days: DayGroup[];
+    /** [sessões] Os mesmos `days`, agrupados pela data (`event.dates`). */
+    dates: DateGroup[];
     passport: TicketType[];
     single: TicketType[];
     seats: TicketType[];
 } {
     const seats = event.types.filter(isSeatType);
     const entries = event.types.filter((type) => !isSeatType(type));
-    if (!event.multi_day) return { days: [], passport: [], single: entries, seats };
+    if (!event.multi_day) return { days: [], dates: [], passport: [], single: entries, seats };
+    const days = event.days.map((day) => ({
+        day,
+        types: entries.filter((type) => type.validity === "day" && type.day_id === day.id),
+    }));
+    const dates = event.dates
+        .map((date) => {
+            const groups = date.days
+                .map((id) => days.find((group) => group.day.id === id))
+                .filter((group): group is DayGroup => group !== undefined);
+            return {
+                date: date.date,
+                label: date.label,
+                days: groups,
+                sessions: groups.length > 1,
+                closed: groups.length > 0 && groups.every((group) => group.day.closed),
+            };
+        })
+        .filter((date) => date.days.length > 0);
     return {
-        days: event.days.map((day) => ({
-            day,
-            types: entries.filter((type) => type.validity === "day" && type.day_id === day.id),
-        })),
+        days,
+        dates,
         passport: entries.filter((type) => type.validity === "passport"),
         single: [],
         seats,
@@ -292,11 +362,16 @@ export function typeLabel(type: TicketType, days: TicketEventDay[]): string {
 /**
  * "Diária · Sáb 14/02", "Passaporte · todos os dias" ou "" (evento de um dia).
  * [lugares] O lugar é sempre de um dia: só o dia ("Sáb 14/02"), sem "Diária".
+ * [sessões] Na sessão, data e horário: "Sessão · Sáb 21/11 · 09:00–10:30" (o
+ * `label` da Lara já leva o horário).
  */
 export function validityText(ticket: Pick<OrderTicket, "validity" | "day"> & { kind?: string }): string {
     if (ticket.kind === "seat") return ticket.day ? ticket.day.label : "";
     if (ticket.validity === "passport") return "Passaporte · todos os dias";
-    if (ticket.validity === "day") return ticket.day ? `Diária · ${ticket.day.label}` : "Diária";
+    if (ticket.validity === "day") {
+        if (!ticket.day) return "Diária";
+        return `${ticket.day.is_session ? "Sessão" : "Diária"} · ${ticket.day.label}`;
+    }
     return "";
 }
 
@@ -349,6 +424,19 @@ export function couponPreviewDiscount(coupon: CouponPreview | null, typeId: numb
     if (coupon.type_ids && !coupon.type_ids.includes(typeId)) return 0;
     const raw = coupon.kind === "percent" ? (price * coupon.value) / 100 : coupon.kind === "fixed" ? coupon.value : 0;
     return Math.min(price, Math.max(0, Math.round(raw * 100) / 100));
+}
+
+/**
+ * Código do ingresso para mostrar: as letras e os números separados, para a
+ * portaria ler ("CT-48291" → "CT-" e "48291"). Não é validação — o código é
+ * mostrado como a Lara manda (os antigos `ING-…` continuam valendo); sem hífen
+ * fica inteiro. `digits` = quantos números há depois do hífen, se só números.
+ */
+export function splitTicketCode(code: string): { prefix: string; rest: string; digits: number | null } {
+    const at = code.indexOf("-");
+    if (at <= 0 || at === code.length - 1) return { prefix: "", rest: code, digits: null };
+    const rest = code.slice(at + 1);
+    return { prefix: code.slice(0, at + 1), rest, digits: /^\d+$/.test(rest) ? rest.length : null };
 }
 
 /** "carla@email.com" → "c***@email.com" (para dizer para onde foi o código). */
@@ -473,6 +561,7 @@ const REASON_TITLES: Record<string, string> = {
     day_required: "Não foi possível abrir o mapa",
     map_not_found: "Mapa não encontrado",
     seat_captive: "Esse lugar está indisponível",
+    session_closed: "Esta sessão já terminou",
 };
 
 /** Texto de apoio quando a Lara não mandou mensagem. */
@@ -496,6 +585,7 @@ const REASON_FALLBACKS: Record<string, string> = {
     seat_taken: "Escolha outro.",
     map_not_found: "O mapa saiu de venda. Atualizamos o evento.",
     seat_captive: "Atualizamos o mapa: escolha outro lugar.",
+    session_closed: "Atualizamos o evento e tiramos esse ingresso do pedido.",
 };
 
 export interface TicketFlash {
@@ -508,9 +598,15 @@ export function refusalFlash(failure: TicketFailure, fallbackTitle = "Não deu c
     const reason = failure.reason ?? "";
     let title = REASON_TITLES[reason] ?? fallbackTitle;
     // [v4] Dia lotado no evento de vários dias: "Sáb 13/02 esgotado".
+    // [sessões] Sessão lotada: "Sessão Sáb 21/11 · 09:00–10:30 esgotada".
     if (reason === "capacity_full" && failure.context.day_id !== undefined && failure.context.day_id !== null) {
         const day = days.find((item) => item.id === Number(failure.context.day_id));
-        if (day) title = `${day.label} esgotado`;
+        if (day) title = day.is_session ? `Sessão ${day.label} esgotada` : `${day.label} esgotado`;
+    }
+    // [sessões] A diária é de um dia que já terminou (fora de sessão): "Este dia já terminou".
+    if (reason === "session_closed" && failure.context.day_id !== undefined && failure.context.day_id !== null) {
+        const day = days.find((item) => item.id === Number(failure.context.day_id));
+        if (day && !day.is_session) title = "Este dia já terminou";
     }
     // [v4] Já tem ingresso no mesmo dia (`day_id`) ou passaporte (`day_id: null`).
     if (reason === "already_has_ticket" && "day_id" in failure.context) {
@@ -552,7 +648,10 @@ export const EVENT_RELOAD_REASONS = new Set([
     "seat_wrong_type",
     "map_not_found",
     "seat_captive",
+    // [sessões] A sessão da diária terminou.
+    "session_closed",
 ]);
+
 
 /** [lugares] Recusas de lugar: a tela volta ao mapa (relido). */
 export const SEAT_REASONS = new Set(["seat_required", "seat_not_found", "seat_wrong_type", "seat_taken", "seat_captive"]);
